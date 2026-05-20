@@ -1,6 +1,7 @@
 # Dependencies & build
 node_modules/
 dist/
+.vscode/
 
 # Local database
 *.db
@@ -10,7 +11,9 @@ data.db
 
 # Environment
 .env
-.env.*
+.env.local
+.env.*.local
+!.env.example
 
 # Test / coverage
 coverage/

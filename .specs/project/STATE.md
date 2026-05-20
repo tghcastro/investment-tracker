@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-20
-**Current Work:** M1 Execute — T19 done (GET /api/holdings); next T20+ (remaining M1 API/UI tasks)
+**Current Work:** M1 Execute — T20–T22 done (error middleware, route tests, web scaffold); next T22a+ (DESIGN tokens, app shell, pages)
 
 ---
 
@@ -94,6 +94,9 @@ _None yet._
 - [x] Implement T17 — POST /api/holdings (`packages/api/src/routes/holdings/post.ts`; `list.ts`/`get-by-id.ts` stubs for T18/T19; validators `accountId`/`bondHoldingId` positive int strings; API `couponRate` % in body, decimal in DB) (2026-05-20)
 - [x] Implement T19 — GET /api/holdings (`packages/api/src/routes/holdings/list.ts`; optional `maturityAfter` YYYY-MM-DD filter) (2026-05-20)
 - [x] Web application design — `/.specs/features/m1-scaffold/web-design.md` from DESIGN.md (2026-05-20)
+- [x] Implement T20 — API error middleware (`packages/api/src/middleware/errors.ts`) (2026-05-20)
+- [x] Implement T21 — API route integration tests (`packages/api/__tests__/routes.test.ts`, 11 tests) (2026-05-20)
+- [x] Implement T22 — React + Vite web scaffold (`packages/web/`) (2026-05-20)
 
 ---
 
