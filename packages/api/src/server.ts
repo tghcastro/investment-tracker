@@ -1,7 +1,8 @@
 import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 
-import { db } from './db.js';
+import { db, type Database } from './db.js';
+import { registerErrorHandler } from './middleware/errors.js';
 import { createRepo } from './repo.js';
 import { registerAccountHoldings } from './routes/accounts/holdings.js';
 import { registerListAccounts } from './routes/accounts/list.js';
@@ -13,7 +14,7 @@ import { registerPostHolding } from './routes/holdings/post.js';
 export const DEFAULT_PORT = 3000;
 const WEB_DEV_ORIGIN = 'http://localhost:3001';
 
-export async function createServer(): Promise<FastifyInstance> {
+export async function createServer(database: Database = db): Promise<FastifyInstance> {
   const app = Fastify({ logger: true });
 
   await app.register(cors, {
@@ -22,7 +23,9 @@ export async function createServer(): Promise<FastifyInstance> {
 
   app.get('/health', async () => ({ status: 'ok' }));
 
-  const repo = createRepo(db);
+  registerErrorHandler(app);
+
+  const repo = createRepo(database);
   registerPostAccount(app, repo);
   registerListAccounts(app, repo);
   registerAccountHoldings(app, repo);
