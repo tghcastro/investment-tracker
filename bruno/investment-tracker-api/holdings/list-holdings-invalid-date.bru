@@ -1,0 +1,10 @@
+meta {
+  name: List Holdings (invalid maturityAfter)
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/holdings?maturityAfter=not-a-date
+  auth: none
+}
