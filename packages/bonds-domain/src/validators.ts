@@ -2,6 +2,17 @@ import { z } from 'zod';
 
 export const couponFrequencySchema = z.enum(['semi-annual', 'quarterly', 'monthly', 'annual']);
 
+/** Matches repo parseId: positive integer string without leading zeros (e.g. "1", "42"). */
+function positiveIntegerId(label: string) {
+  return z.string().refine(
+    (id) => {
+      const parsed = Number.parseInt(id, 10);
+      return Number.isInteger(parsed) && parsed > 0 && String(parsed) === id;
+    },
+    { message: `${label} must be a positive integer` }
+  );
+}
+
 export const createAccountSchema = z.object({
   name: z.string().min(1, 'Account name required').max(255),
   description: z.string().max(1000).optional(),
@@ -9,7 +20,7 @@ export const createAccountSchema = z.object({
 
 export const createBondHoldingSchema = z
   .object({
-    accountId: z.string().uuid('Account ID must be a valid UUID'),
+    accountId: positiveIntegerId('Account ID'),
     issuer: z.string().min(1, 'Issuer required').max(255),
     isin: z.string().max(20).optional(),
     cusip: z.string().max(20).optional(),
@@ -26,7 +37,7 @@ export const createBondHoldingSchema = z
   });
 
 export const createCouponPaymentSchema = z.object({
-  bondHoldingId: z.string().uuid('Holding ID must be a valid UUID'),
+  bondHoldingId: positiveIntegerId('Holding ID'),
   paymentDate: z.coerce.date(),
   amount: z.number().int().positive('Amount must be positive'),
 });

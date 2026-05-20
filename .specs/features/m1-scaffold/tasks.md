@@ -472,13 +472,13 @@ T3 ──→ T22 ──→ T22a ──→ T23 ──┬─→ T24 (Home) [P]
 
 **Done when**:
 
-- [ ] POST /api/holdings accepts full bond holding body
-- [ ] Validates with createBondHoldingSchema (date order, positive amounts, etc.)
-- [ ] Calls repo.insertBondHolding()
-- [ ] Returns 201 with created holding + id
-- [ ] Invalid data (maturityDate ≤ purchaseDate) returns 400 with specific error
-- [ ] Missing required fields returns 400 with field list
-- [ ] Non-existent accountId: DB constraint or app logic returns 400
+- [x] POST /api/holdings accepts full bond holding body
+- [x] Validates with createBondHoldingSchema (date order, positive amounts, etc.)
+- [x] Calls repo.insertBondHolding()
+- [x] Returns 201 with created holding + id
+- [x] Invalid data (maturityDate ≤ purchaseDate) returns 400 with specific error
+- [x] Missing required fields returns 400 with field list
+- [x] Non-existent accountId: DB constraint or app logic returns 400
 
 **Tests**: none (integration tests in T22)  
 **Gate**: Build (`npm run build -w api`)
@@ -497,8 +497,8 @@ T3 ──→ T22 ──→ T22a ──→ T23 ──┬─→ T24 (Home) [P]
 
 **Done when**:
 
-- [ ] GET /api/holdings/{id} returns 200 with holding (all fields)
-- [ ] Non-existent id returns 404 with `{ code: "NOT_FOUND" }`
+- [x] GET /api/holdings/{id} returns 200 with holding (all fields)
+- [x] Non-existent id returns 404 with `{ code: "NOT_FOUND" }`
 
 **Tests**: none (integration tests in T22)  
 **Gate**: Build (`npm run build -w api`)
@@ -517,10 +517,10 @@ T3 ──→ T22 ──→ T22a ──→ T23 ──┬─→ T24 (Home) [P]
 
 **Done when**:
 
-- [ ] GET /api/holdings returns all holdings (200, array)
-- [ ] GET /api/holdings?maturityAfter=2026-06-01 returns only holdings with maturity after date
-- [ ] Invalid date format in query returns 400 with error message
-- [ ] Empty result returns empty array (not null or error)
+- [x] GET /api/holdings returns all holdings (200, array)
+- [x] GET /api/holdings?maturityAfter=2026-06-01 returns only holdings with maturity after date
+- [x] Invalid date format in query returns 400 with error message
+- [x] Empty result returns empty array (not null or error)
 
 **Tests**: none (integration tests in T22)  
 **Gate**: Build (`npm run build -w api`)

@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-20
-**Current Work:** M1 Execute — T15 done (GET /api/accounts); next T17+ (remaining M1 API/UI tasks)
+**Current Work:** M1 Execute — T19 done (GET /api/holdings); next T20+ (remaining M1 API/UI tasks)
 
 ---
 
@@ -91,6 +91,8 @@ _None yet._
 - [x] Implement T14 — POST /api/accounts (`packages/api/src/routes/accounts/post.ts`; `list.ts`/`holdings.ts` stubs for T15/T16) (2026-05-20)
 - [x] Implement T15 — GET /api/accounts (`packages/api/src/routes/accounts/list.ts`) (2026-05-20)
 - [x] Implement T16 — GET /api/accounts/:id/holdings (`packages/api/src/routes/accounts/holdings.ts`) (2026-05-20)
+- [x] Implement T17 — POST /api/holdings (`packages/api/src/routes/holdings/post.ts`; `list.ts`/`get-by-id.ts` stubs for T18/T19; validators `accountId`/`bondHoldingId` positive int strings; API `couponRate` % in body, decimal in DB) (2026-05-20)
+- [x] Implement T19 — GET /api/holdings (`packages/api/src/routes/holdings/list.ts`; optional `maturityAfter` YYYY-MM-DD filter) (2026-05-20)
 - [x] Web application design — `/.specs/features/m1-scaffold/web-design.md` from DESIGN.md (2026-05-20)
 
 ---
