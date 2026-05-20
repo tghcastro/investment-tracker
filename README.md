@@ -14,9 +14,22 @@ Personal portfolio tracker (web + Node/TypeScript API) for investors who hold as
 
 ## Stack (v1)
 
-- **Backend:** Node.js + TypeScript, REST API, SQLite
+- **Runtime:** Node.js 22 (see `.nvmrc`)
+- **Backend:** TypeScript, REST API, SQLite (`better-sqlite3`)
 - **Frontend:** React
 - **Data:** Manual entry (no market feeds in v1)
+
+## Development setup (WSL)
+
+```bash
+cd /mnt/d/workspace/investment-tracker   # or your clone path
+source ~/.nvm/nvm.sh && nvm install 22 && nvm use 22
+npm install
+npm rebuild better-sqlite3             # after any Node version switch
+cd packages/api && npm run test -- --run
+```
+
+Use the same Node version for `npm install` and `npm test` (avoids native module crashes).
 
 ## Next steps
 

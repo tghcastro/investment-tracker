@@ -173,6 +173,23 @@ test('renders holdings list', () => {
 
 ---
 
+## Native modules (`better-sqlite3`)
+
+`better-sqlite3` is compiled for the **Node version that ran `npm install`**. If tests fail with `NODE_MODULE_VERSION` mismatch or exit code 139 (segfault), your shell is using a different Node than install.
+
+**Fix (from repo root, in WSL — project uses Node 22 per `.nvmrc`):**
+
+```bash
+node -v   # should be v22.x (nvm use / fnm use in repo root)
+cd /mnt/d/workspace/investment-tracker
+npm rebuild better-sqlite3
+cd packages/api && npm run test -- --run
+```
+
+If you switch Node versions, reinstall or rebuild: `rm -rf node_modules && npm install`, or `npm rebuild better-sqlite3`.
+
+---
+
 ## Tips
 
 - **Test data isolation**: Each test DB = new in-memory file or transaction rollback

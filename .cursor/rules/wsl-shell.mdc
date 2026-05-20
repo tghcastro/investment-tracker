@@ -10,10 +10,10 @@ This project is developed on Windows with **WSL Ubuntu**. The integrated termina
 ## When running commands via the Shell tool
 
 1. **Do not** run commands directly in PowerShell (e.g. bare `git`, `npm`, `node`).
-2. **Always** execute through WSL:
+2. **Always** execute through WSL with **Node 22** (`.nvmrc`):
 
 ```bash
-wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && <command>'
+wsl -d Ubuntu -e bash -lc 'source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker && <command>'
 ```
 
 3. Replace `<command>` with the actual command. Use single quotes around the whole `bash -lc` argument; escape inner single quotes as `'\''`.
@@ -23,7 +23,7 @@ wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && <command>'
 ## Examples
 
 - `git status` → `wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && git status'`
-- `npm test` → `wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && npm test'`
+- `npm test` → `wsl -d Ubuntu -e bash -lc 'source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker && npm test'`
 
 ## Verify
 
