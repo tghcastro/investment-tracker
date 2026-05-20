@@ -20,7 +20,7 @@ describe('Domain Validators', () => {
 
   describe('createBondHoldingSchema', () => {
     const validHolding = {
-      accountId: '550e8400-e29b-41d4-a716-446655440000',
+      accountId: '1',
       issuer: 'US Treasury',
       faceValue: 100000,
       couponRate: 3.5,
@@ -73,7 +73,7 @@ describe('Domain Validators', () => {
   describe('createCouponPaymentSchema', () => {
     it('parses valid coupon payment', () => {
       const result = createCouponPaymentSchema.parse({
-        bondHoldingId: '550e8400-e29b-41d4-a716-446655440000',
+        bondHoldingId: '1',
         paymentDate: new Date('2024-06-15'),
         amount: 1750,
       });
@@ -83,7 +83,7 @@ describe('Domain Validators', () => {
     it('rejects negative amount', () => {
       expect(() =>
         createCouponPaymentSchema.parse({
-          bondHoldingId: '550e8400-e29b-41d4-a716-446655440000',
+          bondHoldingId: '1',
           paymentDate: new Date('2024-06-15'),
           amount: -100,
         })
@@ -94,7 +94,7 @@ describe('Domain Validators', () => {
       const future = new Date();
       future.setFullYear(future.getFullYear() + 1);
       const result = createCouponPaymentSchema.parse({
-        bondHoldingId: '550e8400-e29b-41d4-a716-446655440000',
+        bondHoldingId: '1',
         paymentDate: future,
         amount: 1750,
       });

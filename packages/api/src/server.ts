@@ -6,6 +6,9 @@ import { createRepo } from './repo.js';
 import { registerAccountHoldings } from './routes/accounts/holdings.js';
 import { registerListAccounts } from './routes/accounts/list.js';
 import { registerPostAccount } from './routes/accounts/post.js';
+import { registerGetHoldingById } from './routes/holdings/get-by-id.js';
+import { registerListHoldings } from './routes/holdings/list.js';
+import { registerPostHolding } from './routes/holdings/post.js';
 
 export const DEFAULT_PORT = 3000;
 const WEB_DEV_ORIGIN = 'http://localhost:3001';
@@ -23,6 +26,9 @@ export async function createServer(): Promise<FastifyInstance> {
   registerPostAccount(app, repo);
   registerListAccounts(app, repo);
   registerAccountHoldings(app, repo);
+  registerPostHolding(app, repo);
+  registerListHoldings(app, repo);
+  registerGetHoldingById(app, repo);
 
   return app;
 }

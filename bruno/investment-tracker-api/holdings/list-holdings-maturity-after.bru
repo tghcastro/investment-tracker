@@ -1,0 +1,14 @@
+meta {
+  name: List Holdings (maturityAfter)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/holdings?maturityAfter=2026-12-31
+  auth: none
+}
+
+docs {
+  Returns holdings with maturity strictly after 2026-12-31 (UTC date parse).
+}
