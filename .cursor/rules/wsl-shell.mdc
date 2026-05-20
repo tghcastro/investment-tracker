@@ -1,0 +1,30 @@
+---
+description: Run all shell commands in WSL (Ubuntu), not PowerShell
+alwaysApply: true
+---
+
+# WSL shell for terminal commands
+
+This project is developed on Windows with **WSL Ubuntu**. The integrated terminal uses WSL; agent shell commands must match.
+
+## When running commands via the Shell tool
+
+1. **Do not** run commands directly in PowerShell (e.g. bare `git`, `npm`, `node`).
+2. **Always** execute through WSL:
+
+```bash
+wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && <command>'
+```
+
+3. Replace `<command>` with the actual command. Use single quotes around the whole `bash -lc` argument; escape inner single quotes as `'\''`.
+4. For paths inside WSL, use `/mnt/d/workspace/investment-tracker` (not `D:\...`).
+5. If the user’s distro name differs from `Ubuntu`, use the distro from `terminal.integrated.profiles.windows` in `.vscode/settings.json`.
+
+## Examples
+
+- `git status` → `wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && git status'`
+- `npm test` → `wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && npm test'`
+
+## Verify
+
+After changing terminal settings, prefer a quick `git --version` or `git status` via WSL to confirm the environment.

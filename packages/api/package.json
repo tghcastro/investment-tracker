@@ -1,0 +1,44 @@
+{
+  "name": "@investment-tracker/api",
+  "version": "0.0.1",
+  "description": "Investment tracker REST API",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./db": {
+      "import": "./dist/db.js",
+      "types": "./dist/db.d.ts"
+    },
+    "./fixtures/seed": {
+      "import": "./dist/fixtures/seed.js",
+      "types": "./dist/fixtures/seed.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "migrate": "npm run build && node dist/migrate.js",
+    "seed": "npm run build && node dist/fixtures/seed.js",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "better-sqlite3": "^11.0.0",
+    "bonds-domain": "*",
+    "drizzle-orm": "^0.31.4",
+    "fastify": "^5.8.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.22.3"
+  }
+}

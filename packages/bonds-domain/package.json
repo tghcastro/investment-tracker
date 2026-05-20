@@ -1,0 +1,23 @@
+{
+  "name": "bonds-domain",
+  "version": "0.0.1",
+  "description": "Bond holding domain model + validators",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  }
+}
