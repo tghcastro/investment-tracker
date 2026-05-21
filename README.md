@@ -31,6 +31,43 @@ cd packages/api && npm run test -- --run
 
 Use the same Node version for `npm install` and `npm test` (avoids native module crashes).
 
+## Web app
+
+The dev server listens on **port 80** so URLs are simple (`http://localhost/...`).
+
+### Start
+
+From the repo root (WSL):
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 22
+cd /mnt/d/workspace/investment-tracker
+npm run dev -w @investment-tracker/web
+```
+
+On Linux/WSL, binding to port 80 may require elevated privileges:
+
+```bash
+sudo npm run dev -w @investment-tracker/web
+```
+
+Or from `packages/web`:
+
+```bash
+cd packages/web
+npm run dev
+```
+
+### Navigation
+
+| Page | URL |
+| --- | --- |
+| Home | http://localhost/ |
+| Holdings | http://localhost/holdings |
+| Accounts | http://localhost/accounts |
+
+Use the top nav in the app, or open these links directly.
+
 ## Next steps
 
 1. **`/tlc-spec-driven specify feature`** — M1 platform & bond domain foundation
