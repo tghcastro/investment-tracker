@@ -1,0 +1,16 @@
+.cb-error-banner {
+  width: 100%;
+  background-color: var(--cb-surface-soft);
+  padding: var(--cb-space-base) var(--cb-space-lg);
+  border-radius: var(--cb-radius-md);
+}
+
+.cb-error-banner__message {
+  margin: 0;
+  font-family: var(--cb-font-body-md-family);
+  font-size: var(--cb-font-body-md-size);
+  font-weight: var(--cb-font-body-md-weight);
+  line-height: var(--cb-font-body-md-line-height);
+  letter-spacing: var(--cb-font-body-md-letter-spacing);
+  color: var(--cb-semantic-down);
+}
