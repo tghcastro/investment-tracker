@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-21
-**Current Work:** M1 Execute — branch `feat/m1-web-pages-t24-t29`; T22a/T23 done (tokens, UI primitives, app shell); implementing T24–T29 (pages, useApi, ErrorBoundary, tests)
+**Current Work:** M1 Execute — branch `feat/m1-web-pages-t24-t29`; T24–T29 done (pages, useApi, ErrorBoundary, vitest)
 
 ---
 
@@ -99,13 +99,13 @@ _None yet._
 - [x] Implement T22 — React + Vite web scaffold (`packages/web/`) (2026-05-20)
 - [x] Implement T22a — DESIGN.md tokens + UI primitives (`packages/web/src/styles/`, `packages/web/src/components/ui/`) (2026-05-21)
 - [x] Implement T23 — App shell + TopNav + router (`packages/web/src/App.tsx`, placeholder pages) (2026-05-21)
-- [ ] Implement T24 — Home page (hero + summary cards)
-- [ ] Implement T25 — Holdings list page + HoldingsTable
-- [ ] Implement T25b — Accounts page (feature-card grid)
-- [ ] Implement T26 — useApi hook
-- [ ] Implement T27 — ErrorBoundary
-- [ ] Implement T28 — Wire Holdings/Accounts to useApi
-- [ ] Implement T29 — Web component unit tests
+- [x] Implement T24 — Home page (hero + summary cards, useApi, EmptyState) (2026-05-21)
+- [x] Implement T25 — Holdings list page + HoldingsTable (2026-05-21)
+- [x] Implement T25b — Accounts page (feature-card grid) (2026-05-21)
+- [x] Implement T26 — useApi hook (2026-05-21)
+- [x] Implement T27 — ErrorBoundary (2026-05-21)
+- [x] Implement T28 — Wire Holdings/Accounts to useApi (2026-05-21)
+- [x] Implement T29 — Web component unit tests (8 tests, vitest + RTL) (2026-05-21)
 
 ---
 

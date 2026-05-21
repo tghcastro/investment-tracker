@@ -1,0 +1,136 @@
+.cb-holdings-table {
+  border-top: 1px solid var(--cb-hairline);
+}
+
+.cb-holdings-table__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--cb-space-base);
+  padding: var(--cb-space-base) 0;
+  border-bottom: 1px solid var(--cb-hairline);
+}
+
+.cb-holdings-table__issuer-block {
+  display: flex;
+  align-items: center;
+  gap: var(--cb-space-base);
+  min-width: 0;
+}
+
+.cb-holdings-table__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--cb-radius-full);
+  background-color: var(--cb-surface-strong);
+  font-family: var(--cb-font-caption-strong-family);
+  font-size: var(--cb-font-caption-strong-size);
+  font-weight: var(--cb-font-caption-strong-weight);
+  color: var(--cb-ink);
+}
+
+.cb-holdings-table__labels {
+  min-width: 0;
+}
+
+.cb-holdings-table__issuer {
+  margin: 0;
+  font-family: var(--cb-font-title-md-family);
+  font-size: var(--cb-font-title-md-size);
+  font-weight: var(--cb-font-title-md-weight);
+  line-height: var(--cb-font-title-md-line-height);
+  letter-spacing: var(--cb-font-title-md-letter-spacing);
+  color: var(--cb-ink);
+}
+
+.cb-holdings-table__account {
+  margin: var(--cb-space-xs) 0 0;
+  font-family: var(--cb-font-caption-family);
+  font-size: var(--cb-font-caption-size);
+  font-weight: var(--cb-font-caption-weight);
+  line-height: var(--cb-font-caption-line-height);
+  letter-spacing: var(--cb-font-caption-letter-spacing);
+  color: var(--cb-muted);
+}
+
+.cb-holdings-table__metrics {
+  display: flex;
+  align-items: center;
+  gap: var(--cb-space-lg);
+  text-align: right;
+}
+
+.cb-holdings-table__face-value {
+  min-width: 7rem;
+  text-align: right;
+}
+
+.cb-holdings-table__skeleton-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--cb-space-base);
+  padding: var(--cb-space-base) 0;
+  border-bottom: 1px solid var(--cb-hairline);
+}
+
+.cb-holdings-table__skeleton-icon,
+.cb-holdings-table__skeleton-line {
+  background-color: var(--cb-surface-strong);
+  border-radius: var(--cb-radius-md);
+}
+
+.cb-holdings-table__skeleton-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--cb-radius-full);
+}
+
+.cb-holdings-table__skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cb-space-xs);
+}
+
+.cb-holdings-table__skeleton-line {
+  height: 14px;
+}
+
+.cb-holdings-table__skeleton-line--wide {
+  width: 160px;
+}
+
+.cb-holdings-table__skeleton-line--narrow {
+  width: 96px;
+}
+
+.cb-holdings-table__skeleton-metrics {
+  display: flex;
+  gap: var(--cb-space-base);
+}
+
+.cb-holdings-table__skeleton-line--metric {
+  width: 64px;
+}
+
+@media (max-width: 639px) {
+  .cb-holdings-table__row {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .cb-holdings-table__metrics {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    text-align: left;
+    padding-left: calc(32px + var(--cb-space-base));
+  }
+
+  .cb-holdings-table__face-value {
+    text-align: left;
+  }
+}

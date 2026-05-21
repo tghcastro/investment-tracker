@@ -1,4 +1,5 @@
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { TopNav } from './components/ui';
 import Accounts from './pages/Accounts';
 import Home from './pages/Home';
@@ -18,14 +19,16 @@ function AppLayout() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/holdings" element={<Holdings />} />
-          <Route path="/accounts" element={<Accounts />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/holdings" element={<Holdings />} />
+            <Route path="/accounts" element={<Accounts />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
