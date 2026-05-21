@@ -37,25 +37,31 @@ The dev server listens on **port 80** so URLs are simple (`http://localhost/...`
 
 ### Start
 
+**Requires Node.js 22** (see `.nvmrc`). If you see `crypto.hash is not a function` or a Vite Node version error, your shell is on Node 18 — run `nvm use 22` first.
+
 From the repo root (WSL):
 
 ```bash
-source ~/.nvm/nvm.sh && nvm use 22
 cd /mnt/d/workspace/investment-tracker
+npm run dev:web
+```
+
+`dev:web` loads nvm, switches to Node 22, checks the version, then starts Vite.
+
+On Linux/WSL, port 80 needs elevated privileges. **Do not** run bare `sudo npm run dev` — sudo drops nvm and uses system Node 18. Use:
+
+```bash
+npm run dev:web:sudo
+```
+
+That keeps Node 22 from nvm while binding to port 80.
+
+Manual equivalent:
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 22
+node -v   # must be v22.12+
 npm run dev -w @investment-tracker/web
-```
-
-On Linux/WSL, binding to port 80 may require elevated privileges:
-
-```bash
-sudo npm run dev -w @investment-tracker/web
-```
-
-Or from `packages/web`:
-
-```bash
-cd packages/web
-npm run dev
 ```
 
 ### Navigation
