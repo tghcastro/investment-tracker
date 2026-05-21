@@ -1,0 +1,72 @@
+.cb-home__hero {
+  margin-bottom: var(--cb-space-xl);
+}
+
+.cb-home__subcopy {
+  margin: var(--cb-space-base) 0 0;
+  max-width: 36rem;
+}
+
+.cb-home__summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--cb-space-lg);
+  padding: var(--cb-space-xl);
+  margin-bottom: var(--cb-space-xl);
+  background-color: var(--cb-surface-soft);
+  border-radius: var(--cb-radius-xl);
+}
+
+.cb-home__metric-card {
+  padding: var(--cb-space-lg);
+  background-color: var(--cb-canvas);
+  border: 1px solid var(--cb-hairline);
+  border-radius: var(--cb-radius-xl);
+}
+
+.cb-home__metric-label {
+  margin: 0;
+  font-family: var(--cb-font-caption-strong-family);
+  font-size: var(--cb-font-caption-strong-size);
+  font-weight: var(--cb-font-caption-strong-weight);
+  line-height: var(--cb-font-caption-strong-line-height);
+  letter-spacing: var(--cb-font-caption-strong-letter-spacing);
+  color: var(--cb-body);
+}
+
+.cb-home__metric-value {
+  margin: var(--cb-space-sm) 0 0;
+  color: var(--cb-ink);
+}
+
+.cb-home__metric-card--skeleton {
+  min-height: 96px;
+  background-color: var(--cb-surface-strong);
+  border: none;
+}
+
+.cb-home__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cb-space-base);
+}
+
+.cb-home__link {
+  text-decoration: none;
+}
+
+@media (max-width: 1023px) {
+  .cb-home__summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .cb-home__summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cb-home__summary .cb-home__metric-card:last-child {
+    grid-column: 1 / -1;
+  }
+}

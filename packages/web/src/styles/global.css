@@ -83,3 +83,21 @@ body {
   line-height: var(--cb-font-number-display-line-height);
   letter-spacing: var(--cb-font-number-display-letter-spacing);
 }
+
+.cb-body-sm {
+  font-family: var(--cb-font-body-sm-family);
+  font-size: var(--cb-font-body-sm-size);
+  font-weight: var(--cb-font-body-sm-weight);
+  line-height: var(--cb-font-body-sm-line-height);
+  letter-spacing: var(--cb-font-body-sm-letter-spacing);
+  color: var(--cb-body);
+}
+
+.cb-caption {
+  font-family: var(--cb-font-caption-family);
+  font-size: var(--cb-font-caption-size);
+  font-weight: var(--cb-font-caption-weight);
+  line-height: var(--cb-font-caption-line-height);
+  letter-spacing: var(--cb-font-caption-letter-spacing);
+  color: var(--cb-muted);
+}

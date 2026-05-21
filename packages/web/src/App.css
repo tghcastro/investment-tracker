@@ -10,6 +10,6 @@
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  padding: var(--cb-space-lg) var(--cb-space-xl);
+  padding: var(--cb-space-xl) var(--cb-space-lg);
   box-sizing: border-box;
 }

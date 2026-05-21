@@ -384,7 +384,7 @@ T3 ──→ T22 ──→ T22a ──→ T23 ──┬─→ T24 (Home) [P]
 - [x] `npm install fastify @fastify/cors` in api package
 - [x] `createServer()` function returns Fastify instance
 - [x] GET /health endpoint responds with `{ status: "ok" }` (200)
-- [x] CORS middleware enabled (localhost:3001 for web)
+- [x] CORS middleware enabled (`http://localhost`, `http://localhost:3001`; env `CORS_ORIGINS`)
 - [x] Server listens on port 3000 by default
 - [x] `src/index.ts` (main entry) imports + starts server
 - [x] `npm run dev -w api` starts server, `/health` returns 200
@@ -595,7 +595,7 @@ T3 ──→ T22 ──→ T22a ──→ T23 ──┬─→ T24 (Home) [P]
 
 - [ ] `npm install react react-dom vite @vitejs/plugin-react` in web
 - [ ] `vite.config.ts` configured with React plugin
-- [ ] Dev server starts on port 3001 (default + 1)
+- [x] Dev server starts on port 80 (`http://localhost`)
 - [ ] `npm run dev -w web` starts Vite dev server without error
 - [ ] `.env.local` or vite config sets `VITE_API_URL=http://localhost:3000` (for local dev)
 - [ ] `src/main.tsx` imports `styles/global.css`

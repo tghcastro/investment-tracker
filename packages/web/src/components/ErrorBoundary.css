@@ -1,0 +1,37 @@
+.cb-error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--cb-space-xl);
+  background-color: var(--cb-surface-soft);
+}
+
+.cb-error-boundary__content {
+  max-width: 480px;
+  padding: var(--cb-space-xl);
+  text-align: center;
+  background-color: var(--cb-canvas);
+  border: 1px solid var(--cb-hairline);
+  border-radius: var(--cb-radius-xl);
+}
+
+.cb-error-boundary__title {
+  margin: 0;
+  font-family: var(--cb-font-title-md-family);
+  font-size: var(--cb-font-title-md-size);
+  font-weight: var(--cb-font-title-md-weight);
+  line-height: var(--cb-font-title-md-line-height);
+  letter-spacing: var(--cb-font-title-md-letter-spacing);
+  color: var(--cb-ink);
+}
+
+.cb-error-boundary__message {
+  margin: var(--cb-space-base) 0 var(--cb-space-lg);
+  font-family: var(--cb-font-body-md-family);
+  font-size: var(--cb-font-body-md-size);
+  font-weight: var(--cb-font-body-md-weight);
+  line-height: var(--cb-font-body-md-line-height);
+  letter-spacing: var(--cb-font-body-md-letter-spacing);
+  color: var(--cb-body);
+}

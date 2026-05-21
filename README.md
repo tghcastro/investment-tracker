@@ -74,6 +74,17 @@ npm run dev -w @investment-tracker/web
 
 Use the top nav in the app, or open these links directly.
 
+### API + CORS
+
+Start the API on port 3000 (`npm run dev:api`). The web app fetches `http://localhost:3000` (see `packages/web/.env.example`).
+
+CORS allows browser requests from:
+
+- `http://localhost` (web dev on port 80)
+- `http://localhost:3001` (legacy)
+
+Override when starting the API: `CORS_ORIGINS=http://localhost,http://127.0.0.1 npm run dev:api`
+
 ## Next steps
 
 1. **`/tlc-spec-driven specify feature`** — M1 platform & bond domain foundation

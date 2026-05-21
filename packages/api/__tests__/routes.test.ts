@@ -320,3 +320,61 @@ describe('API routes', () => {
     );
   });
 });
+
+describe('CORS', () => {
+  let sqlite: Database.Database;
+  let app: FastifyInstance;
+
+  beforeEach(async () => {
+    const conn = createTestDatabase();
+    sqlite = conn.sqlite;
+    app = await createServer(conn.database);
+    await app.ready();
+  });
+
+  afterEach(async () => {
+    await app.close();
+    sqlite.close();
+  });
+
+  it('OPTIONS preflight allows http://localhost', async () => {
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/holdings',
+      headers: {
+        origin: 'http://localhost',
+        'access-control-request-method': 'GET',
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost');
+  });
+
+  it('OPTIONS preflight allows http://localhost:3001', async () => {
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/holdings',
+      headers: {
+        origin: 'http://localhost:3001',
+        'access-control-request-method': 'GET',
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost:3001');
+  });
+
+  it('OPTIONS preflight rejects unknown origin', async () => {
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/holdings',
+      headers: {
+        origin: 'http://evil.example',
+        'access-control-request-method': 'GET',
+      },
+    });
+
+    expect(response.headers['access-control-allow-origin']).toBeUndefined();
+  });
+});
