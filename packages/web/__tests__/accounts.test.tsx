@@ -88,4 +88,27 @@ describe('Accounts', () => {
     expect(screen.getByText('1 holding')).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'View holdings' })).toHaveLength(2);
   });
+
+  it('shows holdings error and avoids misleading zero counts when holdings fetch fails', () => {
+    mockUseApi.mockImplementation((url: string) => {
+      if (url === '/api/accounts') {
+        return { data: sampleAccounts, loading: false, error: undefined };
+      }
+      if (url === '/api/holdings') {
+        return { data: undefined, loading: false, error: 'Network error' };
+      }
+      return { data: undefined, loading: false, error: undefined };
+    });
+
+    render(
+      <MemoryRouter>
+        <Accounts />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Network error');
+    expect(screen.getByRole('heading', { name: 'Vanguard' })).toBeInTheDocument();
+    expect(screen.queryByText('0 holdings')).not.toBeInTheDocument();
+    expect(screen.getAllByText('—')).toHaveLength(2);
+  });
 });

@@ -17,7 +17,7 @@ function AccountsSkeleton() {
 
 export default function Accounts() {
   const { data: accounts, loading, error } = useApi<ApiAccount[]>('/api/accounts');
-  const { data: holdings } = useApi<ApiBondHolding[]>('/api/holdings');
+  const { data: holdings, error: holdingsError } = useApi<ApiBondHolding[]>('/api/holdings');
 
   const holdingCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -32,6 +32,7 @@ export default function Accounts() {
       <PageHeader title="Accounts" subtitle="Brokerage accounts" />
 
       {error ? <ErrorBanner message={error} /> : null}
+      {!error && holdingsError ? <ErrorBanner message={holdingsError} /> : null}
 
       {loading ? <AccountsSkeleton /> : null}
 
@@ -46,14 +47,15 @@ export default function Accounts() {
         <div className="cb-accounts-grid">
           {accounts.map((account) => {
             const count = holdingCounts.get(account.id) ?? 0;
+            const holdingLabel = holdingsError
+              ? '—'
+              : `${count} ${count === 1 ? 'holding' : 'holdings'}`;
 
             return (
               <article key={account.id} className="cb-accounts-card">
                 <div className="cb-accounts-card__header">
                   <h2 className="cb-accounts-card__name">{account.name}</h2>
-                  <span className="cb-accounts-card__badge">
-                    {count} {count === 1 ? 'holding' : 'holdings'}
-                  </span>
+                  <span className="cb-accounts-card__badge">{holdingLabel}</span>
                 </div>
                 {account.description ? (
                   <p className="cb-accounts-card__description">{account.description}</p>

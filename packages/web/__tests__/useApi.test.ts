@@ -49,4 +49,20 @@ describe('useApi', () => {
     expect(result.current.data).toBeUndefined();
     expect(result.current.error).toBe('Request failed (500)');
   });
+
+  it('handles fetch network errors gracefully', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('Network error'))
+    );
+
+    const { result } = renderHook(() => useApi<unknown[]>('/api/accounts'));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.data).toBeUndefined();
+    expect(result.current.error).toBe('Network error');
+  });
 });
