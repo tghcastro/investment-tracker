@@ -1,0 +1,192 @@
+/* Design tokens — mapped from DESIGN.md (--cb-* prefix) */
+
+:root {
+  /* Colors — brand & accent */
+  --cb-primary: #0052ff;
+  --cb-primary-active: #003ecc;
+  --cb-primary-disabled: #a8b8cc;
+  --cb-accent-yellow: #f4b000;
+
+  /* Colors — text */
+  --cb-ink: #0a0b0d;
+  --cb-body: #5b616e;
+  --cb-body-strong: #0a0b0d;
+  --cb-muted: #7c828a;
+  --cb-muted-soft: #a8acb3;
+
+  /* Colors — surfaces */
+  --cb-canvas: #ffffff;
+  --cb-surface-soft: #f7f7f7;
+  --cb-surface-card: #ffffff;
+  --cb-surface-strong: #eef0f3;
+  --cb-surface-dark: #0a0b0d;
+  --cb-surface-dark-elevated: #16181c;
+
+  /* Colors — hairlines */
+  --cb-hairline: #dee1e6;
+  --cb-hairline-soft: #eef0f3;
+
+  /* Colors — on-surface */
+  --cb-on-primary: #ffffff;
+  --cb-on-dark: #ffffff;
+  --cb-on-dark-soft: #a8acb3;
+
+  /* Colors — trading semantics */
+  --cb-semantic-up: #05b169;
+  --cb-semantic-down: #cf202f;
+
+  /* Spacing — base unit 4px */
+  --cb-space-xxs: 4px;
+  --cb-space-xs: 8px;
+  --cb-space-sm: 12px;
+  --cb-space-base: 16px;
+  --cb-space-md: 20px;
+  --cb-space-lg: 24px;
+  --cb-space-xl: 32px;
+  --cb-space-xxl: 48px;
+  --cb-space-section: 96px;
+
+  /* Radii */
+  --cb-radius-none: 0px;
+  --cb-radius-xs: 4px;
+  --cb-radius-sm: 8px;
+  --cb-radius-md: 12px;
+  --cb-radius-lg: 16px;
+  --cb-radius-xl: 24px;
+  --cb-radius-pill: 100px;
+  --cb-radius-full: 9999px;
+
+  /* Font families (Inter / JetBrains Mono substitutes) */
+  --cb-font-display: 'Inter', -apple-system, system-ui, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --cb-font-sans: 'Inter', -apple-system, system-ui, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  --cb-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Typography — display-mega */
+  --cb-font-display-mega-family: var(--cb-font-display);
+  --cb-font-display-mega-size: 80px;
+  --cb-font-display-mega-weight: 400;
+  --cb-font-display-mega-line-height: 1;
+  --cb-font-display-mega-letter-spacing: -2px;
+
+  /* Typography — display-xl */
+  --cb-font-display-xl-family: var(--cb-font-display);
+  --cb-font-display-xl-size: 64px;
+  --cb-font-display-xl-weight: 400;
+  --cb-font-display-xl-line-height: 1;
+  --cb-font-display-xl-letter-spacing: -1.6px;
+
+  /* Typography — display-lg */
+  --cb-font-display-lg-family: var(--cb-font-display);
+  --cb-font-display-lg-size: 52px;
+  --cb-font-display-lg-weight: 400;
+  --cb-font-display-lg-line-height: 1;
+  --cb-font-display-lg-letter-spacing: -1.3px;
+
+  /* Typography — display-md */
+  --cb-font-display-md-family: var(--cb-font-display);
+  --cb-font-display-md-size: 44px;
+  --cb-font-display-md-weight: 400;
+  --cb-font-display-md-line-height: 1.09;
+  --cb-font-display-md-letter-spacing: -1px;
+
+  /* Typography — display-sm */
+  --cb-font-display-sm-family: var(--cb-font-sans);
+  --cb-font-display-sm-size: 36px;
+  --cb-font-display-sm-weight: 400;
+  --cb-font-display-sm-line-height: 1.11;
+  --cb-font-display-sm-letter-spacing: -0.5px;
+
+  /* Typography — title-lg */
+  --cb-font-title-lg-family: var(--cb-font-sans);
+  --cb-font-title-lg-size: 32px;
+  --cb-font-title-lg-weight: 400;
+  --cb-font-title-lg-line-height: 1.13;
+  --cb-font-title-lg-letter-spacing: -0.4px;
+
+  /* Typography — title-md */
+  --cb-font-title-md-family: var(--cb-font-sans);
+  --cb-font-title-md-size: 18px;
+  --cb-font-title-md-weight: 600;
+  --cb-font-title-md-line-height: 1.33;
+  --cb-font-title-md-letter-spacing: 0;
+
+  /* Typography — title-sm */
+  --cb-font-title-sm-family: var(--cb-font-sans);
+  --cb-font-title-sm-size: 16px;
+  --cb-font-title-sm-weight: 600;
+  --cb-font-title-sm-line-height: 1.25;
+  --cb-font-title-sm-letter-spacing: 0;
+
+  /* Typography — body-md */
+  --cb-font-body-md-family: var(--cb-font-sans);
+  --cb-font-body-md-size: 16px;
+  --cb-font-body-md-weight: 400;
+  --cb-font-body-md-line-height: 1.5;
+  --cb-font-body-md-letter-spacing: 0;
+
+  /* Typography — body-strong */
+  --cb-font-body-strong-family: var(--cb-font-sans);
+  --cb-font-body-strong-size: 16px;
+  --cb-font-body-strong-weight: 700;
+  --cb-font-body-strong-line-height: 1.5;
+  --cb-font-body-strong-letter-spacing: 0;
+
+  /* Typography — body-sm */
+  --cb-font-body-sm-family: var(--cb-font-sans);
+  --cb-font-body-sm-size: 14px;
+  --cb-font-body-sm-weight: 400;
+  --cb-font-body-sm-line-height: 1.5;
+  --cb-font-body-sm-letter-spacing: 0;
+
+  /* Typography — caption */
+  --cb-font-caption-family: var(--cb-font-sans);
+  --cb-font-caption-size: 13px;
+  --cb-font-caption-weight: 400;
+  --cb-font-caption-line-height: 1.5;
+  --cb-font-caption-letter-spacing: 0;
+
+  /* Typography — caption-strong */
+  --cb-font-caption-strong-family: var(--cb-font-sans);
+  --cb-font-caption-strong-size: 12px;
+  --cb-font-caption-strong-weight: 600;
+  --cb-font-caption-strong-line-height: 1.5;
+  --cb-font-caption-strong-letter-spacing: 0;
+
+  /* Typography — number-display */
+  --cb-font-number-display-family: var(--cb-font-mono);
+  --cb-font-number-display-size: 18px;
+  --cb-font-number-display-weight: 500;
+  --cb-font-number-display-line-height: 1.4;
+  --cb-font-number-display-letter-spacing: 0;
+
+  /* Typography — button */
+  --cb-font-button-family: var(--cb-font-sans);
+  --cb-font-button-size: 16px;
+  --cb-font-button-weight: 600;
+  --cb-font-button-line-height: 1.15;
+  --cb-font-button-letter-spacing: 0;
+
+  /* Typography — nav-link */
+  --cb-font-nav-link-family: var(--cb-font-sans);
+  --cb-font-nav-link-size: 14px;
+  --cb-font-nav-link-weight: 500;
+  --cb-font-nav-link-line-height: 1.4;
+  --cb-font-nav-link-letter-spacing: 0;
+
+  /* Component — button geometry */
+  --cb-button-height: 44px;
+  --cb-button-height-large: 56px;
+  --cb-button-padding-x: 20px;
+  --cb-button-padding-y: 12px;
+  --cb-button-padding-x-large: 32px;
+  --cb-button-padding-y-large: 16px;
+
+  /* Elevation */
+  --cb-shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.04);
+
+  /* Layout */
+  --cb-content-max-width: 1200px;
+  --cb-top-nav-height: 64px;
+}

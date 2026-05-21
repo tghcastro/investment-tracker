@@ -1,0 +1,15 @@
+.cb-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--cb-canvas);
+}
+
+.cb-app__main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--cb-space-lg) var(--cb-space-xl);
+  box-sizing: border-box;
+}
