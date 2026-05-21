@@ -160,7 +160,7 @@ We need a working, testable foundation to build bond holding and coupon tracking
 
 **Acceptance Criteria**:
 
-1. WHEN I run the web dev server THEN it starts on http://localhost:3001
+1. WHEN I run the web dev server THEN it starts on http://localhost (port 80)
 2. WHEN I open the app THEN I see a `top-nav-light` shell (64px): wordmark, nav (Home, Holdings, Accounts), and a primary-styled "Add holding" control (disabled until M2)
 3. WHEN I visit Home THEN I see a compressed `hero-band-light` headline, summary `feature-card`(s) with portfolio metrics in `number-display` (mono font), and navigation CTAs using `button-primary` / `button-secondary-light`
 4. WHEN I visit Holdings THEN the app fetches GET /api/holdings and renders an `asset-row` list (issuer, account, coupon, maturity, face value) with hairline dividers — not an unstyled HTML table
@@ -173,7 +173,7 @@ We need a working, testable foundation to build bond holding and coupon tracking
 
 **Independent Test**:
 - Start web and API dev servers
-- Open http://localhost:3001 — confirm white canvas, Coinbase Blue (#0052ff) used only on primary CTA/nav accent
+- Open http://localhost — confirm white canvas, Coinbase Blue (#0052ff) used only on primary CTA/nav accent
 - Navigate Home → Holdings → Accounts; verify API data renders with mono numbers and pill/card geometry
 - Stop API; verify error state on Holdings page
 

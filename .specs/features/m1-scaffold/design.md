@@ -94,7 +94,7 @@ None yet. Greenfield project. Docs exist (PROJECT.md, ROADMAP.md, STATE.md).
   - `routes/accounts.ts`: GET /accounts, GET /accounts/:id/holdings
   - `repo.ts`: Query + insert fns (uses Drizzle client). Returns typed entities.
   - `middleware/errors.ts`: Validation error → 400, not found → 404, DB error → 500
-  - `middleware/cors.ts`: CORS for web SPA (localhost:3001)
+  - CORS for web SPA (`http://localhost` port 80, legacy `http://localhost:3001`; override via `CORS_ORIGINS`)
 - **Dependencies**: fastify, @fastify/cors, drizzle-orm, sqlite, bonds-domain
 - **Endpoints**:
   - POST /health → `{ status: "ok" }`
@@ -255,7 +255,7 @@ API middleware uses schema.parse(req.body) → 400 if fails, includes field erro
 1. `npm install` at root → workspaces linked
 2. `npm run lint` → ESLint across all packages
 3. `npm run test` → Vitest across all
-4. `npm run dev` → Both API (port 3000) + web (port 3001)
+4. `npm run dev` → Both API (port 3000) + web (port 80, http://localhost)
 5. `npm run dev:api` OR `npm run dev:web` → Individual servers
 
 Seed data: On first migration, create 2 fixture accounts + 3 bonds in DB. Fixture runs if count = 0.

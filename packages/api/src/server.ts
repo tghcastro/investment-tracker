@@ -12,13 +12,30 @@ import { registerListHoldings } from './routes/holdings/list.js';
 import { registerPostHolding } from './routes/holdings/post.js';
 
 export const DEFAULT_PORT = 3000;
-const WEB_DEV_ORIGIN = 'http://localhost:3001';
+
+/** Dev web origins: port 80 (README) and legacy :3001. Override with CORS_ORIGINS (comma-separated). */
+const DEFAULT_CORS_ORIGINS = ['http://localhost', 'http://localhost:3001'];
+
+export function getCorsOrigins(): string[] {
+  const fromEnv = process.env.CORS_ORIGINS?.split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return fromEnv?.length ? fromEnv : DEFAULT_CORS_ORIGINS;
+}
 
 export async function createServer(database: Database = db): Promise<FastifyInstance> {
   const app = Fastify({ logger: true });
 
+  const allowedOrigins = getCorsOrigins();
+
   await app.register(cors, {
-    origin: WEB_DEV_ORIGIN,
+    origin: (origin, cb) => {
+      if (!origin) {
+        cb(null, true);
+        return;
+      }
+      cb(null, allowedOrigins.includes(origin));
+    },
   });
 
   app.get('/health', async () => ({ status: 'ok' }));
