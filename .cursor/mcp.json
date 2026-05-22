@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "jira-invtr": {
+      "command": "npx",
+      "args": ["-y", "@aashari/mcp-server-atlassian-jira"],
+      "envFile": "${workspaceFolder}/.cursor/jira.env"
+    }
+  }
+}
