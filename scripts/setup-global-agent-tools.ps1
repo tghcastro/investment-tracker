@@ -42,3 +42,28 @@ Drop caveman for security warnings, irreversible confirmations, ambiguous multi-
 [Environment]::SetEnvironmentVariable('CAVEMAN_DEFAULT_MODE', 'ultra', 'User')
 
 Write-Host 'Caveman ultra configured globally.'
+
+# RTK: Windows binary + WSL hook/PATH (Cursor Shell preToolUse)
+$rtkWindowsInstaller = Join-Path $PSScriptRoot 'install-rtk-windows.ps1'
+$rtkPathScript = Join-Path $PSScriptRoot 'add-rtk-to-path.ps1'
+$rtkWslInstaller = Join-Path $PSScriptRoot 'install-rtk-wsl.ps1'
+
+if (Test-Path $rtkWindowsInstaller) {
+  & $rtkWindowsInstaller
+} else {
+  Write-Host "Skipped RTK Windows install (missing $rtkWindowsInstaller)"
+}
+
+if (Test-Path $rtkPathScript) {
+  & $rtkPathScript
+}
+
+if (Get-Command wsl -ErrorAction SilentlyContinue) {
+  if (Test-Path $rtkWslInstaller) {
+    & $rtkWslInstaller
+  } else {
+    Write-Host "Skipped RTK WSL install (missing $rtkWslInstaller)"
+  }
+} else {
+  Write-Host 'Skipped RTK WSL install (wsl not available).'
+}
