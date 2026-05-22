@@ -74,7 +74,10 @@ export default function Accounts() {
                   <p className="cb-accounts-card__description">{account.description}</p>
                 ) : null}
                 <div className="cb-accounts-card__actions">
-                  <Link to="/holdings" className="cb-button cb-button--tertiary-text">
+                  <Link
+                    to={`/holdings?accountId=${account.id}`}
+                    className="cb-button cb-button--tertiary-text"
+                  >
                     View holdings
                   </Link>
                   <Link to={`/accounts/${account.id}`} className="cb-button cb-button--tertiary-text">

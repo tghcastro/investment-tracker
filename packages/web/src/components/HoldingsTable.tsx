@@ -1,17 +1,32 @@
+import { Link } from 'react-router-dom';
 import type { ApiBondHolding } from '../types/api';
 import { formatCouponRate, formatCurrency, formatDate, issuerInitials } from '../utils/format';
+import { Button } from './ui/Button';
 import './HoldingsTable.css';
+
+export interface AccountInfo {
+  name: string;
+  archived: boolean;
+}
 
 export interface HoldingsTableProps {
   holdings: ApiBondHolding[];
-  accountNames: Map<string, string>;
+  accountInfo: Map<string, AccountInfo>;
+  onDelete: (id: string) => void;
 }
 
-export function HoldingsTable({ holdings, accountNames }: HoldingsTableProps) {
+function formatAccountLabel(info: AccountInfo | undefined): string {
+  if (!info) {
+    return 'Unknown account';
+  }
+  return info.archived ? `${info.name} (archived)` : info.name;
+}
+
+export function HoldingsTable({ holdings, accountInfo, onDelete }: HoldingsTableProps) {
   return (
     <div className="cb-holdings-table" role="list">
       {holdings.map((holding) => {
-        const accountName = accountNames.get(holding.accountId) ?? 'Unknown account';
+        const accountLabel = formatAccountLabel(accountInfo.get(holding.accountId));
 
         return (
           <article key={holding.id} className="cb-holdings-table__row" role="listitem">
@@ -21,17 +36,30 @@ export function HoldingsTable({ holdings, accountNames }: HoldingsTableProps) {
               </div>
               <div className="cb-holdings-table__labels">
                 <h2 className="cb-holdings-table__issuer">{holding.issuer}</h2>
-                <p className="cb-holdings-table__account">{accountName}</p>
+                <p className="cb-holdings-table__account">{accountLabel}</p>
               </div>
             </div>
             <div className="cb-holdings-table__metrics">
               <span className="cb-holdings-table__coupon cb-number-display">
                 {formatCouponRate(holding.couponRate)}
               </span>
-              <span className="cb-holdings-table__maturity cb-body-sm">{formatDate(holding.maturityDate)}</span>
+              <span className="cb-holdings-table__maturity cb-body-sm">
+                {formatDate(holding.maturityDate)}
+              </span>
               <span className="cb-holdings-table__face-value cb-number-display">
                 {formatCurrency(holding.faceValue)}
               </span>
+            </div>
+            <div className="cb-holdings-table__actions">
+              <Link
+                to={`/holdings/${holding.id}`}
+                className="cb-button cb-button--tertiary-text"
+              >
+                Edit
+              </Link>
+              <Button variant="secondary-light" onClick={() => onDelete(holding.id)}>
+                Delete
+              </Button>
             </div>
           </article>
         );

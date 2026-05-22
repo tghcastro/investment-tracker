@@ -107,4 +107,18 @@ describe('TopNav responsive behavior', () => {
     expect(screen.getByRole('link', { name: 'Accounts' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Close menu' })).not.toBeInTheDocument();
   });
+
+  it('enables Add holding link to /holdings/new', () => {
+    mockMatchMedia(false);
+
+    render(
+      <MemoryRouter>
+        <TopNav />
+      </MemoryRouter>
+    );
+
+    const addLink = screen.getByRole('link', { name: 'Add holding' });
+    expect(addLink).toHaveAttribute('href', '/holdings/new');
+    expect(addLink.querySelector('button')).not.toBeDisabled();
+  });
 });

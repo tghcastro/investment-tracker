@@ -80,10 +80,11 @@ Start the API on port 3000 (`npm run dev:api`). The web app fetches `http://loca
 
 CORS allows browser requests from:
 
-- `http://localhost` (web dev on port 80)
+- `http://localhost` and `http://127.0.0.1` (web dev on port 80)
+- `http://localhost:5173` and `http://127.0.0.1:5173` (Vite fallback if port 80 is unavailable)
 - `http://localhost:3001` (legacy)
 
-Override when starting the API: `CORS_ORIGINS=http://localhost,http://127.0.0.1 npm run dev:api`
+Use the same host for the web app and API (both `localhost` or both `127.0.0.1`). Override when starting the API: `CORS_ORIGINS=http://localhost,http://127.0.0.1 npm run dev:api`
 
 ## Next steps
 

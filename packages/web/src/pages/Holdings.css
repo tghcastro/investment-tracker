@@ -1,0 +1,16 @@
+.cb-holdings-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--cb-space-base);
+  margin-bottom: var(--cb-space-lg);
+  padding: var(--cb-space-lg);
+  background-color: var(--cb-surface-soft);
+  border-radius: var(--cb-radius-xl);
+}
+
+.cb-holdings-filters .cb-form-field {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+}

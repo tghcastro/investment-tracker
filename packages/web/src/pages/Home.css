@@ -9,7 +9,7 @@
 
 .cb-home__summary {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--cb-space-lg);
   padding: var(--cb-space-xl);
   margin-bottom: var(--cb-space-xl);
@@ -39,10 +39,65 @@
   color: var(--cb-ink);
 }
 
+.cb-home__summary-footnote {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--cb-muted);
+}
+
 .cb-home__metric-card--skeleton {
   min-height: 96px;
   background-color: var(--cb-surface-strong);
   border: none;
+}
+
+.cb-home__ladder {
+  margin-bottom: var(--cb-space-xl);
+  padding: var(--cb-space-xl);
+  background-color: var(--cb-surface-soft);
+  border-radius: var(--cb-radius-xl);
+}
+
+.cb-home__ladder-title {
+  margin: 0 0 var(--cb-space-lg);
+  font-family: var(--cb-font-title-md-family);
+  font-size: var(--cb-font-title-md-size);
+  font-weight: var(--cb-font-title-md-weight);
+  line-height: var(--cb-font-title-md-line-height);
+  letter-spacing: var(--cb-font-title-md-letter-spacing);
+  color: var(--cb-ink);
+}
+
+.cb-home__ladder-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cb-home__ladder-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--cb-space-base);
+  padding: var(--cb-space-base) 0;
+  border-bottom: 1px solid var(--cb-hairline);
+}
+
+.cb-home__ladder-row:last-child {
+  border-bottom: none;
+}
+
+.cb-home__ladder-issuer {
+  min-width: 0;
+  font-family: var(--cb-font-title-md-family);
+  font-size: var(--cb-font-title-md-size);
+  font-weight: var(--cb-font-title-md-weight);
+  color: var(--cb-ink);
+}
+
+.cb-home__ladder-value {
+  min-width: 7rem;
+  text-align: right;
 }
 
 .cb-home__actions {
@@ -57,16 +112,21 @@
 
 @media (max-width: 1023px) {
   .cb-home__summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (min-width: 640px) and (max-width: 1023px) {
+@media (max-width: 639px) {
   .cb-home__summary {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 
-  .cb-home__summary .cb-home__metric-card:last-child {
-    grid-column: 1 / -1;
+  .cb-home__ladder-row {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .cb-home__ladder-value {
+    text-align: left;
   }
 }
