@@ -1,39 +1,14 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, EmptyState, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi } from '../hooks';
-import type { ApiAccount, ApiBondHolding } from '../types/api';
+import type { ApiPortfolioSummary } from '../types/api';
 import { formatCurrency, formatDate } from '../utils/format';
 import './Home.css';
 
-function findNextMaturity(holdings: ApiBondHolding[]): string | null {
-  if (holdings.length === 0) {
-    return null;
-  }
-
-  const sorted = [...holdings].sort(
-    (a, b) => new Date(a.maturityDate).getTime() - new Date(b.maturityDate).getTime()
-  );
-  return sorted[0]!.maturityDate;
-}
-
 export default function Home() {
-  const { data: holdings, loading, error } = useApi<ApiBondHolding[]>('/api/holdings');
+  const { data: summary, loading, error } = useApi<ApiPortfolioSummary>('/api/portfolio/summary');
 
-  const metrics = useMemo(() => {
-    if (!holdings?.length) {
-      return null;
-    }
-
-    const totalFaceValue = holdings.reduce((sum, h) => sum + h.faceValue, 0);
-    const nextMaturity = findNextMaturity(holdings);
-
-    return {
-      totalFaceValue,
-      positionCount: holdings.length,
-      nextMaturity,
-    };
-  }, [holdings]);
+  const hasPositions = Boolean(summary && summary.positionCount > 0);
 
   return (
     <div className="cb-home">
@@ -54,31 +29,64 @@ export default function Home() {
           <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
           <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
           <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
+          <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
         </div>
       ) : null}
 
-      {!loading && !error && metrics ? (
+      {!loading && !error && hasPositions && summary ? (
         <section className="cb-home__summary" aria-label="Portfolio summary">
           <div className="cb-home__metric-card">
             <p className="cb-home__metric-label">Total face value</p>
             <p className="cb-home__metric-value cb-number-display">
-              {formatCurrency(metrics.totalFaceValue)}
+              {formatCurrency(summary.totalFaceValue)}
             </p>
           </div>
           <div className="cb-home__metric-card">
             <p className="cb-home__metric-label">Positions</p>
-            <p className="cb-home__metric-value cb-number-display">{metrics.positionCount}</p>
+            <p className="cb-home__metric-value cb-number-display">{summary.positionCount}</p>
           </div>
           <div className="cb-home__metric-card">
             <p className="cb-home__metric-label">Next maturity</p>
             <p className="cb-home__metric-value cb-number-display">
-              {metrics.nextMaturity ? formatDate(metrics.nextMaturity) : '—'}
+              {summary.nextMaturityDate ? formatDate(summary.nextMaturityDate) : 'None'}
             </p>
           </div>
+          <div className="cb-home__metric-card">
+            <p className="cb-home__metric-label">Total cost basis</p>
+            <p className="cb-home__metric-value cb-number-display">
+              {formatCurrency(summary.totalCostBasis)}
+            </p>
+          </div>
+          {summary.holdingsMissingCostBasis > 0 ? (
+            <p className="cb-home__summary-footnote cb-body-sm">
+              {summary.holdingsMissingCostBasis}{' '}
+              {summary.holdingsMissingCostBasis === 1 ? 'holding is' : 'holdings are'} missing
+              purchase price; cost basis may be incomplete.
+            </p>
+          ) : null}
         </section>
       ) : null}
 
-      {!loading && !error && !metrics ? (
+      {!loading && !error && hasPositions && summary && summary.maturityLadder.length > 0 ? (
+        <section className="cb-home__ladder" aria-label="Upcoming maturities">
+          <h2 className="cb-home__ladder-title">Upcoming maturities</h2>
+          <ul className="cb-home__ladder-list">
+            {summary.maturityLadder.map((item) => (
+              <li key={item.holdingId} className="cb-home__ladder-row">
+                <span className="cb-home__ladder-issuer">{item.issuer}</span>
+                <span className="cb-home__ladder-date cb-body-sm">
+                  {formatDate(item.maturityDate)}
+                </span>
+                <span className="cb-home__ladder-value cb-number-display">
+                  {formatCurrency(item.faceValue)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {!loading && !error && !hasPositions ? (
         <EmptyState
           title="No bond holdings yet"
           description="Add your first bond position to start tracking face value and maturities."
@@ -90,7 +98,7 @@ export default function Home() {
         />
       ) : null}
 
-      {!loading && !error && metrics ? (
+      {!loading && !error && hasPositions ? (
         <div className="cb-home__actions">
           <Link to="/holdings" className="cb-home__link">
             <Button variant="primary">View holdings</Button>

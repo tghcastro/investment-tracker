@@ -19,8 +19,14 @@ import { registerPortfolioSummary } from './routes/portfolio/summary.js';
 
 export const DEFAULT_PORT = 3000;
 
-/** Dev web origins: port 80 (README) and legacy :3001. Override with CORS_ORIGINS (comma-separated). */
-const DEFAULT_CORS_ORIGINS = ['http://localhost', 'http://localhost:3001'];
+/** Dev web origins. Override with CORS_ORIGINS (comma-separated). */
+const DEFAULT_CORS_ORIGINS = [
+  'http://localhost',
+  'http://127.0.0.1',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3001',
+];
 
 export function getCorsOrigins(): string[] {
   const fromEnv = process.env.CORS_ORIGINS?.split(',')
@@ -42,6 +48,7 @@ export async function createServer(database: Database = db): Promise<FastifyInst
       }
       cb(null, allowedOrigins.includes(origin));
     },
+    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   });
 
   app.get('/health', async () => ({ status: 'ok' }));

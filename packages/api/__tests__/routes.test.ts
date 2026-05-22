@@ -704,6 +704,36 @@ describe('CORS', () => {
     expect(response.headers['access-control-allow-origin']).toBe('http://localhost:3001');
   });
 
+  it('OPTIONS preflight allows http://127.0.0.1', async () => {
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/holdings',
+      headers: {
+        origin: 'http://127.0.0.1',
+        'access-control-request-method': 'GET',
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe('http://127.0.0.1');
+  });
+
+  it('OPTIONS preflight allows PATCH for edit flows', async () => {
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/api/holdings/1',
+      headers: {
+        origin: 'http://localhost',
+        'access-control-request-method': 'PATCH',
+        'access-control-request-headers': 'content-type',
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers['access-control-allow-origin']).toBe('http://localhost');
+    expect(response.headers['access-control-allow-methods']).toContain('PATCH');
+  });
+
   it('OPTIONS preflight rejects unknown origin', async () => {
     const response = await app.inject({
       method: 'OPTIONS',

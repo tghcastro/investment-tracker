@@ -4,11 +4,18 @@
 
 .cb-holdings-table__row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: var(--cb-space-base);
   padding: var(--cb-space-base) 0;
   border-bottom: 1px solid var(--cb-hairline);
+}
+
+.cb-holdings-table__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cb-space-sm);
+  flex-shrink: 0;
 }
 
 .cb-holdings-table__issuer-block {
@@ -132,5 +139,9 @@
 
   .cb-holdings-table__face-value {
     text-align: left;
+  }
+
+  .cb-holdings-table__actions {
+    padding-left: calc(32px + var(--cb-space-base));
   }
 }

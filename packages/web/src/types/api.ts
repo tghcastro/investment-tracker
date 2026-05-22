@@ -1,7 +1,11 @@
 import type { Account, BondHolding, CouponFrequency } from 'bonds-domain';
 
 type SerializeDates<T> = {
-  [K in keyof T]: T[K] extends Date ? string : T[K];
+  [K in keyof T]: T[K] extends Date
+    ? string
+    : T[K] extends Date | undefined
+      ? string | undefined
+      : T[K];
 };
 
 /** JSON shape returned by GET /api/accounts */
