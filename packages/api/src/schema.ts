@@ -18,6 +18,7 @@ export const accounts = sqliteTable('accounts', {
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
+  archivedAt: integer('archived_at', { mode: 'timestamp_ms' }),
 });
 
 export const bondHoldings = sqliteTable(
