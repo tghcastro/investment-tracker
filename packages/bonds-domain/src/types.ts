@@ -9,6 +9,7 @@ export interface Account {
   description?: string;
   createdAt: Date;
   updatedAt: Date;
+  archivedAt?: Date;
 }
 
 export type CouponFrequency = 'semi-annual' | 'quarterly' | 'monthly' | 'annual';

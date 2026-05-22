@@ -273,4 +273,248 @@ describe('Repo integration', () => {
     const holdings = await repo.listBondHoldings();
     expect(holdings.length).toBeGreaterThanOrEqual(fixtureBondDefs.length);
   });
+
+  it('listAccounts excludes archived by default', async () => {
+    const active = await repo.insertAccount({ name: 'Active Account' });
+    const toArchive = await repo.insertAccount({ name: 'Archived Account' });
+    await repo.archiveAccount(toArchive.id);
+
+    const list = await repo.listAccounts();
+    expect(list.map((a) => a.id)).toContain(active.id);
+    expect(list.map((a) => a.id)).not.toContain(toArchive.id);
+  });
+
+  it('listAccounts with includeArchived returns archived accounts', async () => {
+    const toArchive = await repo.insertAccount({ name: 'Will Archive' });
+    await repo.archiveAccount(toArchive.id);
+
+    const list = await repo.listAccounts({ includeArchived: true });
+    const archived = list.find((a) => a.id === toArchive.id);
+    expect(archived?.archivedAt).toBeInstanceOf(Date);
+  });
+
+  it('archiveAccount sets archivedAt and is idempotent', async () => {
+    const account = await repo.insertAccount({ name: 'Archive Me' });
+    const first = await repo.archiveAccount(account.id);
+    expect(first?.archivedAt).toBeInstanceOf(Date);
+
+    const second = await repo.archiveAccount(account.id);
+    expect(second?.archivedAt?.getTime()).toBe(first?.archivedAt?.getTime());
+  });
+
+  it('updateAccount updates name and description', async () => {
+    const account = await repo.insertAccount({ name: 'Original', description: 'Old' });
+    const updated = await repo.updateAccount(account.id, {
+      name: 'Renamed',
+      description: 'New description',
+    });
+    expect(updated).toMatchObject({
+      id: account.id,
+      name: 'Renamed',
+      description: 'New description',
+    });
+  });
+
+  it('insertBondHolding rejects archived account', async () => {
+    const account = await repo.insertAccount({ name: 'Archived Holder' });
+    await repo.archiveAccount(account.id);
+
+    await expect(
+      repo.insertBondHolding({
+        accountId: account.id,
+        issuer: 'Blocked Issuer',
+        faceValue: 10_000,
+        couponRate: 0.03,
+        couponFrequency: 'annual',
+        maturityDate: new Date('2030-01-01'),
+        purchaseDate: new Date('2024-01-01'),
+      })
+    ).rejects.toMatchObject({ name: 'RepoError', code: 'ARCHIVED_ACCOUNT' });
+  });
+
+  it('updateBondHolding rejects move to archived account', async () => {
+    const active = await repo.insertAccount({ name: 'Active' });
+    const archived = await repo.insertAccount({ name: 'Archived Target' });
+    await repo.archiveAccount(archived.id);
+
+    const holding = await repo.insertBondHolding({
+      accountId: active.id,
+      issuer: 'Movable',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+
+    await expect(
+      repo.updateBondHolding(holding.id, { accountId: archived.id })
+    ).rejects.toMatchObject({ name: 'RepoError', code: 'ARCHIVED_ACCOUNT' });
+  });
+
+  it('updateBondHolding updates fields', async () => {
+    const account = await repo.insertAccount({ name: 'Update Holding' });
+    const holding = await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Before',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+
+    const updated = await repo.updateBondHolding(holding.id, {
+      issuer: 'After',
+      faceValue: 20_000,
+    });
+    expect(updated).toMatchObject({
+      id: holding.id,
+      issuer: 'After',
+      faceValue: 20_000,
+    });
+  });
+
+  it('deleteBondHolding succeeds when no coupon payments', async () => {
+    const account = await repo.insertAccount({ name: 'Delete Test' });
+    const holding = await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Deletable',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+
+    const deleted = await repo.deleteBondHolding(holding.id);
+    expect(deleted).toBe(true);
+    expect(await repo.getBondHolding(holding.id)).toBeNull();
+  });
+
+  it('deleteBondHolding rejects when coupon payments exist', async () => {
+    const account = await repo.insertAccount({ name: 'Coupon Block' });
+    const holding = await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Has Coupons',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+    await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-01-01'),
+      amount: 500,
+    });
+
+    await expect(repo.deleteBondHolding(holding.id)).rejects.toMatchObject({
+      name: 'RepoError',
+      code: 'HAS_COUPON_PAYMENTS',
+    });
+  });
+
+  it('listBondHoldingsFiltered returns empty for missing accountId', async () => {
+    const list = await repo.listBondHoldingsFiltered({ accountId: '99999' });
+    expect(list).toEqual([]);
+  });
+
+  it('listBondHoldingsFiltered combines accountId and maturityAfter', async () => {
+    const accountA = await repo.insertAccount({ name: 'Filter A' });
+    const accountB = await repo.insertAccount({ name: 'Filter B' });
+    const cutoff = new Date('2026-12-31');
+
+    await repo.insertBondHolding({
+      accountId: accountA.id,
+      issuer: 'A Early',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2026-06-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+    await repo.insertBondHolding({
+      accountId: accountA.id,
+      issuer: 'A Late',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+    await repo.insertBondHolding({
+      accountId: accountB.id,
+      issuer: 'B Late',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2031-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+
+    const filtered = await repo.listBondHoldingsFiltered({
+      accountId: accountA.id,
+      maturityAfter: cutoff,
+    });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].issuer).toBe('A Late');
+  });
+
+  it('getPortfolioSummary returns zeros for empty portfolio', async () => {
+    const summary = await repo.getPortfolioSummary();
+    expect(summary).toEqual({
+      totalFaceValue: 0,
+      positionCount: 0,
+      nextMaturityDate: null,
+      totalCostBasis: 0,
+      holdingsWithCostBasis: 0,
+      holdingsMissingCostBasis: 0,
+      maturityLadder: [],
+    });
+  });
+
+  it('getPortfolioSummary aggregates face value, cost basis, and ladder', async () => {
+    const account = await repo.insertAccount({ name: 'Summary Account' });
+
+    await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Later Bond',
+      faceValue: 50_000,
+      couponRate: 0.04,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-06-01'),
+      purchaseDate: new Date('2024-01-01'),
+      purchasePrice: 100,
+    });
+    await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Soon Bond',
+      faceValue: 25_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2028-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+    await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Mid Bond',
+      faceValue: 10_000,
+      couponRate: 0.02,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2029-03-01'),
+      purchaseDate: new Date('2024-01-01'),
+      purchasePrice: 50,
+    });
+
+    const summary = await repo.getPortfolioSummary();
+    expect(summary.totalFaceValue).toBe(85_000);
+    expect(summary.positionCount).toBe(3);
+    expect(summary.nextMaturityDate).toBe('2028-01-01');
+    expect(summary.totalCostBasis).toBe(150);
+    expect(summary.holdingsWithCostBasis).toBe(2);
+    expect(summary.holdingsMissingCostBasis).toBe(1);
+    expect(summary.maturityLadder).toHaveLength(3);
+    expect(summary.maturityLadder[0].issuer).toBe('Soon Bond');
+  });
 });

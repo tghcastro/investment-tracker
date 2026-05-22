@@ -41,7 +41,13 @@ export function mapRepoError(
   switch (error.code) {
     case 'FOREIGN_KEY':
     case 'INVALID_ID':
+    case 'ARCHIVED_ACCOUNT':
       return { statusCode: 400, body: { code: error.code, message: error.message } };
+    case 'HAS_COUPON_PAYMENTS':
+      return {
+        statusCode: 409,
+        body: { code: 'CONFLICT', message: error.message },
+      };
     default:
       return { statusCode: 500, body: { code: 'INTERNAL_ERROR', message: 'Internal server error' } };
   }

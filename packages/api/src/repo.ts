@@ -1,4 +1,4 @@
-import { eq, gt } from 'drizzle-orm';
+import { and, eq, gt, isNull } from 'drizzle-orm';
 import type {
   Account,
   BondHolding,
@@ -39,10 +39,43 @@ export type InsertBondHoldingData = {
   purchasePrice?: number;
 };
 
+export type UpdateAccountData = {
+  name?: string;
+  description?: string;
+};
+
+export type UpdateBondHoldingData = {
+  accountId?: string;
+  issuer?: string;
+  isin?: string;
+  cusip?: string;
+  faceValue?: number;
+  couponRate?: number;
+  couponFrequency?: CouponFrequency;
+  maturityDate?: Date;
+  purchaseDate?: Date;
+  purchasePrice?: number;
+};
+
 export type InsertCouponPaymentData = {
   bondHoldingId: string;
   paymentDate: Date;
   amount: number;
+};
+
+export type PortfolioSummary = {
+  totalFaceValue: number;
+  positionCount: number;
+  nextMaturityDate: string | null;
+  totalCostBasis: number;
+  holdingsWithCostBasis: number;
+  holdingsMissingCostBasis: number;
+  maturityLadder: Array<{
+    holdingId: string;
+    issuer: string;
+    maturityDate: string;
+    faceValue: number;
+  }>;
 };
 
 function parseId(id: string, label = 'id'): number {
@@ -53,6 +86,13 @@ function parseId(id: string, label = 'id'): number {
   return parsed;
 }
 
+function toIsoDateString(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function mapAccount(row: typeof accounts.$inferSelect): Account {
   return {
     id: String(row.id),
@@ -60,6 +100,7 @@ function mapAccount(row: typeof accounts.$inferSelect): Account {
     description: row.description ?? undefined,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    archivedAt: row.archivedAt ?? undefined,
   };
 }
 
@@ -98,6 +139,27 @@ function wrapDbError(error: unknown): never {
   throw error;
 }
 
+async function assertAccountNotArchived(
+  database: Db,
+  accountId: string
+): Promise<void> {
+  const numericId = parseId(accountId, 'account id');
+  const [row] = database
+    .select({ archivedAt: accounts.archivedAt })
+    .from(accounts)
+    .where(eq(accounts.id, numericId))
+    .all();
+  if (!row) {
+    throw new RepoError('FOREIGN_KEY', 'Referenced record does not exist');
+  }
+  if (row.archivedAt !== null) {
+    throw new RepoError(
+      'ARCHIVED_ACCOUNT',
+      'Cannot modify holdings for an archived account'
+    );
+  }
+}
+
 export function createRepo(database: Db) {
   async function insertAccount(data: InsertAccountData): Promise<Account> {
     try {
@@ -125,12 +187,77 @@ export function createRepo(database: Db) {
     return row ? mapAccount(row) : null;
   }
 
-  async function listAccounts(): Promise<Account[]> {
-    const rows = database.select().from(accounts).orderBy(accounts.id).all();
+  async function listAccounts(options?: {
+    includeArchived?: boolean;
+  }): Promise<Account[]> {
+    const includeArchived = options?.includeArchived ?? false;
+    const rows = includeArchived
+      ? database.select().from(accounts).orderBy(accounts.id).all()
+      : database
+          .select()
+          .from(accounts)
+          .where(isNull(accounts.archivedAt))
+          .orderBy(accounts.id)
+          .all();
     return rows.map(mapAccount);
   }
 
+  async function updateAccount(
+    id: string,
+    data: UpdateAccountData
+  ): Promise<Account | null> {
+    const numericId = parseId(id, 'account id');
+    const existing = await getAccount(id);
+    if (!existing) {
+      return null;
+    }
+
+    const updates: Partial<typeof accounts.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+    if (data.name !== undefined) {
+      updates.name = data.name;
+    }
+    if (data.description !== undefined) {
+      updates.description = data.description;
+    }
+
+    const [row] = database
+      .update(accounts)
+      .set(updates)
+      .where(eq(accounts.id, numericId))
+      .returning()
+      .all();
+    return mapAccount(row);
+  }
+
+  async function archiveAccount(id: string): Promise<Account | null> {
+    const existing = await getAccount(id);
+    if (!existing) {
+      return null;
+    }
+    if (existing.archivedAt) {
+      return existing;
+    }
+
+    const now = new Date();
+    const numericId = parseId(id, 'account id');
+    const [row] = database
+      .update(accounts)
+      .set({ archivedAt: now, updatedAt: now })
+      .where(eq(accounts.id, numericId))
+      .returning()
+      .all();
+    return mapAccount(row);
+  }
+
+  async function isAccountArchived(id: string): Promise<boolean> {
+    const account = await getAccount(id);
+    return account?.archivedAt !== undefined;
+  }
+
   async function insertBondHolding(data: InsertBondHoldingData): Promise<BondHolding> {
+    await assertAccountNotArchived(database, data.accountId);
     const accountId = parseId(data.accountId, 'account id');
     try {
       const [row] = database
@@ -165,6 +292,82 @@ export function createRepo(database: Db) {
     return row ? mapBondHolding(row) : null;
   }
 
+  async function updateBondHolding(
+    id: string,
+    data: UpdateBondHoldingData
+  ): Promise<BondHolding | null> {
+    const numericId = parseId(id, 'holding id');
+    const existing = await getBondHolding(id);
+    if (!existing) {
+      return null;
+    }
+
+    if (data.accountId !== undefined) {
+      await assertAccountNotArchived(database, data.accountId);
+    }
+
+    const updates: Partial<typeof bondHoldings.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+    if (data.accountId !== undefined) {
+      updates.accountId = parseId(data.accountId, 'account id');
+    }
+    if (data.issuer !== undefined) {
+      updates.issuer = data.issuer;
+    }
+    if (data.isin !== undefined) {
+      updates.isin = data.isin;
+    }
+    if (data.cusip !== undefined) {
+      updates.cusip = data.cusip;
+    }
+    if (data.faceValue !== undefined) {
+      updates.faceValue = data.faceValue;
+    }
+    if (data.couponRate !== undefined) {
+      updates.couponRate = data.couponRate;
+    }
+    if (data.couponFrequency !== undefined) {
+      updates.couponFrequency = data.couponFrequency;
+    }
+    if (data.maturityDate !== undefined) {
+      updates.maturityDate = data.maturityDate;
+    }
+    if (data.purchaseDate !== undefined) {
+      updates.purchaseDate = data.purchaseDate;
+    }
+    if (data.purchasePrice !== undefined) {
+      updates.purchasePrice = data.purchasePrice;
+    }
+
+    const [row] = database
+      .update(bondHoldings)
+      .set(updates)
+      .where(eq(bondHoldings.id, numericId))
+      .returning()
+      .all();
+    return mapBondHolding(row);
+  }
+
+  async function deleteBondHolding(id: string): Promise<boolean> {
+    const existing = await getBondHolding(id);
+    if (!existing) {
+      return false;
+    }
+
+    const payments = await listCouponPaymentsByHolding(id);
+    if (payments.length > 0) {
+      throw new RepoError(
+        'HAS_COUPON_PAYMENTS',
+        'Cannot delete holding with linked coupon payments. Coupon payment management is planned for M3.'
+      );
+    }
+
+    const numericId = parseId(id, 'holding id');
+    database.delete(bondHoldings).where(eq(bondHoldings.id, numericId)).run();
+    return true;
+  }
+
   async function listBondHoldings(): Promise<BondHolding[]> {
     const rows = database.select().from(bondHoldings).orderBy(bondHoldings.id).all();
     return rows.map(mapBondHolding);
@@ -189,6 +392,93 @@ export function createRepo(database: Db) {
       .orderBy(bondHoldings.maturityDate)
       .all();
     return rows.map(mapBondHolding);
+  }
+
+  async function listBondHoldingsFiltered(filters: {
+    accountId?: string;
+    maturityAfter?: Date;
+  }): Promise<BondHolding[]> {
+    const { accountId, maturityAfter } = filters;
+
+    if (accountId !== undefined) {
+      const account = await getAccount(accountId);
+      if (!account) {
+        return [];
+      }
+    }
+
+    const conditions = [];
+    if (accountId !== undefined) {
+      conditions.push(eq(bondHoldings.accountId, parseId(accountId, 'account id')));
+    }
+    if (maturityAfter !== undefined) {
+      conditions.push(gt(bondHoldings.maturityDate, maturityAfter));
+    }
+
+    const whereClause =
+      conditions.length === 0
+        ? undefined
+        : conditions.length === 1
+          ? conditions[0]
+          : and(...conditions);
+
+    const rows = database
+      .select()
+      .from(bondHoldings)
+      .where(whereClause)
+      .orderBy(bondHoldings.maturityDate, bondHoldings.id)
+      .all();
+    return rows.map(mapBondHolding);
+  }
+
+  async function getPortfolioSummary(): Promise<PortfolioSummary> {
+    const holdings = await listBondHoldings();
+
+    if (holdings.length === 0) {
+      return {
+        totalFaceValue: 0,
+        positionCount: 0,
+        nextMaturityDate: null,
+        totalCostBasis: 0,
+        holdingsWithCostBasis: 0,
+        holdingsMissingCostBasis: 0,
+        maturityLadder: [],
+      };
+    }
+
+    let totalFaceValue = 0;
+    let totalCostBasis = 0;
+    let holdingsWithCostBasis = 0;
+    let holdingsMissingCostBasis = 0;
+
+    for (const holding of holdings) {
+      totalFaceValue += holding.faceValue;
+      if (holding.purchasePrice !== undefined) {
+        totalCostBasis += holding.purchasePrice;
+        holdingsWithCostBasis += 1;
+      } else {
+        holdingsMissingCostBasis += 1;
+      }
+    }
+
+    const sortedByMaturity = [...holdings].sort(
+      (a, b) => a.maturityDate.getTime() - b.maturityDate.getTime()
+    );
+
+    return {
+      totalFaceValue,
+      positionCount: holdings.length,
+      nextMaturityDate: toIsoDateString(sortedByMaturity[0].maturityDate),
+      totalCostBasis,
+      holdingsWithCostBasis,
+      holdingsMissingCostBasis,
+      maturityLadder: sortedByMaturity.slice(0, 5).map((holding) => ({
+        holdingId: holding.id,
+        issuer: holding.issuer,
+        maturityDate: toIsoDateString(holding.maturityDate),
+        faceValue: holding.faceValue,
+      })),
+    };
   }
 
   async function insertCouponPayment(data: InsertCouponPaymentData): Promise<CouponPayment> {
@@ -224,11 +514,18 @@ export function createRepo(database: Db) {
     insertAccount,
     getAccount,
     listAccounts,
+    updateAccount,
+    archiveAccount,
+    isAccountArchived,
     insertBondHolding,
     getBondHolding,
+    updateBondHolding,
+    deleteBondHolding,
     listBondHoldings,
     listBondHoldingsByAccount,
     listBondHoldingsByMaturity,
+    listBondHoldingsFiltered,
+    getPortfolioSummary,
     insertCouponPayment,
     listCouponPaymentsByHolding,
   };

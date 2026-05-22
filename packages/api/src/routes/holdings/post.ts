@@ -1,24 +1,11 @@
 import { createBondHoldingSchema } from 'bonds-domain';
-import type { BondHolding } from 'bonds-domain';
 import type { FastifyInstance } from 'fastify';
 
 import type { Repo } from '../../repo.js';
-
-/** Request/response couponRate is annual % (schema 0–100); repo stores decimal (e.g. 4.25 → 0.0425). */
-function couponRatePercentToDecimal(percent: number): number {
-  return percent / 100;
-}
-
-function couponRateDecimalToPercent(decimal: number): number {
-  return decimal * 100;
-}
-
-function toApiBondHolding(holding: BondHolding): BondHolding {
-  return {
-    ...holding,
-    couponRate: couponRateDecimalToPercent(holding.couponRate),
-  };
-}
+import {
+  couponRatePercentToDecimal,
+  toApiBondHolding,
+} from './serialize.js';
 
 export function registerPostHolding(app: FastifyInstance, repo: Repo): void {
   app.post('/api/holdings', async (request, reply) => {

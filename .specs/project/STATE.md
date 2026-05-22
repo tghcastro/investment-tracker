@@ -1,7 +1,7 @@
 # State
 
-**Last Updated:** 2026-05-21
-**Current Work:** M1 Execute — branch `feat/m1-web-pages-t24-t29`; T24–T29 done (pages, useApi, ErrorBoundary, vitest)
+**Last Updated:** 2026-05-22
+**Current Work:** M2 P1 backend done — next P2 web CRUD (see `.specs/features/m2-core/tasks.md`)
 
 ---
 
@@ -106,10 +106,17 @@ _None yet._
 - [x] Implement T27 — ErrorBoundary (2026-05-21)
 - [x] Implement T28 — Wire Holdings/Accounts to useApi (2026-05-21)
 - [x] Implement T29 — Web component unit tests (8 tests, vitest + RTL) (2026-05-21)
+- [x] Specify M2 — bond holdings & accounts CRUD — `.specs/features/m2-core/spec.md` (2026-05-21)
+- [x] Approve M2 spec (2026-05-22)
+- [x] Design M2 — `.specs/features/m2-core/design.md` (2026-05-22)
+- [x] Create tasks for M2 — `.specs/features/m2-core/tasks.md` (2026-05-22)
+- [x] Implement M2 P1 — backend API T1–T17 (2026-05-22)
+- [ ] Implement M2 P2 — web CRUD T18–T25
+- [ ] Implement M2 P3 — web polish T26–T29
 
 ---
 
 ## Open Questions
 
 - **Hosting:** Local-only initially or target a host (e.g. VPS with SQLite file, or revisit DB if cloud multi-instance)?
-- **API style:** REST (default) vs tRPC — decide during M1 specify
+- ~~**API style:** REST (default) vs tRPC~~ — **Resolved:** REST + Fastify (M1 implementation, AD-002)

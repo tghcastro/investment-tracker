@@ -8,6 +8,13 @@
       "when": 1747699200000,
       "tag": "001_initial_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1747785600000,
+      "tag": "002_accounts_archived_at",
+      "breakpoints": true
     }
   ]
 }

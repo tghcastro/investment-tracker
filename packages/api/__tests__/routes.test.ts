@@ -319,6 +319,345 @@ describe('API routes', () => {
       'Before Cutoff Bond'
     );
   });
+
+  it('GET /api/holdings returns couponRate as percent', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/holdings',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    const treasury = body.find((h: { issuer: string }) => h.issuer === 'US Treasury');
+    expect(treasury.couponRate).toBe(4.25);
+  });
+
+  it('GET /api/accounts/:id returns account with archivedAt when archived', async () => {
+    const accountId = seededAccountIds.get('vanguard')!;
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/accounts/${accountId}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.id).toBe(accountId);
+    expect(body.name).toBe('Vanguard');
+    expect(body.archivedAt).toBeUndefined();
+  });
+
+  it('GET /api/accounts/:id for unknown id returns 404', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/accounts/99999',
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('PATCH /api/accounts/:id updates name and description', async () => {
+    const accountId = seededAccountIds.get('interactiveBrokers')!;
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: `/api/accounts/${accountId}`,
+      payload: { name: 'IBKR Updated', description: 'Updated margin account' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      id: accountId,
+      name: 'IBKR Updated',
+      description: 'Updated margin account',
+    });
+  });
+
+  it('PATCH /api/accounts/:id with empty name returns 400', async () => {
+    const accountId = seededAccountIds.get('vanguard')!;
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: `/api/accounts/${accountId}`,
+      payload: { name: '' },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().code).toBe('VALIDATION_ERROR');
+  });
+
+  it('PATCH /api/accounts/:id/archive hides account from default list', async () => {
+    const postResponse = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: { name: 'Archive Route Test' },
+    });
+    const accountId = postResponse.json().id;
+
+    const archiveResponse = await app.inject({
+      method: 'PATCH',
+      url: `/api/accounts/${accountId}/archive`,
+    });
+    expect(archiveResponse.statusCode).toBe(200);
+    expect(archiveResponse.json().archivedAt).toBeDefined();
+
+    const defaultList = await app.inject({ method: 'GET', url: '/api/accounts' });
+    expect(defaultList.json().some((a: { id: string }) => a.id === accountId)).toBe(false);
+
+    const allList = await app.inject({
+      method: 'GET',
+      url: '/api/accounts?includeArchived=true',
+    });
+    expect(allList.json().some((a: { id: string }) => a.id === accountId)).toBe(true);
+  });
+
+  it('PATCH archived account name is blocked but description is allowed', async () => {
+    const postResponse = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: { name: 'Archived Rename Test' },
+    });
+    const accountId = postResponse.json().id;
+
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/accounts/${accountId}/archive`,
+    });
+
+    const renameResponse = await app.inject({
+      method: 'PATCH',
+      url: `/api/accounts/${accountId}`,
+      payload: { name: 'New Name Blocked' },
+    });
+    expect(renameResponse.statusCode).toBe(400);
+    expect(renameResponse.json().message).toBe('Cannot rename archived account');
+
+    const descResponse = await app.inject({
+      method: 'PATCH',
+      url: `/api/accounts/${accountId}`,
+      payload: { description: 'Archived notes ok' },
+    });
+    expect(descResponse.statusCode).toBe(200);
+    expect(descResponse.json().description).toBe('Archived notes ok');
+  });
+
+  it('PATCH /api/holdings/:id updates holding fields', async () => {
+    const accountId = seededAccountIds.get('vanguard')!;
+    const postResponse = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        issuer: 'Patch Target',
+        faceValue: 10_000,
+        couponRate: 3,
+        couponFrequency: 'annual',
+        maturityDate: '2030-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+    const holdingId = postResponse.json().id;
+
+    const patchResponse = await app.inject({
+      method: 'PATCH',
+      url: `/api/holdings/${holdingId}`,
+      payload: { issuer: 'Patched Issuer', couponRate: 4.5 },
+    });
+
+    expect(patchResponse.statusCode).toBe(200);
+    expect(patchResponse.json()).toMatchObject({
+      id: holdingId,
+      issuer: 'Patched Issuer',
+      couponRate: 4.5,
+    });
+  });
+
+  it('PATCH /api/holdings/:id for unknown id returns 404', async () => {
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/api/holdings/99999',
+      payload: { issuer: 'Missing' },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json().code).toBe('NOT_FOUND');
+  });
+
+  it('DELETE /api/holdings/:id returns 204 when no coupons', async () => {
+    const accountId = seededAccountIds.get('vanguard')!;
+    const postResponse = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        issuer: 'Delete Me',
+        faceValue: 5_000,
+        couponRate: 2,
+        couponFrequency: 'annual',
+        maturityDate: '2030-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+    const holdingId = postResponse.json().id;
+
+    const deleteResponse = await app.inject({
+      method: 'DELETE',
+      url: `/api/holdings/${holdingId}`,
+    });
+    expect(deleteResponse.statusCode).toBe(204);
+
+    const getResponse = await app.inject({
+      method: 'GET',
+      url: `/api/holdings/${holdingId}`,
+    });
+    expect(getResponse.statusCode).toBe(404);
+  });
+
+  it('DELETE /api/holdings/:id returns 409 when coupon payments exist', async () => {
+    const accountId = seededAccountIds.get('vanguard')!;
+    const postResponse = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        issuer: 'Coupon Protected',
+        faceValue: 5_000,
+        couponRate: 2,
+        couponFrequency: 'annual',
+        maturityDate: '2030-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+    const holdingId = postResponse.json().id;
+
+    const repo = createRepo(database);
+    await repo.insertCouponPayment({
+      bondHoldingId: holdingId,
+      paymentDate: new Date('2025-06-01'),
+      amount: 100,
+    });
+
+    const deleteResponse = await app.inject({
+      method: 'DELETE',
+      url: `/api/holdings/${holdingId}`,
+    });
+    expect(deleteResponse.statusCode).toBe(409);
+    expect(deleteResponse.json()).toMatchObject({
+      code: 'CONFLICT',
+      message: expect.stringContaining('M3'),
+    });
+  });
+
+  it('GET /api/holdings?accountId filters holdings', async () => {
+    const vanguardId = seededAccountIds.get('vanguard')!;
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/holdings?accountId=${vanguardId}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.length).toBe(2);
+    expect(body.every((h: { accountId: string }) => h.accountId === vanguardId)).toBe(true);
+  });
+
+  it('GET /api/holdings?accountId for missing account returns empty array', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/holdings?accountId=99999',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([]);
+  });
+
+  it('GET /api/holdings?accountId with invalid format returns 400', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/holdings?accountId=abc',
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().code).toBe('VALIDATION_ERROR');
+  });
+
+  it('POST /api/holdings on archived account returns 400 ARCHIVED_ACCOUNT', async () => {
+    const postAccount = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: { name: 'Archived For POST' },
+    });
+    const accountId = postAccount.json().id;
+
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/accounts/${accountId}/archive`,
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        issuer: 'Should Fail',
+        faceValue: 10_000,
+        couponRate: 3,
+        couponFrequency: 'annual',
+        maturityDate: '2030-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      code: 'ARCHIVED_ACCOUNT',
+      message: expect.any(String),
+    });
+  });
+
+  it('GET /api/portfolio/summary returns aggregates for seeded data', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/summary',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.positionCount).toBeGreaterThanOrEqual(4);
+    expect(body.totalFaceValue).toBeGreaterThan(0);
+    expect(body.nextMaturityDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(Array.isArray(body.maturityLadder)).toBe(true);
+    expect(body.maturityLadder.length).toBeLessThanOrEqual(5);
+  });
+
+  it('GET /api/portfolio/summary on empty database returns zeros', async () => {
+    await app.close();
+    sqlite.close();
+
+    const conn = createTestDatabase();
+    sqlite = conn.sqlite;
+    database = conn.database;
+    app = await createServer(database);
+    await app.ready();
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/summary',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      totalFaceValue: 0,
+      positionCount: 0,
+      nextMaturityDate: null,
+      totalCostBasis: 0,
+      holdingsWithCostBasis: 0,
+      holdingsMissingCostBasis: 0,
+      maturityLadder: [],
+    });
+  });
 });
 
 describe('CORS', () => {

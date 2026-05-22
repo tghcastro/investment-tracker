@@ -4,12 +4,18 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { db, type Database } from './db.js';
 import { registerErrorHandler } from './middleware/errors.js';
 import { createRepo } from './repo.js';
+import { registerArchiveAccount } from './routes/accounts/archive.js';
+import { registerGetAccountById } from './routes/accounts/get-by-id.js';
 import { registerAccountHoldings } from './routes/accounts/holdings.js';
 import { registerListAccounts } from './routes/accounts/list.js';
+import { registerPatchAccount } from './routes/accounts/patch.js';
 import { registerPostAccount } from './routes/accounts/post.js';
+import { registerDeleteHolding } from './routes/holdings/delete.js';
 import { registerGetHoldingById } from './routes/holdings/get-by-id.js';
 import { registerListHoldings } from './routes/holdings/list.js';
+import { registerPatchHolding } from './routes/holdings/patch.js';
 import { registerPostHolding } from './routes/holdings/post.js';
+import { registerPortfolioSummary } from './routes/portfolio/summary.js';
 
 export const DEFAULT_PORT = 3000;
 
@@ -45,10 +51,16 @@ export async function createServer(database: Database = db): Promise<FastifyInst
   const repo = createRepo(database);
   registerPostAccount(app, repo);
   registerListAccounts(app, repo);
+  registerGetAccountById(app, repo);
+  registerPatchAccount(app, repo);
+  registerArchiveAccount(app, repo);
   registerAccountHoldings(app, repo);
   registerPostHolding(app, repo);
   registerListHoldings(app, repo);
   registerGetHoldingById(app, repo);
+  registerPatchHolding(app, repo);
+  registerDeleteHolding(app, repo);
+  registerPortfolioSummary(app, repo);
 
   return app;
 }
