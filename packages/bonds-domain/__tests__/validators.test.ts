@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { createAccountSchema, createBondHoldingSchema, createCouponPaymentSchema } from '../src/validators.js';
+import {
+  createAccountSchema,
+  createBondHoldingSchema,
+  createCouponPaymentSchema,
+  updateAccountSchema,
+  updateBondHoldingSchema,
+} from '../src/validators.js';
 
 describe('Domain Validators', () => {
   describe('createAccountSchema', () => {
@@ -67,6 +73,61 @@ describe('Domain Validators', () => {
       });
       expect(result.isin).toBe('US0128128100');
       expect(result.cusip).toBe('012812810');
+    });
+  });
+
+  describe('updateAccountSchema', () => {
+    it('parses valid partial update with name only', () => {
+      const result = updateAccountSchema.parse({ name: 'Renamed' });
+      expect(result.name).toBe('Renamed');
+    });
+
+    it('parses valid partial update with description only', () => {
+      const result = updateAccountSchema.parse({ description: 'Updated notes' });
+      expect(result.description).toBe('Updated notes');
+    });
+
+    it('rejects empty name when provided', () => {
+      expect(() => updateAccountSchema.parse({ name: '' })).toThrow();
+    });
+
+    it('accepts empty object for description-only semantics at route layer', () => {
+      const result = updateAccountSchema.parse({});
+      expect(result).toEqual({});
+    });
+  });
+
+  describe('updateBondHoldingSchema', () => {
+    it('parses valid partial update with issuer only', () => {
+      const result = updateBondHoldingSchema.parse({ issuer: 'New Issuer' });
+      expect(result.issuer).toBe('New Issuer');
+    });
+
+    it('rejects maturityDate <= purchaseDate when both present', () => {
+      expect(() =>
+        updateBondHoldingSchema.parse({
+          maturityDate: new Date('2024-01-01'),
+          purchaseDate: new Date('2024-06-01'),
+        })
+      ).toThrow('Maturity date must be after purchase date');
+    });
+
+    it('allows maturityDate only without purchaseDate', () => {
+      const result = updateBondHoldingSchema.parse({
+        maturityDate: new Date('2030-01-01'),
+      });
+      expect(result.maturityDate).toEqual(new Date('2030-01-01'));
+    });
+
+    it('allows purchaseDate only without maturityDate', () => {
+      const result = updateBondHoldingSchema.parse({
+        purchaseDate: new Date('2024-01-01'),
+      });
+      expect(result.purchaseDate).toEqual(new Date('2024-01-01'));
+    });
+
+    it('rejects invalid couponRate on partial update', () => {
+      expect(() => updateBondHoldingSchema.parse({ couponRate: 150 })).toThrow();
     });
   });
 
