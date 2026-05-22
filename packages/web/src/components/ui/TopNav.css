@@ -77,6 +77,10 @@
   flex-shrink: 0;
 }
 
+.cb-top-nav__cta {
+  text-decoration: none;
+}
+
 .cb-top-nav__menu-toggle {
   display: none;
   align-items: center;

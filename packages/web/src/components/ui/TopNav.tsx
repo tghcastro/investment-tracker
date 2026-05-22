@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { Button } from './Button';
 import './TopNav.css';
 
@@ -58,9 +58,9 @@ export function TopNav() {
         </nav>
 
         <div className="cb-top-nav__right">
-          <Button variant="primary" disabled>
-            Add holding
-          </Button>
+          <Link to="/holdings/new" className="cb-top-nav__cta">
+            <Button variant="primary">Add holding</Button>
+          </Link>
         </div>
       </div>
     </header>

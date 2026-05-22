@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { EmptyState, ErrorBanner, PageHeader } from '../components/ui';
+import { Button, EmptyState, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi } from '../hooks';
 import type { ApiAccount, ApiBondHolding } from '../types/api';
 import './Accounts.css';
@@ -29,7 +29,15 @@ export default function Accounts() {
 
   return (
     <div className="cb-accounts-page">
-      <PageHeader title="Accounts" subtitle="Brokerage accounts" />
+      <PageHeader
+        title="Accounts"
+        subtitle="Brokerage accounts"
+        action={
+          <Link to="/accounts/new" className="cb-accounts-page__add-link">
+            <Button variant="primary">Add account</Button>
+          </Link>
+        }
+      />
 
       {error ? <ErrorBanner message={error} /> : null}
       {!error && holdingsError ? <ErrorBanner message={holdingsError} /> : null}
@@ -40,6 +48,11 @@ export default function Accounts() {
         <EmptyState
           title="No accounts"
           description="Brokerage accounts you add will appear here."
+          action={
+            <Link to="/accounts/new" className="cb-button cb-button--primary">
+              Add account
+            </Link>
+          }
         />
       ) : null}
 
@@ -60,9 +73,14 @@ export default function Accounts() {
                 {account.description ? (
                   <p className="cb-accounts-card__description">{account.description}</p>
                 ) : null}
-                <Link to="/holdings" className="cb-button cb-button--tertiary-text">
-                  View holdings
-                </Link>
+                <div className="cb-accounts-card__actions">
+                  <Link to="/holdings" className="cb-button cb-button--tertiary-text">
+                    View holdings
+                  </Link>
+                  <Link to={`/accounts/${account.id}`} className="cb-button cb-button--tertiary-text">
+                    Manage
+                  </Link>
+                </div>
               </article>
             );
           })}
