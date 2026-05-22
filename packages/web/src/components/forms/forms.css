@@ -1,0 +1,120 @@
+.cb-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cb-form-field__label {
+  font-family: var(--cb-font-caption-strong-family);
+  font-size: var(--cb-font-caption-strong-size);
+  font-weight: var(--cb-font-caption-strong-weight);
+  line-height: var(--cb-font-caption-strong-line-height);
+  letter-spacing: var(--cb-font-caption-strong-letter-spacing);
+  color: var(--cb-ink);
+}
+
+.cb-form-field__error {
+  font-family: var(--cb-font-caption-family);
+  font-size: var(--cb-font-caption-size);
+  font-weight: var(--cb-font-caption-weight);
+  line-height: var(--cb-font-caption-line-height);
+  letter-spacing: var(--cb-font-caption-letter-spacing);
+  color: var(--cb-semantic-down);
+  margin: 0;
+}
+
+.cb-text-input,
+.cb-select {
+  height: 48px;
+  width: 100%;
+  padding: 0 var(--cb-space-base);
+  border: 1px solid var(--cb-hairline);
+  border-radius: var(--cb-radius-md);
+  font-family: var(--cb-font-body-md-family);
+  font-size: var(--cb-font-body-md-size);
+  font-weight: var(--cb-font-body-md-weight);
+  line-height: var(--cb-font-body-md-line-height);
+  letter-spacing: var(--cb-font-body-md-letter-spacing);
+  color: var(--cb-ink);
+  background-color: var(--cb-canvas);
+  transition: border-color 0.15s ease;
+}
+
+.cb-text-input:focus,
+.cb-select:focus {
+  outline: none;
+  border: 2px solid var(--cb-primary);
+  padding: 0 calc(var(--cb-space-base) - 1px);
+}
+
+.cb-text-input--error,
+.cb-select--error {
+  border-color: var(--cb-semantic-down);
+}
+
+.cb-text-input--error:focus,
+.cb-select--error:focus {
+  border-color: var(--cb-semantic-down);
+}
+
+.cb-text-input:disabled,
+.cb-select:disabled {
+  background-color: var(--cb-surface-soft);
+  color: var(--cb-muted);
+  cursor: not-allowed;
+}
+
+.cb-confirm-dialog__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cb-space-base);
+  background-color: rgba(10, 11, 13, 0.4);
+}
+
+.cb-confirm-dialog__panel {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--cb-space-lg);
+  border: 1px solid var(--cb-hairline);
+  border-radius: var(--cb-radius-xl);
+  background-color: var(--cb-canvas);
+}
+
+.cb-confirm-dialog__title {
+  margin: 0 0 var(--cb-space-xs);
+  font-family: var(--cb-font-title-md-family);
+  font-size: var(--cb-font-title-md-size);
+  font-weight: var(--cb-font-title-md-weight);
+  line-height: var(--cb-font-title-md-line-height);
+  letter-spacing: var(--cb-font-title-md-letter-spacing);
+  color: var(--cb-ink);
+}
+
+.cb-confirm-dialog__message {
+  margin: 0 0 var(--cb-space-lg);
+  font-family: var(--cb-font-body-md-family);
+  font-size: var(--cb-font-body-md-size);
+  font-weight: var(--cb-font-body-md-weight);
+  line-height: var(--cb-font-body-md-line-height);
+  letter-spacing: var(--cb-font-body-md-letter-spacing);
+  color: var(--cb-body);
+}
+
+.cb-confirm-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cb-space-xs);
+}
+
+.cb-confirm-dialog__confirm {
+  background-color: var(--cb-semantic-down);
+  color: var(--cb-canvas);
+}
+
+.cb-confirm-dialog__confirm:not(:disabled):hover {
+  background-color: #a81a26;
+}

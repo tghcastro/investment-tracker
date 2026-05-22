@@ -1,0 +1,34 @@
+.cb-account-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cb-space-lg);
+  max-width: 480px;
+}
+
+.cb-account-form__notice {
+  margin: 0;
+  padding: var(--cb-space-base);
+  border: 1px solid var(--cb-hairline);
+  border-radius: var(--cb-radius-md);
+  background-color: var(--cb-surface-soft);
+  font-family: var(--cb-font-body-md-family);
+  font-size: var(--cb-font-body-md-size);
+  color: var(--cb-body);
+}
+
+.cb-account-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cb-space-xs);
+  align-items: center;
+}
+
+.cb-account-form__actions--split {
+  justify-content: space-between;
+}
+
+.cb-account-form__actions-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cb-space-xs);
+}

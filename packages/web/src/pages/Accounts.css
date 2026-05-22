@@ -55,6 +55,16 @@
   color: var(--cb-body);
 }
 
+.cb-accounts-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cb-space-base);
+}
+
+.cb-accounts-page__add-link {
+  text-decoration: none;
+}
+
 .cb-accounts-card--skeleton {
   min-height: 180px;
   background-color: var(--cb-surface-strong);

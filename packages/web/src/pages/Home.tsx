@@ -81,11 +81,11 @@ export default function Home() {
       {!loading && !error && !metrics ? (
         <EmptyState
           title="No bond holdings yet"
-          description="Add holdings manually once the create flow is available in M2."
+          description="Add your first bond position to start tracking face value and maturities."
           action={
-            <Button variant="primary" disabled>
-              Add holding
-            </Button>
+            <Link to="/holdings/new" className="cb-home__link">
+              <Button variant="primary">Add holding</Button>
+            </Link>
           }
         />
       ) : null}

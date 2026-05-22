@@ -14,6 +14,13 @@ export function useApi<T>(url: string): UseApiResult<T> {
   const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    if (!url) {
+      setData(undefined);
+      setLoading(false);
+      setError(undefined);
+      return;
+    }
+
     let cancelled = false;
 
     async function fetchData() {
