@@ -25,7 +25,7 @@
     "start": "node dist/index.js",
     "migrate": "npm run build && node dist/migrate.js",
     "seed": "npm run build && node dist/fixtures/seed.js",
-    "lint": "eslint src --ext .ts",
+    "lint": "node ../../node_modules/eslint/bin/eslint.js src",
     "test": "vitest",
     "test:watch": "vitest --watch"
   },

@@ -8,7 +8,9 @@
   "scripts": {
     "dev:api": "npm run dev -w @investment-tracker/api",
     "dev:web": "bash scripts/dev-web.sh",
-    "dev:web:sudo": "bash scripts/dev-web-sudo.sh"
+    "dev:web:sudo": "bash scripts/dev-web-sudo.sh",
+    "lint": "node scripts/lint-monorepo.mjs",
+    "test": "npm run test -w bonds-domain -- --run && npm run test -w @investment-tracker/api -- --run && npm run test -w @investment-tracker/web -- --run"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.59.4",

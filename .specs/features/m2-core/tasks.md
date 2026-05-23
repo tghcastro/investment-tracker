@@ -627,10 +627,10 @@ T23, T25 (P2 done) → T26 → T27 → T28 → T29
 
 **Done when**:
 
-- [ ] `topNav.test.tsx` — Add holding not disabled
-- [ ] `holdings.test.tsx` — filters/actions
-- [ ] `app.test.tsx` — new routes resolve
-- [ ] All web tests pass
+- [x] `topNav.test.tsx` — Add holding not disabled
+- [x] `holdings.test.tsx` — filters/actions
+- [x] `app.test.tsx` — new routes resolve
+- [x] All web tests pass
 
 **Tests**: unit  
 **Gate**: `npm run test -w web`
@@ -646,10 +646,10 @@ T23, T25 (P2 done) → T26 → T27 → T28 → T29
 
 **Done when**:
 
-- [ ] `npm run lint` — no errors
-- [ ] `npm run test` — all packages green
-- [ ] Manual UAT: create/edit/delete holding, account CRUD, archive, filters, home summary
-- [ ] No Playwright/Cypress required
+- [x] `npm run lint` — no errors
+- [x] `npm run test` — all packages green
+- [x] Manual UAT: create/edit/delete holding, account CRUD, archive, filters, home summary
+- [x] No Playwright/Cypress required
 
 **Tests**: full gate  
 **Gate**: `npm run lint && npm run test`
@@ -703,4 +703,4 @@ P3 Polish:   T26 → T27 → T28 → T29
 
 ## Next Phase
 
-**Execute P1** — start at **T1**. Merge P1 before starting P2; merge P2 before P3.
+**M2 complete.** Next: **Specify M3** — coupon income & cash flows (`.specs/project/ROADMAP.md`).
