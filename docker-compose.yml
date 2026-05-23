@@ -33,6 +33,7 @@ services:
       dockerfile: docker/web/Dockerfile
       args:
         VITE_API_URL: ""
+        VITE_SHOW_DEV_BANNER: "true"
     ports:
       - "80:80"
     depends_on:

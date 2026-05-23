@@ -74,7 +74,7 @@ npm run dev -w @investment-tracker/web
 
 Use the top nav in the app, or open these links directly.
 
-When running the Vite dev server (`npm run dev:web`), a red **DEV** badge appears next to the app title in the header. Production and Docker builds do not show it.
+When running the Vite dev server (`npm run dev:web`) or the local Docker stack (`make start`), a red **DEV** badge appears next to the app title. Production Hub images and `make start-prod` do not show it.
 
 ### API + CORS
 

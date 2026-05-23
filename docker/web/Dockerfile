@@ -14,6 +14,9 @@ COPY packages/web packages/web
 ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL
 
+ARG VITE_SHOW_DEV_BANNER=
+ENV VITE_SHOW_DEV_BANNER=$VITE_SHOW_DEV_BANNER
+
 RUN npm run build -w bonds-domain && npm run build -w @investment-tracker/web
 
 FROM nginx:1.27-alpine
