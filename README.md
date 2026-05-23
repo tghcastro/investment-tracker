@@ -1,25 +1,33 @@
 # Investment Tracker
 
-Personal portfolio tracker (web + Node/TypeScript API) for investors who hold assets across many brokers and spreadsheets. Built with spec-driven development (see [.specs/](.specs/)).
+Personal portfolio tracker (web + Node/TypeScript API). Product scope, milestones, and decisions live in **[`.specs/`](.specs/)** — treat that as source of truth; this README covers how to run and deploy the app.
 
-**v1 focus:** Bond holdings and coupon income only.
+## Documentation
 
-## Project docs
+Start here for **what** we're building and **what's next**:
 
 | Doc | Purpose |
 | --- | --- |
-| [.specs/project/PROJECT.md](.specs/project/PROJECT.md) | Vision, goals, stack, scope |
-| [.specs/project/ROADMAP.md](.specs/project/ROADMAP.md) | Milestones and features |
-| [.specs/project/STATE.md](.specs/project/STATE.md) | Decisions, blockers, todos |
+| [.specs/project/PROJECT.md](.specs/project/PROJECT.md) | Vision, v1 scope, constraints |
+| [.specs/project/ROADMAP.md](.specs/project/ROADMAP.md) | Milestones (M1–M4) and future work |
+| [.specs/project/STATE.md](.specs/project/STATE.md) | Current work, decisions, todos, blockers |
 
-## Stack (v1)
+Feature specs (when present): [`.specs/features/`](.specs/features/)
 
-- **Runtime:** Node.js 22 (see `.nvmrc`)
-- **Backend:** TypeScript, REST API, SQLite (`better-sqlite3`)
-- **Frontend:** React
-- **Data:** Manual entry (no market feeds in v1)
+Codebase reference (stack, architecture, testing):
+
+| Doc | Purpose |
+| --- | --- |
+| [.specs/codebase/STACK.md](.specs/codebase/STACK.md) | Runtime, packages, deploy |
+| [.specs/codebase/ARCHITECTURE.md](.specs/codebase/ARCHITECTURE.md) | Module boundaries |
+| [.specs/codebase/TESTING.md](.specs/codebase/TESTING.md) | Test strategy and commands |
+| [.specs/codebase/STRUCTURE.md](.specs/codebase/STRUCTURE.md) | Repo layout |
+
+Full index: [`.specs/codebase/`](.specs/codebase/)
 
 ## Development setup (WSL)
+
+**Runtime:** Node.js 22 (see `.nvmrc`). Stack details: [.specs/codebase/STACK.md](.specs/codebase/STACK.md).
 
 ```bash
 cd /mnt/d/workspace/investment-tracker   # or your clone path
@@ -120,7 +128,7 @@ Open http://localhost/ (same routes as dev: `/`, `/holdings`, `/accounts`).
 
 ## Docker (production)
 
-Production uses pre-built Hub images and a **persistent data directory outside the repo** (see comments in `docker-compose.prod.yml`). Image tags are pinned to `0.1.1` in that file — update them when you release a new version.
+Production uses pre-built Hub images and a **persistent data directory outside the repo** (see comments in [`docker-compose.prod.yml`](docker-compose.prod.yml)). Image tags are pinned in that file — update them when you release a new version.
 
 ```bash
 export INVESTMENT_TRACKER_DATA_DIR=/var/lib/investment-tracker   # Linux
@@ -151,7 +159,7 @@ If it keeps happening, restart Docker Desktop or switch `INVESTMENT_TRACKER_DATA
 
 | | Local (`make start`) | Production (`make start-prod`) |
 | --- | --- | --- |
-| Images | Built from source | `tghcastro/investment-tracker:api-0.1.1`, `:web-0.1.1` |
+| Images | Built from source | Hub images (tags in `docker-compose.prod.yml`) |
 | Database | `./data/data.db` | `$INVESTMENT_TRACKER_DATA_DIR/data/data.db` |
 | Fixture seed data | yes (demo accounts/holdings) | no — empty DB until you add data |
 | DEV badge | yes | no |
@@ -168,15 +176,15 @@ Publish a versioned release: build/push container images, create a git tag, and 
 - [GitHub CLI](https://cli.github.com/) — `gh auth login`
 
 ```bash
-make release TAG=0.1.0
+make release TAG=x.y.z
 # or
-./scripts/investment-tracker-release.sh 0.1.0
+./scripts/investment-tracker-release.sh x.y.z
 ```
 
 From Windows:
 
 ```bash
-wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && make release TAG=0.1.0'
+wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && make release TAG=x.y.z'
 ```
 
 **What the release script does:**
@@ -204,10 +212,5 @@ wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && make releas
 Dry-run build (no push, no tag):
 
 ```bash
-DOCKER_PUSH=0 GIT_TAG=0 GH_RELEASE=0 ./scripts/investment-tracker-release.sh 0.1.0
+DOCKER_PUSH=0 GIT_TAG=0 GH_RELEASE=0 ./scripts/investment-tracker-release.sh x.y.z
 ```
-
-## Next steps
-
-1. **`/tlc-spec-driven specify feature`** — M1 platform & bond domain foundation
-2. **Map codebase** — after scaffold exists
