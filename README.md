@@ -135,6 +135,20 @@ make stop-prod
 
 Production starts with an **empty database** (migrations only, no demo seed). If you previously ran prod against the same data directory, delete `$INVESTMENT_TRACKER_DATA_DIR/data/data.db` before restarting.
 
+**WSL + Docker Desktop tip:** prefer a path inside the Linux filesystem (e.g. `$HOME/investment-tracker-data`) over `/mnt/d/...` for bind mounts — fewer mount glitches.
+
+**Troubleshooting `docker-desktop-bind-mounts ... file exists`:** Docker Desktop can leave a stale bind-mount hash after a failed start. Fix:
+
+```bash
+make stop-prod
+# replace HASH with the value from the error message
+sudo umount /mnt/wsl/docker-desktop-bind-mounts/Ubuntu/HASH 2>/dev/null || true
+sudo rm -rf /mnt/wsl/docker-desktop-bind-mounts/Ubuntu/HASH
+make start-prod
+```
+
+If it keeps happening, restart Docker Desktop or switch `INVESTMENT_TRACKER_DATA_DIR` to `$HOME/investment-tracker-data`.
+
 | | Local (`make start`) | Production (`make start-prod`) |
 | --- | --- | --- |
 | Images | Built from source | `tghcastro/investment-tracker:api-0.1.1`, `:web-0.1.1` |
