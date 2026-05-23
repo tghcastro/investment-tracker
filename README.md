@@ -120,7 +120,7 @@ Open http://localhost/ (same routes as dev: `/`, `/holdings`, `/accounts`).
 
 ## Docker (production)
 
-Production uses pre-built Hub images and a **persistent data directory outside the repo** (see comments in `docker-compose.prod.yml`). Image tags are pinned to `0.1.0` in that file — update them when you release a new version.
+Production uses pre-built Hub images and a **persistent data directory outside the repo** (see comments in `docker-compose.prod.yml`). Image tags are pinned to `0.1.1` in that file — update them when you release a new version.
 
 ```bash
 export INVESTMENT_TRACKER_DATA_DIR=/var/lib/investment-tracker   # Linux
@@ -137,7 +137,7 @@ Production starts with an **empty database** (migrations only, no demo seed). If
 
 | | Local (`make start`) | Production (`make start-prod`) |
 | --- | --- | --- |
-| Images | Built from source | `tghcastro/investment-tracker:api-0.1.0`, `:web-0.1.0` |
+| Images | Built from source | `tghcastro/investment-tracker:api-0.1.1`, `:web-0.1.1` |
 | Database | `./data/data.db` | `$INVESTMENT_TRACKER_DATA_DIR/data/data.db` |
 | Fixture seed data | yes (demo accounts/holdings) | no — empty DB until you add data |
 | DEV badge | yes | no |
