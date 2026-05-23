@@ -75,21 +75,23 @@
 
 ---
 
-## M4 — v1 polish & import (optional before “v1 complete”)
+## M4 — v1 polish
 
-**Goal:** Usable day-to-day for bond-only portfolios; reduce migration friction from sheets.
+**Goal:** Reliable day-to-day use for bond-only portfolios; users can inspect system state and back up or restore their data.
 **Target:** Declared v1 release for bonds-only scope.
+**Status:** Planned
 
 ### Features
 
-**CSV import** — PLANNED
+**Backup & system info** — PLANNED
 
-- Import holdings and/or coupon rows from spreadsheet export templates
+- Settings page: app version, database location (from config), last backup timestamp
+- Trigger backup → download SQLite snapshot (browser file download)
+- Restore from a previously downloaded backup file
 
 **UX polish** — PLANNED
 
-- Empty states, validation errors, responsive layout
-- Basic onboarding copy (what v1 does and does not do)
+- Remaining gaps only: form validation UX, responsive tables, loading states (M1/M2 already ship core empty states)
 
 ---
 
@@ -102,4 +104,5 @@
 - Live pricing and yield-to-maturity from market-data providers
 - Multi-currency and FX
 - Authentication and multi-user households
+- Import data
 - Export and reporting for tax prep

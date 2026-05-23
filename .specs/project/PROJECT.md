@@ -48,7 +48,7 @@
 - **Timeline:** No fixed deadline — iterative delivery
 - **Technical:** Node + TypeScript; modular boundaries between bond domain, persistence, and API/UI layers
 - **Resources:** Solo/small-team build; prefer simple deploy and low operational cost for early versions
-- **Data:** Manual entry only for v1; CSV import may follow in M4
+- **Data:** Manual entry for v1 core; M4 adds database backup/restore and UX polish. Spreadsheet import deferred to Future Considerations.
 
 ## Domain Note: Bonds
 

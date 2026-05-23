@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-23
-**Current Work:** M2 complete — next M3 coupon income & cash flows (see `.specs/project/ROADMAP.md`)
+**Current Work:** M3 coupon income & cash flows (planning). M4 scope defined — backup/restore + UX polish (see `.specs/project/ROADMAP.md`).
 
 ---
 
@@ -56,6 +56,13 @@
 **Trade-off:** Two images to version and pull; SQLite still file-backed (`./data` volume locally).
 **Impact:** `docker/`, `docker-compose.yml`, `Makefile`, Hub repo `tghcastro/investment-tracker` with tags `api-<version>` and `web-<version>`.
 
+### AD-008: M4 scope is backup/restore + UX polish, not CSV import (2026-05-23)
+
+**Decision:** M4 delivers a settings/backup page (version, DB path, backup download, restore) and remaining UX polish. Spreadsheet import moves to Future Considerations.
+**Reason:** Docker prod deploy makes data safety the priority before v1 declaration; import can follow after core coupon flows (M3).
+**Trade-off:** Users still enter holdings manually until import is built later.
+**Impact:** ROADMAP M4, PROJECT.md constraints, INTEGRATIONS.md, m2-core out-of-scope table aligned; M4 spec not yet written.
+
 ---
 
 ## Active Blockers
@@ -80,7 +87,7 @@ _None yet._
 
 ## Deferred Ideas
 
-- [ ] CSV import templates matching common spreadsheet layouts — Captured during: project init
+- [ ] Spreadsheet import (CSV templates matching common layouts) — Future Considerations; was scoped to M4, moved out per AD-008 (2026-05-23)
 - [ ] Broker adapter interface for future sync — Captured during: project init
 - [ ] Yield-to-maturity / duration calculators — Captured during: project init
 
@@ -120,7 +127,11 @@ _None yet._
 - [x] Implement M2 P1 — backend API T1–T17 (2026-05-22)
 - [x] Implement M2 P2 — web CRUD T18–T25 (2026-05-22)
 - [x] Implement M2 P3 — web polish T26–T29 (2026-05-23)
+- [x] Docker deployment + release script — PR #9, `scripts/investment-tracker-release.sh` (2026-05-23)
+- [x] Release v0.1.0 + v0.1.1 — Hub images, GitHub releases; prod compose; prod seed fix (PR #10–#11) (2026-05-23)
+- [x] Update M4 roadmap scope — backup/restore + UX polish; import deferred (AD-008) (2026-05-23)
 - [ ] Specify M3 — coupon income & cash flows
+- [ ] Specify M4 — v1 polish (after M3)
 
 ---
 

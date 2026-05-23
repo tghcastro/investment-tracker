@@ -70,10 +70,16 @@ Documented in `.specs/project/ROADMAP.md` **Future Considerations** and `.specs/
 **Status:** Out of scope v1; listed under Future Considerations.
 **Implementation:** None.
 
-### CSV import (M4)
+### Import data (Future Considerations)
 
 **Purpose:** Migrate from spreadsheets — file upload/parsing, not external API.
-**Status:** PLANNED M4 — local file processing, not third-party service.
+**Status:** Deferred — listed under ROADMAP Future Considerations (not M4).
+**Implementation:** None.
+
+### Database backup & restore (M4 — local, not external)
+
+**Purpose:** Download SQLite snapshot and restore from backup; system info page (version, DB path, last backup time).
+**Status:** PLANNED M4 — server streams local DB file; no cloud storage integration.
 **Implementation:** None.
 
 ## Development Tool Integrations (observed)
@@ -94,7 +100,7 @@ Documented in `.specs/project/ROADMAP.md` **Future Considerations** and `.specs/
 
 **Service:** Docker Hub — `tghcastro/investment-tracker`
 **Purpose:** Published api/web container images for deployable releases.
-**Tags:** `api-<version>`, `web-<version>` (e.g. `api-0.1.0`, `web-0.1.0`).
+**Tags:** `api-<version>`, `web-<version>` (e.g. `api-0.1.1`, `web-0.1.1`).
 **Build/push:** `scripts/investment-tracker-release.sh` or `make release TAG=<version>` (requires `docker login`).
 **Configuration:** `DOCKER_IMAGE` env var overrides Hub repository name.
 

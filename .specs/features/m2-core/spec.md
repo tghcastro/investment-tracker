@@ -19,13 +19,13 @@ M1 delivered a read-only web shell and API to list accounts and holdings. Users 
 | Feature | Reason |
 | --- | --- |
 | Coupon payment CRUD UI | M3 — coupon income & cash flows |
-| CSV import | M4 |
+| CSV / spreadsheet import | Future Considerations (see ROADMAP.md) |
 | Hard-delete accounts | ROADMAP specifies archive only; preserves holding history |
 | Un-archive / restore archived accounts | Deferred unless needed during design; archive is one-way in M2 |
 | Live market pricing, YTM, duration | Future considerations; manual entry only (AD-005) |
 | Authentication / multi-user | Out of v1 scope (PROJECT.md) |
 | Bulk edit or multi-select delete | Nice-to-have; not required for v1 core |
-| Charts or net-worth dashboard | M4 / future asset classes |
+| Charts or net-worth dashboard | Future Considerations |
 | E2E browser tests (Playwright) | TESTING.md marks E2E as M2+ optional; unit + integration sufficient for M2 |
 
 ---
