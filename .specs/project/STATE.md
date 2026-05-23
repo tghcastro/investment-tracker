@@ -49,6 +49,13 @@
 **Trade-off:** No live prices or auto-reconciliation; user maintains accuracy.
 **Impact:** UI is form-driven CRUD; no pricing service module in M1–M3.
 
+### AD-007: Docker deployment and release automation (2026-05-23)
+
+**Decision:** Ship api + web as separate Docker images; local stack via `docker compose`; releases via `scripts/investment-tracker-release.sh` (git tag, GitHub release, Docker Hub push).
+**Reason:** Repeatable deploys without manual build/push steps; nginx web image proxies `/api/` to api container.
+**Trade-off:** Two images to version and pull; SQLite still file-backed (`./data` volume locally).
+**Impact:** `docker/`, `docker-compose.yml`, `Makefile`, Hub repo `tghcastro/investment-tracker` with tags `api-<version>` and `web-<version>`.
+
 ---
 
 ## Active Blockers
@@ -119,5 +126,5 @@ _None yet._
 
 ## Open Questions
 
-- **Hosting:** Local-only initially or target a host (e.g. VPS with SQLite file, or revisit DB if cloud multi-instance)?
+- **Hosting:** Docker images on Hub + compose for local/VPS deploy (see AD-007). Cloud multi-instance or managed DB still TBD.
 - ~~**API style:** REST (default) vs tRPC~~ — **Resolved:** REST + Fastify (M1 implementation, AD-002)

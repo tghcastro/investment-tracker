@@ -1,0 +1,48 @@
+# PRODUCTION compose — uses published Docker Hub images (tag 0.1.0).
+#
+# Before first run, set a persistent data directory OUTSIDE this repo:
+#   export INVESTMENT_TRACKER_DATA_DIR=/var/lib/investment-tracker
+# WSL example:
+#   export INVESTMENT_TRACKER_DATA_DIR=/mnt/d/investment-tracker-data
+#
+# DO NOT mount ./data from the repo for production — re-clones, branch switches,
+# or accidental cleanup can delete your SQLite database.
+#
+# Usage:
+#   export INVESTMENT_TRACKER_DATA_DIR=/var/lib/investment-tracker
+#   make start-prod
+#
+# Update image tags below when releasing a new version.
+
+services:
+  api:
+    image: tghcastro/investment-tracker:api-0.1.0
+    environment:
+      DATABASE_URL: /data/data.db
+      CORS_ORIGINS: http://localhost,http://127.0.0.1
+    volumes:
+      - ${INVESTMENT_TRACKER_DATA_DIR:?Set INVESTMENT_TRACKER_DATA_DIR to a persistent host path}/data:/data
+    expose:
+      - "3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  web:
+    image: tghcastro/investment-tracker:web-0.1.0
+    ports:
+      - "80:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
