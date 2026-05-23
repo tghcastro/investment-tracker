@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createRepo, RepoError } from '../src/repo.js';
 import {
@@ -210,7 +210,7 @@ describe('Repo integration', () => {
     expect(after[0].issuer).toBe('After Cutoff');
   });
 
-  it('inserts coupon payment and lists matching payment', async () => {
+  it('inserts coupon payment and lists matching payment in descending date order', async () => {
     const account = await repo.insertAccount({ name: 'Coupon Account' });
     const holding = await repo.insertBondHolding({
       accountId: account.id,
@@ -222,21 +222,218 @@ describe('Repo integration', () => {
       purchaseDate: new Date('2024-01-01'),
     });
 
-    const paymentDate = new Date('2025-06-15');
-    const inserted = await repo.insertCouponPayment({
+    const earlier = new Date('2025-06-15');
+    const later = new Date('2025-12-15');
+    const first = await repo.insertCouponPayment({
       bondHoldingId: holding.id,
-      paymentDate,
+      paymentDate: earlier,
+      amount: 1_000,
+    });
+    const second = await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: later,
       amount: 1_250,
     });
 
     const payments = await repo.listCouponPaymentsByHolding(holding.id);
-    expect(payments).toHaveLength(1);
+    expect(payments).toHaveLength(2);
+    expect(payments[0].id).toBe(second.id);
+    expect(payments[1].id).toBe(first.id);
     expect(payments[0]).toMatchObject({
-      id: inserted.id,
       bondHoldingId: holding.id,
-      paymentDate,
+      paymentDate: later,
       amount: 1_250,
     });
+  });
+
+  it('getCouponPayment returns payment or null', async () => {
+    const account = await repo.insertAccount({ name: 'Get Payment' });
+    const holding = await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Issuer',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+    const inserted = await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-01-01'),
+      amount: 300,
+    });
+
+    const found = await repo.getCouponPayment(inserted.id);
+    expect(found).toMatchObject({
+      id: inserted.id,
+      amount: 300,
+    });
+    expect(await repo.getCouponPayment('99999')).toBeNull();
+  });
+
+  it('updateCouponPayment updates fields and returns null when missing', async () => {
+    const account = await repo.insertAccount({ name: 'Update Payment' });
+    const holding = await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Issuer',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+    const inserted = await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-01-01'),
+      amount: 300,
+    });
+
+    const updated = await repo.updateCouponPayment(inserted.id, {
+      amount: 450,
+      paymentDate: new Date('2025-06-01'),
+    });
+    expect(updated).toMatchObject({
+      id: inserted.id,
+      amount: 450,
+      paymentDate: new Date('2025-06-01'),
+    });
+    expect(await repo.updateCouponPayment('99999', { amount: 1 })).toBeNull();
+  });
+
+  it('deleteCouponPayment removes payment and returns false when missing', async () => {
+    const account = await repo.insertAccount({ name: 'Delete Payment' });
+    const holding = await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Issuer',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+    const inserted = await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-01-01'),
+      amount: 300,
+    });
+
+    expect(await repo.deleteCouponPayment(inserted.id)).toBe(true);
+    expect(await repo.getCouponPayment(inserted.id)).toBeNull();
+    expect(await repo.deleteCouponPayment('99999')).toBe(false);
+  });
+
+  it('getIncomeSummary returns zeros for empty portfolio', async () => {
+    const summary = await repo.getIncomeSummary(
+      new Date(Date.UTC(2026, 0, 1)),
+      new Date(Date.UTC(2026, 11, 31))
+    );
+    expect(summary).toEqual({
+      totalReceived: 0,
+      paymentCount: 0,
+      byHolding: [],
+      payments: [],
+    });
+  });
+
+  it('getIncomeSummary aggregates by range and holding', async () => {
+    const account = await repo.insertAccount({ name: 'Income Summary' });
+    const holdingA = await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Issuer A',
+      faceValue: 100_000,
+      couponRate: 0.04,
+      couponFrequency: 'semi-annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+    const holdingB = await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Issuer B',
+      faceValue: 50_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2031-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+
+    await repo.insertCouponPayment({
+      bondHoldingId: holdingA.id,
+      paymentDate: new Date(Date.UTC(2026, 2, 15)),
+      amount: 2_000,
+    });
+    await repo.insertCouponPayment({
+      bondHoldingId: holdingA.id,
+      paymentDate: new Date(Date.UTC(2026, 8, 15)),
+      amount: 2_250,
+    });
+    await repo.insertCouponPayment({
+      bondHoldingId: holdingB.id,
+      paymentDate: new Date(Date.UTC(2026, 5, 1)),
+      amount: 1_500,
+    });
+    await repo.insertCouponPayment({
+      bondHoldingId: holdingB.id,
+      paymentDate: new Date(Date.UTC(2025, 5, 1)),
+      amount: 999,
+    });
+
+    const summary = await repo.getIncomeSummary(
+      new Date(Date.UTC(2026, 0, 1)),
+      new Date(Date.UTC(2026, 11, 31))
+    );
+
+    expect(summary.totalReceived).toBe(5_750);
+    expect(summary.paymentCount).toBe(3);
+    expect(summary.byHolding).toEqual([
+      {
+        holdingId: holdingA.id,
+        issuer: 'Issuer A',
+        totalReceived: 4_250,
+        paymentCount: 2,
+      },
+      {
+        holdingId: holdingB.id,
+        issuer: 'Issuer B',
+        totalReceived: 1_500,
+        paymentCount: 1,
+      },
+    ]);
+    expect(summary.payments).toHaveLength(3);
+    expect(summary.payments[0].paymentDate).toBe('2026-09-15');
+    expect(summary.payments[0].issuer).toBe('Issuer A');
+  });
+
+  it('getUpcomingCoupons merges holdings, sorts asc, and respects limit', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(Date.UTC(2026, 4, 23)));
+
+    const account = await repo.insertAccount({ name: 'Upcoming' });
+    await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Later Issuer',
+      faceValue: 100_000,
+      couponRate: 0.04,
+      couponFrequency: 'semi-annual',
+      maturityDate: new Date(Date.UTC(2030, 0, 10)),
+      purchaseDate: new Date(Date.UTC(2024, 0, 10)),
+    });
+    await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Soon Issuer',
+      faceValue: 50_000,
+      couponRate: 0.03,
+      couponFrequency: 'quarterly',
+      maturityDate: new Date(Date.UTC(2028, 5, 1)),
+      purchaseDate: new Date(Date.UTC(2025, 2, 1)),
+    });
+
+    const upcoming = await repo.getUpcomingCoupons(3);
+    expect(upcoming).toHaveLength(3);
+    expect(upcoming[0].estimatedDate <= upcoming[1].estimatedDate).toBe(true);
+    expect(upcoming[1].estimatedDate <= upcoming[2].estimatedDate).toBe(true);
+    expect(upcoming.some((entry) => entry.issuer === 'Soon Issuer')).toBe(true);
+
+    vi.useRealTimers();
   });
 
   it('seeds fixture accounts and holdings via repo', async () => {

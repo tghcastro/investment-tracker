@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/m3-coupon-income/design.md`  
 **Spec**: `.specs/features/m3-coupon-income/spec.md`  
-**Status**: Draft
+**Status**: In Progress (P1 done)
 
 ---
 

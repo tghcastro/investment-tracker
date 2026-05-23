@@ -15,7 +15,14 @@ import { registerGetHoldingById } from './routes/holdings/get-by-id.js';
 import { registerListHoldings } from './routes/holdings/list.js';
 import { registerPatchHolding } from './routes/holdings/patch.js';
 import { registerPostHolding } from './routes/holdings/post.js';
+import { registerDeleteCouponPayment } from './routes/coupon-payments/delete.js';
+import { registerGetCouponPaymentById } from './routes/coupon-payments/get-by-id.js';
+import { registerListCouponPayments } from './routes/coupon-payments/list.js';
+import { registerPatchCouponPayment } from './routes/coupon-payments/patch.js';
+import { registerPostCouponPayment } from './routes/coupon-payments/post.js';
+import { registerPortfolioIncomeSummary } from './routes/portfolio/income-summary.js';
 import { registerPortfolioSummary } from './routes/portfolio/summary.js';
+import { registerPortfolioUpcomingCoupons } from './routes/portfolio/upcoming-coupons.js';
 
 export const DEFAULT_PORT = 3000;
 
@@ -68,6 +75,13 @@ export async function createServer(database: Database = db): Promise<FastifyInst
   registerPatchHolding(app, repo);
   registerDeleteHolding(app, repo);
   registerPortfolioSummary(app, repo);
+  registerPortfolioIncomeSummary(app, repo);
+  registerPortfolioUpcomingCoupons(app, repo);
+  registerPostCouponPayment(app, repo);
+  registerListCouponPayments(app, repo);
+  registerGetCouponPaymentById(app, repo);
+  registerPatchCouponPayment(app, repo);
+  registerDeleteCouponPayment(app, repo);
 
   return app;
 }

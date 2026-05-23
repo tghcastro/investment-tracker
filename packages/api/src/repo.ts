@@ -1,9 +1,13 @@
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, desc, eq, gt, gte, isNull, lte } from 'drizzle-orm';
 import type {
   Account,
   BondHolding,
   CouponFrequency,
   CouponPayment,
+} from 'bonds-domain';
+import {
+  expectedCouponAmountCents,
+  generateEstimatedCouponDates,
 } from 'bonds-domain';
 
 import type { Database } from './db.js';
@@ -63,6 +67,40 @@ export type InsertCouponPaymentData = {
   amount: number;
 };
 
+export type UpdateCouponPaymentData = {
+  paymentDate?: Date;
+  amount?: number;
+};
+
+export type IncomeSummaryByHolding = {
+  holdingId: string;
+  issuer: string;
+  totalReceived: number;
+  paymentCount: number;
+};
+
+export type IncomeSummaryPaymentRow = {
+  id: string;
+  paymentDate: string;
+  amount: number;
+  holdingId: string;
+  issuer: string;
+};
+
+export type IncomeSummary = {
+  totalReceived: number;
+  paymentCount: number;
+  byHolding: IncomeSummaryByHolding[];
+  payments: IncomeSummaryPaymentRow[];
+};
+
+export type UpcomingCoupon = {
+  holdingId: string;
+  issuer: string;
+  estimatedDate: string;
+  estimatedAmount: number;
+};
+
 export type PortfolioSummary = {
   totalFaceValue: number;
   positionCount: number;
@@ -91,6 +129,16 @@ function toIsoDateString(date: Date): string {
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const day = String(date.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function startOfUtcDay(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function endOfUtcDay(date: Date): Date {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999)
+  );
 }
 
 function mapAccount(row: typeof accounts.$inferSelect): Account {
@@ -505,9 +553,173 @@ export function createRepo(database: Db) {
       .select()
       .from(couponPayments)
       .where(eq(couponPayments.bondHoldingId, numericHoldingId))
-      .orderBy(couponPayments.paymentDate)
+      .orderBy(desc(couponPayments.paymentDate))
       .all();
     return rows.map(mapCouponPayment);
+  }
+
+  async function getCouponPayment(id: string): Promise<CouponPayment | null> {
+    const numericId = parseId(id, 'payment id');
+    const [row] = database
+      .select()
+      .from(couponPayments)
+      .where(eq(couponPayments.id, numericId))
+      .all();
+    return row ? mapCouponPayment(row) : null;
+  }
+
+  async function updateCouponPayment(
+    id: string,
+    data: UpdateCouponPaymentData
+  ): Promise<CouponPayment | null> {
+    const numericId = parseId(id, 'payment id');
+    const existing = await getCouponPayment(id);
+    if (!existing) {
+      return null;
+    }
+
+    const updates: Partial<typeof couponPayments.$inferInsert> = {};
+    if (data.paymentDate !== undefined) {
+      updates.paymentDate = data.paymentDate;
+    }
+    if (data.amount !== undefined) {
+      updates.amount = data.amount;
+    }
+
+    const [row] = database
+      .update(couponPayments)
+      .set(updates)
+      .where(eq(couponPayments.id, numericId))
+      .returning()
+      .all();
+    return mapCouponPayment(row);
+  }
+
+  async function deleteCouponPayment(id: string): Promise<boolean> {
+    const existing = await getCouponPayment(id);
+    if (!existing) {
+      return false;
+    }
+
+    const numericId = parseId(id, 'payment id');
+    database.delete(couponPayments).where(eq(couponPayments.id, numericId)).run();
+    return true;
+  }
+
+  async function getIncomeSummary(from: Date, to: Date): Promise<IncomeSummary> {
+    const rangeStart = startOfUtcDay(from);
+    const rangeEnd = endOfUtcDay(to);
+
+    const rows = database
+      .select({
+        id: couponPayments.id,
+        paymentDate: couponPayments.paymentDate,
+        amount: couponPayments.amount,
+        bondHoldingId: couponPayments.bondHoldingId,
+        issuer: bondHoldings.issuer,
+      })
+      .from(couponPayments)
+      .innerJoin(bondHoldings, eq(couponPayments.bondHoldingId, bondHoldings.id))
+      .where(
+        and(
+          gte(couponPayments.paymentDate, rangeStart),
+          lte(couponPayments.paymentDate, rangeEnd)
+        )
+      )
+      .orderBy(desc(couponPayments.paymentDate))
+      .all();
+
+    if (rows.length === 0) {
+      return {
+        totalReceived: 0,
+        paymentCount: 0,
+        byHolding: [],
+        payments: [],
+      };
+    }
+
+    let totalReceived = 0;
+    const byHoldingMap = new Map<
+      string,
+      { issuer: string; totalReceived: number; paymentCount: number }
+    >();
+
+    const payments: IncomeSummaryPaymentRow[] = rows.map((row) => {
+      totalReceived += row.amount;
+
+      const holdingId = String(row.bondHoldingId);
+      const existing = byHoldingMap.get(holdingId);
+      if (existing) {
+        existing.totalReceived += row.amount;
+        existing.paymentCount += 1;
+      } else {
+        byHoldingMap.set(holdingId, {
+          issuer: row.issuer,
+          totalReceived: row.amount,
+          paymentCount: 1,
+        });
+      }
+
+      return {
+        id: String(row.id),
+        paymentDate: toIsoDateString(row.paymentDate),
+        amount: row.amount,
+        holdingId,
+        issuer: row.issuer,
+      };
+    });
+
+    const byHolding = [...byHoldingMap.entries()]
+      .map(([holdingId, stats]) => ({
+        holdingId,
+        issuer: stats.issuer,
+        totalReceived: stats.totalReceived,
+        paymentCount: stats.paymentCount,
+      }))
+      .filter((entry) => entry.totalReceived > 0)
+      .sort((a, b) => b.totalReceived - a.totalReceived);
+
+    return {
+      totalReceived,
+      paymentCount: payments.length,
+      byHolding,
+      payments,
+    };
+  }
+
+  async function getUpcomingCoupons(limit: number): Promise<UpcomingCoupon[]> {
+    const holdings = await listBondHoldings();
+    const today = new Date();
+    const upcoming: UpcomingCoupon[] = [];
+
+    for (const holding of holdings) {
+      const dates = generateEstimatedCouponDates(
+        holding.purchaseDate,
+        holding.maturityDate,
+        holding.couponFrequency,
+        today
+      );
+      const estimatedAmount =
+        holding.faceValue > 0
+          ? expectedCouponAmountCents(
+              holding.faceValue,
+              holding.couponRate,
+              holding.couponFrequency
+            )
+          : 0;
+
+      for (const date of dates) {
+        upcoming.push({
+          holdingId: holding.id,
+          issuer: holding.issuer,
+          estimatedDate: toIsoDateString(date),
+          estimatedAmount,
+        });
+      }
+    }
+
+    upcoming.sort((a, b) => a.estimatedDate.localeCompare(b.estimatedDate));
+    return upcoming.slice(0, limit);
   }
 
   return {
@@ -528,6 +740,11 @@ export function createRepo(database: Db) {
     getPortfolioSummary,
     insertCouponPayment,
     listCouponPaymentsByHolding,
+    getCouponPayment,
+    updateCouponPayment,
+    deleteCouponPayment,
+    getIncomeSummary,
+    getUpcomingCoupons,
   };
 }
 

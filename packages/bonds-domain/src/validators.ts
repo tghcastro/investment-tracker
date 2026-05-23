@@ -50,6 +50,16 @@ export const updateAccountSchema = z.object({
   description: z.string().max(1000).optional(),
 });
 
+export const updateCouponPaymentSchema = z
+  .object({
+    paymentDate: z.coerce.date().optional(),
+    amount: z.number().int().positive('Amount must be positive').optional(),
+  })
+  .refine((data) => data.paymentDate !== undefined || data.amount !== undefined, {
+    message: 'At least one field is required',
+    path: ['_root'],
+  });
+
 export const updateBondHoldingSchema = bondHoldingFieldsSchema.partial().refine(
   (data) => {
     if (data.maturityDate === undefined || data.purchaseDate === undefined) {
@@ -68,3 +78,4 @@ export type CreateBondHoldingInput = z.infer<typeof createBondHoldingSchema>;
 export type CreateCouponPaymentInput = z.infer<typeof createCouponPaymentSchema>;
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
 export type UpdateBondHoldingInput = z.infer<typeof updateBondHoldingSchema>;
+export type UpdateCouponPaymentInput = z.infer<typeof updateCouponPaymentSchema>;

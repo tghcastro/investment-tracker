@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-23
-**Current Work:** M3 coupon income & cash flows — tasks ready; next: approve tasks → Execute P1 (`m3-p1-api`)
+**Current Work:** M3 coupon income — P1 backend API complete; next: P2 web payments (T15–T19)
 
 ---
 
@@ -135,7 +135,9 @@ _None yet._
 - [x] Design M3 — `.specs/features/m3-coupon-income/design.md` (2026-05-23)
 - [x] Approve M3 design (2026-05-23)
 - [x] Create tasks for M3 — `.specs/features/m3-coupon-income/tasks.md` (2026-05-23)
-- [ ] Approve M3 tasks → Execute P1 (T1–T14)
+- [x] Approve M3 tasks → Execute P1 (2026-05-23)
+- [x] Implement M3 P1 — backend API T1–T14 (2026-05-23)
+- [ ] Implement M3 P2 — web payments T15–T19
 - [ ] Specify M4 — v1 polish (after M3)
 
 ---
