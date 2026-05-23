@@ -7,6 +7,7 @@ import './TopNav.css';
 const NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
   { to: '/holdings', label: 'Holdings', end: false },
+  { to: '/income', label: 'Income', end: false },
   { to: '/accounts', label: 'Accounts', end: false },
 ] as const;
 

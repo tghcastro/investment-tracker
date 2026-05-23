@@ -1,9 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import Home from '../src/pages/Home';
-import type { ApiPortfolioSummary } from '../src/types/api';
+import type { ApiIncomeSummary, ApiPortfolioSummary, ApiUpcomingCoupon } from '../src/types/api';
+import { currentUtcCalendarYearRangeStrings } from '../src/utils/incomePeriod';
 
 const mockUseApi = vi.fn();
 
@@ -34,14 +35,57 @@ const sampleSummary: ApiPortfolioSummary = {
   ],
 };
 
+const sampleIncome: ApiIncomeSummary = {
+  totalReceived: 42500,
+  paymentCount: 2,
+  byHolding: [],
+  payments: [],
+};
+
+const sampleUpcoming: ApiUpcomingCoupon[] = [
+  {
+    holdingId: '1',
+    issuer: 'US Treasury',
+    estimatedDate: '2026-06-15',
+    estimatedAmount: 21250,
+  },
+];
+
+function mockPortfolioApis(options?: {
+  summary?: ApiPortfolioSummary;
+  income?: ApiIncomeSummary;
+  upcoming?: ApiUpcomingCoupon[];
+}) {
+  const { from, to } = currentUtcCalendarYearRangeStrings();
+  mockUseApi.mockImplementation((url: string) => {
+    if (url === '/api/portfolio/summary') {
+      return {
+        data: options?.summary ?? sampleSummary,
+        loading: false,
+        error: undefined,
+      };
+    }
+    if (url === `/api/portfolio/income-summary?from=${from}&to=${to}`) {
+      return {
+        data: options?.income ?? sampleIncome,
+        loading: false,
+        error: undefined,
+      };
+    }
+    if (url === '/api/portfolio/upcoming-coupons?limit=5') {
+      return {
+        data: options?.upcoming ?? sampleUpcoming,
+        loading: false,
+        error: undefined,
+      };
+    }
+    return { data: undefined, loading: false, error: undefined };
+  });
+}
+
 describe('Home', () => {
   it('renders portfolio summary cards from mocked API data', () => {
-    mockUseApi.mockImplementation((url: string) => {
-      if (url === '/api/portfolio/summary') {
-        return { data: sampleSummary, loading: false, error: undefined };
-      }
-      return { data: undefined, loading: false, error: undefined };
-    });
+    mockPortfolioApis();
 
     render(
       <MemoryRouter>
@@ -57,13 +101,21 @@ describe('Home', () => {
     expect(screen.getByText('$1,450.00')).toBeInTheDocument();
   });
 
+  it('shows YTD coupon income card including zero', () => {
+    mockPortfolioApis({ income: { totalReceived: 0, paymentCount: 0, byHolding: [], payments: [] } });
+
+    render(
+      <MemoryRouter>
+        <Home />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Coupon income (YTD)')).toBeInTheDocument();
+    expect(screen.getByText('$0.00')).toBeInTheDocument();
+  });
+
   it('shows cost basis footnote when holdings are missing purchase price', () => {
-    mockUseApi.mockImplementation((url: string) => {
-      if (url === '/api/portfolio/summary') {
-        return { data: sampleSummary, loading: false, error: undefined };
-      }
-      return { data: undefined, loading: false, error: undefined };
-    });
+    mockPortfolioApis();
 
     render(
       <MemoryRouter>
@@ -77,12 +129,7 @@ describe('Home', () => {
   });
 
   it('renders maturity ladder section with upcoming maturities', () => {
-    mockUseApi.mockImplementation((url: string) => {
-      if (url === '/api/portfolio/summary') {
-        return { data: sampleSummary, loading: false, error: undefined };
-      }
-      return { data: undefined, loading: false, error: undefined };
-    });
+    mockPortfolioApis();
 
     render(
       <MemoryRouter>
@@ -91,30 +138,51 @@ describe('Home', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Upcoming maturities' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Upcoming maturities')).toBeInTheDocument();
-    expect(screen.getByText('Apple Inc')).toBeInTheDocument();
-    expect(screen.getByText('US Treasury')).toBeInTheDocument();
-    expect(screen.getByText('$500.00')).toBeInTheDocument();
+    const ladder = screen.getByLabelText('Upcoming maturities');
+    expect(within(ladder).getByText('Apple Inc')).toBeInTheDocument();
+    expect(within(ladder).getByText('US Treasury')).toBeInTheDocument();
+    expect(within(ladder).getByText('$500.00')).toBeInTheDocument();
+  });
+
+  it('renders upcoming coupon estimates when available', () => {
+    mockPortfolioApis();
+
+    render(
+      <MemoryRouter>
+        <Home />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { name: 'Upcoming coupons' })).toBeInTheDocument();
+    const upcoming = screen.getByLabelText('Upcoming coupon estimates');
+    expect(within(upcoming).getByText(/Estimated from holding terms/)).toBeInTheDocument();
+    expect(within(upcoming).getByText('Jun 15, 2026')).toBeInTheDocument();
+  });
+
+  it('hides upcoming coupons section when none are scheduled', () => {
+    mockPortfolioApis({ upcoming: [] });
+
+    render(
+      <MemoryRouter>
+        <Home />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByRole('heading', { name: 'Upcoming coupons' })).not.toBeInTheDocument();
   });
 
   it('shows empty state when portfolio has no positions', () => {
-    mockUseApi.mockImplementation((url: string) => {
-      if (url === '/api/portfolio/summary') {
-        return {
-          data: {
-            totalFaceValue: 0,
-            positionCount: 0,
-            nextMaturityDate: null,
-            totalCostBasis: 0,
-            holdingsWithCostBasis: 0,
-            holdingsMissingCostBasis: 0,
-            maturityLadder: [],
-          } satisfies ApiPortfolioSummary,
-          loading: false,
-          error: undefined,
-        };
-      }
-      return { data: undefined, loading: false, error: undefined };
+    mockPortfolioApis({
+      summary: {
+        totalFaceValue: 0,
+        positionCount: 0,
+        nextMaturityDate: null,
+        totalCostBasis: 0,
+        holdingsWithCostBasis: 0,
+        holdingsMissingCostBasis: 0,
+        maturityLadder: [],
+      },
+      upcoming: [],
     });
 
     render(
@@ -125,5 +193,6 @@ describe('Home', () => {
 
     expect(screen.getByRole('heading', { name: 'No bond holdings yet' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Add holding' })).toHaveAttribute('href', '/holdings/new');
+    expect(screen.queryByText('Coupon income (YTD)')).not.toBeInTheDocument();
   });
 });

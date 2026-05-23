@@ -1,0 +1,50 @@
+.cb-coupon-payments-section {
+  margin-top: var(--cb-space-8);
+  padding-top: var(--cb-space-8);
+  border-top: 1px solid var(--cb-border-subtle);
+}
+
+.cb-coupon-payments-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cb-space-4);
+  margin-bottom: var(--cb-space-4);
+}
+
+.cb-coupon-payments-section__title {
+  margin: 0;
+  font-size: var(--cb-font-size-lg);
+  font-weight: 600;
+  color: var(--cb-text-primary);
+}
+
+.cb-coupon-payments-section__estimate {
+  margin: var(--cb-space-2) 0 0;
+  color: var(--cb-text-secondary);
+}
+
+.cb-coupon-payments-section__loading {
+  color: var(--cb-text-secondary);
+}
+
+.cb-coupon-payments-section__form-panel {
+  margin-top: var(--cb-space-4);
+  padding: var(--cb-space-4);
+  border: 1px solid var(--cb-border-subtle);
+  border-radius: var(--cb-radius-md);
+  background: var(--cb-bg-subtle);
+}
+
+.cb-coupon-payments-section__form-title {
+  margin: 0 0 var(--cb-space-4);
+  font-size: var(--cb-font-size-md);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .cb-coupon-payments-section__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

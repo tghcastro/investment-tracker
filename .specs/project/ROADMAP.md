@@ -1,7 +1,7 @@
 # Roadmap
 
-**Current Milestone:** M3 — Coupon income & cash flows
-**Status:** Planning
+**Current Milestone:** M4 — v1 polish
+**Status:** Planned
 
 ---
 
@@ -60,16 +60,16 @@
 
 **Goal:** Track coupon payments against holdings and see income history.
 **Target:** Record payments and view per-holding and portfolio-level income.
-**Status:** Spec approved — [`.specs/features/m3-coupon-income/spec.md`](../features/m3-coupon-income/spec.md)
+**Status:** Complete
 
 ### Features
 
-**Coupon payment tracking** — PLANNED
+**Coupon payment tracking** — DONE
 
 - Record payment date, amount, link to holding
 - Optional schedule hints from coupon rate and frequency (user-confirmed)
 
-**Income views** — PLANNED
+**Income views** — DONE
 
 - History by period and by holding
 - Simple upcoming coupon expectations (calculated from terms, not market data)
