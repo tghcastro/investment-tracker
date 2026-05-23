@@ -1,3 +1,6 @@
+# Local Docker stack — builds from source. SQLite at ./data (gitignored).
+# For production deploy with Hub images and external data dir, use docker-compose.prod.yml.
+
 services:
   api:
     build:

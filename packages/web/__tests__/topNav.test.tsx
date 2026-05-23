@@ -108,6 +108,19 @@ describe('TopNav responsive behavior', () => {
     expect(screen.queryByRole('button', { name: 'Close menu' })).not.toBeInTheDocument();
   });
 
+  it('shows a red DEV badge when running the Vite dev server', () => {
+    mockMatchMedia(false);
+
+    render(
+      <MemoryRouter>
+        <TopNav />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('DEV')).toHaveClass('cb-top-nav__env-badge');
+    expect(screen.getByLabelText('Development mode')).toBeInTheDocument();
+  });
+
   it('enables Add holding link to /holdings/new', () => {
     mockMatchMedia(false);
 

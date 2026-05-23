@@ -21,6 +21,11 @@ export function TopNav() {
           <NavLink to="/" end className="cb-top-nav__wordmark" onClick={closeMenu}>
             Investment Tracker
           </NavLink>
+          {import.meta.env.DEV ? (
+            <span className="cb-top-nav__env-badge" aria-label="Development mode">
+              DEV
+            </span>
+          ) : null}
         </div>
 
         <button
