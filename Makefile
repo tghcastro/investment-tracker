@@ -12,7 +12,7 @@ help:
 	@echo "  make recreate  Rebuild images and recreate containers"
 	@echo "  make logs      Follow container logs"
 	@echo "  make ps        Show container status"
-	@echo "  make release TAG=v1.0.0      Git tag + build/push Docker images"
+	@echo "  make release TAG=v1.0.0      Git tag, GitHub release, Docker Hub push"
 
 build:
 	$(DOCKER_COMPOSE) build

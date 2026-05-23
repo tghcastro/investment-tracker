@@ -38,7 +38,7 @@
 
 - **Market data:** None in v1 — manual entry only (AD-005)
 - **Broker sync:** None in v1
-- **Hosting / deploy:** TBD (open question in STATE.md)
+- **Hosting / deploy:** Docker Compose (local) + Docker Hub (`tghcastro/investment-tracker`); release script → git tag + GitHub release (AD-007)
 
 ## Development Tools
 
@@ -46,6 +46,7 @@
 - **Spec workflow:** tlc-spec-driven skill (`.cursor/skills/`, `.claude/skills/`)
 - **Version control:** Git (*observed*)
 - **License:** Apache 2.0 (*observed* — `LICENSE`)
+- **Containers:** Docker + Compose (`docker-compose.yml`, `docker/`); release via `scripts/investment-tracker-release.sh` (*observed*)
 
 ## Observed Artifacts (no app stack yet)
 

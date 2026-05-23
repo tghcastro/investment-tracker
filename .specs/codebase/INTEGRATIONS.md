@@ -90,6 +90,21 @@ Documented in `.specs/project/ROADMAP.md` **Future Considerations** and `.specs/
 **Location:** `.git/`
 **Authentication:** User environment (not in repo)
 
+### Docker Hub (observed)
+
+**Service:** Docker Hub — `tghcastro/investment-tracker`
+**Purpose:** Published api/web container images for deployable releases.
+**Tags:** `api-<version>`, `web-<version>` (e.g. `api-0.1.0`, `web-0.1.0`).
+**Build/push:** `scripts/investment-tracker-release.sh` or `make release TAG=<version>` (requires `docker login`).
+**Configuration:** `DOCKER_IMAGE` env var overrides Hub repository name.
+
+### GitHub Releases (observed)
+
+**Service:** GitHub Releases on `tghcastro/investment-tracker`
+**Purpose:** Versioned release notes tied to git tags; documents Docker image refs per release.
+**Creation:** Same release script via `gh release create` (requires `gh auth login`).
+**Configuration:** `GH_RELEASE=0` skips; `GH_RELEASE_DRAFT=1`, `GH_RELEASE_GENERATE_NOTES=1`, `GH_RELEASE_NOTES` / `GH_RELEASE_NOTES_FILE` customize notes.
+
 ## Security Notes for Future Integrations
 
 When broker or market-data integrations are added:

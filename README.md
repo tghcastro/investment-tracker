@@ -86,6 +86,86 @@ CORS allows browser requests from:
 
 Use the same host for the web app and API (both `localhost` or both `127.0.0.1`). Override when starting the API: `CORS_ORIGINS=http://localhost,http://127.0.0.1 npm run dev:api`
 
+## Docker (local)
+
+Run the full stack (API + web) in containers. SQLite data persists in `./data/` (gitignored).
+
+**Requires:** Docker Engine and Docker Compose v2 (`docker compose`).
+
+From the repo root (WSL):
+
+```bash
+make build    # build api + web images
+make start    # start in background (web on http://localhost/)
+make ps       # container status
+make logs     # follow logs
+make stop     # stop and remove containers
+```
+
+| Service | Image build | Notes |
+| --- | --- | --- |
+| `api` | `docker/api/Dockerfile` | Runs migrations on start; DB at `/data/data.db` |
+| `web` | `docker/web/Dockerfile` | nginx on port 80; proxies `/api/` to the api service |
+
+Manual equivalent:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+Open http://localhost/ (same routes as dev: `/`, `/holdings`, `/accounts`).
+
+## Release (Docker Hub + GitHub)
+
+Publish a versioned release: build/push container images, create a git tag, and open a GitHub release.
+
+**Requires (WSL):**
+
+- Clean git working tree (commit or stash first)
+- `docker login` (Docker Hub)
+- [GitHub CLI](https://cli.github.com/) — `gh auth login`
+
+```bash
+make release TAG=0.1.0
+# or
+./scripts/investment-tracker-release.sh 0.1.0
+```
+
+From Windows:
+
+```bash
+wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && make release TAG=0.1.0'
+```
+
+**What the release script does:**
+
+1. Build `api` and `web` Docker images
+2. Create an annotated git tag and push to `origin`
+3. Push images to Docker Hub:
+   - `tghcastro/investment-tracker:api-<tag>`
+   - `tghcastro/investment-tracker:web-<tag>`
+4. Create a GitHub release (via `gh release create`) with Docker image refs in the notes
+
+**Useful overrides:**
+
+| Variable | Effect |
+| --- | --- |
+| `DOCKER_PUSH=0` | Build images only; skip Hub push |
+| `GIT_TAG=0` | Skip git tag create/push |
+| `GH_RELEASE=0` | Skip GitHub release |
+| `GH_RELEASE_DRAFT=1` | Create a draft GitHub release |
+| `GH_RELEASE_GENERATE_NOTES=1` | Append auto-generated PR/commit notes |
+| `GH_RELEASE_NOTES` / `GH_RELEASE_NOTES_FILE` | Extra release notes |
+| `SKIP_GIT_CLEAN=1` | Allow uncommitted changes (not recommended for releases) |
+| `DOCKER_IMAGE=...` | Override Hub repository (default: `tghcastro/investment-tracker`) |
+
+Dry-run build (no push, no tag):
+
+```bash
+DOCKER_PUSH=0 GIT_TAG=0 GH_RELEASE=0 ./scripts/investment-tracker-release.sh 0.1.0
+```
+
 ## Next steps
 
 1. **`/tlc-spec-driven specify feature`** — M1 platform & bond domain foundation
