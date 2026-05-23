@@ -5,6 +5,7 @@ import {
   createCouponPaymentSchema,
   updateAccountSchema,
   updateBondHoldingSchema,
+  updateCouponPaymentSchema,
 } from '../src/validators.js';
 
 describe('Domain Validators', () => {
@@ -160,6 +161,32 @@ describe('Domain Validators', () => {
         amount: 1750,
       });
       expect(result.paymentDate).toEqual(future);
+    });
+  });
+
+  describe('updateCouponPaymentSchema', () => {
+    it('parses paymentDate only', () => {
+      const result = updateCouponPaymentSchema.parse({
+        paymentDate: new Date('2025-06-01'),
+      });
+      expect(result.paymentDate).toEqual(new Date('2025-06-01'));
+      expect(result.amount).toBeUndefined();
+    });
+
+    it('parses amount only', () => {
+      const result = updateCouponPaymentSchema.parse({ amount: 500 });
+      expect(result.amount).toBe(500);
+      expect(result.paymentDate).toBeUndefined();
+    });
+
+    it('rejects empty object', () => {
+      expect(() => updateCouponPaymentSchema.parse({})).toThrow('At least one field is required');
+    });
+
+    it('rejects non-positive amount', () => {
+      expect(() =>
+        updateCouponPaymentSchema.parse({ amount: 0 })
+      ).toThrow();
     });
   });
 });

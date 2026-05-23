@@ -1,0 +1,27 @@
+meta {
+  name: Create Coupon Payment (out of bounds)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/coupon-payments
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "bondHoldingId": "{{holdingId}}",
+    "paymentDate": "2023-01-01",
+    "amount": 100
+  }
+}
+
+docs {
+  Expect 400 VALIDATION_ERROR when paymentDate is before purchaseDate or after maturityDate.
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Income Summary (current year)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/portfolio/income-summary
+  auth: none
+}
+
+docs {
+  Defaults to current UTC calendar year (Jan 1 – Dec 31) when from/to omitted.
+  Response: totalReceived, paymentCount, byHolding[], payments[] (amounts in cents).
+}

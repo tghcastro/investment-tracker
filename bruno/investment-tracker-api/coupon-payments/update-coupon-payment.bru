@@ -1,0 +1,25 @@
+meta {
+  name: Update Coupon Payment
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/api/coupon-payments/{{paymentId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "amount": 21500
+  }
+}
+
+docs {
+  PATCH accepts partial paymentDate and/or amount. bondHoldingId cannot change.
+}

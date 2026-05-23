@@ -658,6 +658,428 @@ describe('API routes', () => {
       maturityLadder: [],
     });
   });
+
+  async function createTestHolding(accountKey: 'vanguard' | 'interactiveBrokers' = 'vanguard') {
+    const accountId = seededAccountIds.get(accountKey)!;
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        issuer: 'Coupon Route Issuer',
+        faceValue: 100_000,
+        couponRate: 4.25,
+        couponFrequency: 'semi-annual',
+        maturityDate: '2030-08-15',
+        purchaseDate: '2024-01-10',
+      },
+    });
+    expect(response.statusCode).toBe(201);
+    return response.json() as { id: string };
+  }
+
+  it('POST /api/coupon-payments creates payment and returns 201', async () => {
+    const holding = await createTestHolding();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/coupon-payments',
+      payload: {
+        bondHoldingId: holding.id,
+        paymentDate: '2025-06-15',
+        amount: 2125,
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    const body = response.json();
+    expect(body).toMatchObject({
+      id: expect.any(String),
+      bondHoldingId: holding.id,
+      paymentDate: '2025-06-15',
+      amount: 2125,
+      recordedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+    });
+  });
+
+  it('POST /api/coupon-payments returns 404 for unknown holding', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/coupon-payments',
+      payload: {
+        bondHoldingId: '99999',
+        paymentDate: '2025-06-15',
+        amount: 100,
+      },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json().code).toBe('NOT_FOUND');
+  });
+
+  it('POST /api/coupon-payments returns 400 when payment date is out of bounds', async () => {
+    const holding = await createTestHolding();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/coupon-payments',
+      payload: {
+        bondHoldingId: holding.id,
+        paymentDate: '2023-01-01',
+        amount: 100,
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      code: 'VALIDATION_ERROR',
+      fields: {
+        paymentDate: expect.arrayContaining([expect.any(String)]),
+      },
+    });
+  });
+
+  it('POST /api/coupon-payments is allowed on archived account holding', async () => {
+    const postAccount = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: { name: 'Archived Coupon Account' },
+    });
+    const accountId = postAccount.json().id;
+
+    const holdingResponse = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        issuer: 'Archived Holding',
+        faceValue: 10_000,
+        couponRate: 3,
+        couponFrequency: 'annual',
+        maturityDate: '2030-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+    const holdingId = holdingResponse.json().id;
+
+    await app.inject({
+      method: 'PATCH',
+      url: `/api/accounts/${accountId}/archive`,
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/coupon-payments',
+      payload: {
+        bondHoldingId: holdingId,
+        paymentDate: '2025-01-01',
+        amount: 300,
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+  });
+
+  it('GET /api/coupon-payments lists payments newest first', async () => {
+    const holding = await createTestHolding();
+    const repo = createRepo(database);
+
+    await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-06-15'),
+      amount: 1000,
+    });
+    await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-12-15'),
+      amount: 1250,
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/coupon-payments?bondHoldingId=${holding.id}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body).toHaveLength(2);
+    expect(body[0].paymentDate).toBe('2025-12-15');
+    expect(body[1].paymentDate).toBe('2025-06-15');
+  });
+
+  it('GET /api/coupon-payments requires bondHoldingId', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/coupon-payments',
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      code: 'VALIDATION_ERROR',
+      fields: { bondHoldingId: expect.any(Array) },
+    });
+  });
+
+  it('GET /api/coupon-payments returns 404 for unknown holding', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/coupon-payments?bondHoldingId=99999',
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json().code).toBe('NOT_FOUND');
+  });
+
+  it('GET /api/coupon-payments/:id returns payment', async () => {
+    const holding = await createTestHolding();
+    const repo = createRepo(database);
+    const payment = await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-06-15'),
+      amount: 1500,
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/coupon-payments/${payment.id}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      id: payment.id,
+      bondHoldingId: holding.id,
+      paymentDate: '2025-06-15',
+      amount: 1500,
+    });
+  });
+
+  it('GET /api/coupon-payments/:id returns 404 when missing', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/coupon-payments/99999',
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json().code).toBe('NOT_FOUND');
+  });
+
+  it('PATCH /api/coupon-payments/:id updates payment', async () => {
+    const holding = await createTestHolding();
+    const repo = createRepo(database);
+    const payment = await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-06-15'),
+      amount: 1500,
+    });
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: `/api/coupon-payments/${payment.id}`,
+      payload: { amount: 2000, paymentDate: '2025-07-15' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      id: payment.id,
+      paymentDate: '2025-07-15',
+      amount: 2000,
+    });
+  });
+
+  it('PATCH /api/coupon-payments/:id returns 400 for out-of-bounds date', async () => {
+    const holding = await createTestHolding();
+    const repo = createRepo(database);
+    const payment = await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-06-15'),
+      amount: 1500,
+    });
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: `/api/coupon-payments/${payment.id}`,
+      payload: { paymentDate: '2031-01-01' },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().fields.paymentDate).toBeDefined();
+  });
+
+  it('PATCH /api/coupon-payments/:id returns 404 when missing', async () => {
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/api/coupon-payments/99999',
+      payload: { amount: 100 },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json().code).toBe('NOT_FOUND');
+  });
+
+  it('DELETE /api/coupon-payments/:id returns 204', async () => {
+    const holding = await createTestHolding();
+    const repo = createRepo(database);
+    const payment = await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-06-15'),
+      amount: 1500,
+    });
+
+    const response = await app.inject({
+      method: 'DELETE',
+      url: `/api/coupon-payments/${payment.id}`,
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(await repo.getCouponPayment(payment.id)).toBeNull();
+  });
+
+  it('DELETE /api/coupon-payments/:id returns 404 when missing', async () => {
+    const response = await app.inject({
+      method: 'DELETE',
+      url: '/api/coupon-payments/99999',
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json().code).toBe('NOT_FOUND');
+  });
+
+  it('DELETE holding succeeds after deleting all coupon payments', async () => {
+    const holding = await createTestHolding();
+    const repo = createRepo(database);
+    const payment = await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date('2025-06-15'),
+      amount: 1500,
+    });
+
+    const deletePayment = await app.inject({
+      method: 'DELETE',
+      url: `/api/coupon-payments/${payment.id}`,
+    });
+    expect(deletePayment.statusCode).toBe(204);
+
+    const deleteHolding = await app.inject({
+      method: 'DELETE',
+      url: `/api/holdings/${holding.id}`,
+    });
+    expect(deleteHolding.statusCode).toBe(204);
+  });
+
+  it('GET /api/portfolio/income-summary defaults to current UTC calendar year', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/income-summary',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body).toMatchObject({
+      totalReceived: expect.any(Number),
+      paymentCount: expect.any(Number),
+      byHolding: expect.any(Array),
+      payments: expect.any(Array),
+    });
+  });
+
+  it('GET /api/portfolio/income-summary filters by date range and byHolding', async () => {
+    const holding = await createTestHolding();
+    const repo = createRepo(database);
+    await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date(Date.UTC(2026, 2, 15)),
+      amount: 21250,
+    });
+    await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date(Date.UTC(2025, 3, 15)),
+      amount: 999,
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/income-summary?from=2026-01-01&to=2026-12-31',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.totalReceived).toBe(21250);
+    expect(body.paymentCount).toBe(1);
+    expect(body.byHolding).toEqual([
+      {
+        holdingId: holding.id,
+        issuer: 'Coupon Route Issuer',
+        totalReceived: 21250,
+        paymentCount: 1,
+      },
+    ]);
+    expect(body.payments).toHaveLength(1);
+    expect(body.payments[0]).toMatchObject({
+      paymentDate: '2026-03-15',
+      amount: 21250,
+      holdingId: holding.id,
+    });
+  });
+
+  it('GET /api/portfolio/income-summary returns 400 when from > to', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/income-summary?from=2026-12-31&to=2026-01-01',
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().code).toBe('VALIDATION_ERROR');
+  });
+
+  it('GET /api/portfolio/income-summary returns 400 for invalid date', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/income-summary?from=not-a-date',
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().fields.from).toBeDefined();
+  });
+
+  it('GET /api/portfolio/upcoming-coupons returns estimated coupons with default limit', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/upcoming-coupons',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeLessThanOrEqual(5);
+    if (body.length > 0) {
+      expect(body[0]).toMatchObject({
+        holdingId: expect.any(String),
+        issuer: expect.any(String),
+        estimatedDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        estimatedAmount: expect.any(Number),
+      });
+    }
+  });
+
+  it('GET /api/portfolio/upcoming-coupons respects limit query param', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/upcoming-coupons?limit=2',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toHaveLength(2);
+  });
+
+  it('GET /api/portfolio/upcoming-coupons returns 400 for invalid limit', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/upcoming-coupons?limit=0',
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().fields.limit).toBeDefined();
+  });
 });
 
 describe('CORS', () => {

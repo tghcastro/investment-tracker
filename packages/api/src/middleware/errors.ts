@@ -10,6 +10,16 @@ export class NotFoundError extends Error {
   }
 }
 
+export class FieldValidationError extends Error {
+  constructor(
+    public readonly fields: Record<string, string[]>,
+    message = 'Validation failed'
+  ) {
+    super(message);
+    this.name = 'FieldValidationError';
+  }
+}
+
 export function zodToFields(error: ZodError): Record<string, string[]> {
   const fields: Record<string, string[]> = {};
   for (const issue of error.issues) {
@@ -63,6 +73,14 @@ export function registerErrorHandler(app: FastifyInstance): void {
       return reply.status(404).send({
         code: 'NOT_FOUND',
         message: error.message,
+      });
+    }
+
+    if (error instanceof FieldValidationError) {
+      return reply.status(400).send({
+        code: 'VALIDATION_ERROR',
+        message: error.message,
+        fields: error.fields,
       });
     }
 

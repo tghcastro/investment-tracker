@@ -1,0 +1,14 @@
+meta {
+  name: Delete Coupon Payment
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/coupon-payments/{{paymentId}}
+  auth: none
+}
+
+docs {
+  Returns 204 on success. Delete payments before deleting a holding (409 otherwise).
+}

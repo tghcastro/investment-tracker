@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-23
-**Current Work:** M3 coupon income & cash flows (planning). M4 scope defined — backup/restore + UX polish (see `.specs/project/ROADMAP.md`).
+**Current Work:** M3 coupon income — P1 backend API complete; next: P2 web payments (T15–T19)
 
 ---
 
@@ -130,7 +130,14 @@ _None yet._
 - [x] Docker deployment + release script — PR #9, `scripts/investment-tracker-release.sh` (2026-05-23)
 - [x] Release v0.1.0 + v0.1.1 — Hub images, GitHub releases; prod compose; prod seed fix (PR #10–#11) (2026-05-23)
 - [x] Update M4 roadmap scope — backup/restore + UX polish; import deferred (AD-008) (2026-05-23)
-- [ ] Specify M3 — coupon income & cash flows
+- [x] Specify M3 — coupon income & cash flows — `.specs/features/m3-coupon-income/spec.md` (2026-05-23)
+- [x] Approve M3 spec (2026-05-23)
+- [x] Design M3 — `.specs/features/m3-coupon-income/design.md` (2026-05-23)
+- [x] Approve M3 design (2026-05-23)
+- [x] Create tasks for M3 — `.specs/features/m3-coupon-income/tasks.md` (2026-05-23)
+- [x] Approve M3 tasks → Execute P1 (2026-05-23)
+- [x] Implement M3 P1 — backend API T1–T14 (2026-05-23)
+- [ ] Implement M3 P2 — web payments T15–T19
 - [ ] Specify M4 — v1 polish (after M3)
 
 ---
