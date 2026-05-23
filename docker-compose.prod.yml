@@ -20,6 +20,7 @@ services:
     environment:
       DATABASE_URL: /data/data.db
       CORS_ORIGINS: http://localhost,http://127.0.0.1
+      SEED_FIXTURES: "0"
     volumes:
       - ${INVESTMENT_TRACKER_DATA_DIR:?Set INVESTMENT_TRACKER_DATA_DIR to a persistent host path}/data:/data
     expose:
