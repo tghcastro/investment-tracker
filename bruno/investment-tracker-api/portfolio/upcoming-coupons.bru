@@ -1,0 +1,14 @@
+meta {
+  name: Upcoming Coupons
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/portfolio/upcoming-coupons
+  auth: none
+}
+
+docs {
+  Default limit is 5 (max 50). Dates are estimates from calendar stepping, not market accrual.
+}
