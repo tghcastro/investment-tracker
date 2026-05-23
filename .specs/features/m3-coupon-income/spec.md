@@ -287,27 +287,27 @@ TopNav SHALL include **Income** linking to `/income`.
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| M3-01 | P1: Record payment (UI section + list) | Design | Pending |
-| M3-02 | P1: Record payment (POST + validation) | Design | Pending |
-| M3-03 | P1: Record payment (cents + date bounds) | Design | Pending |
-| M3-04 | P1: Edit payment (load + PATCH) | Design | Pending |
-| M3-05 | P1: Edit payment (404) | Design | Pending |
-| M3-06 | P1: Delete payment (confirm + DELETE) | Design | Pending |
-| M3-07 | P1: Delete payment (unblocks holding delete) | Design | Pending |
-| M3-08 | P1: List by holding (GET query) | Design | Pending |
-| M3-09 | P1: List by holding (response shape) | Design | Pending |
-| M3-10 | P2: Income summary API | Design | Pending |
-| M3-11 | P2: Income summary defaults (calendar year) | Design | Pending |
-| M3-12 | P2: `/income` page | Design | Pending |
-| M3-13 | P2: byHolding breakdown API | Design | Pending |
-| M3-14 | P2: byHolding UI | Design | Pending |
-| M3-15 | P2: Home YTD card | Design | Pending |
-| M3-16 | P2: Home YTD zero state | Design | Pending |
-| M3-17 | P3: Expected amount hint | Design | Pending |
-| M3-18 | P3: Estimate labeling | Design | Pending |
-| M3-19 | P3: Upcoming coupons API | Design | Pending |
-| M3-20 | P3: Calendar stepping rules | Design | Pending |
-| M3-21 | P3: Home upcoming list | Design | Pending |
+| M3-01 | P1: Record payment (UI section + list) | Design | Mapped |
+| M3-02 | P1: Record payment (POST + validation) | Design | Mapped |
+| M3-03 | P1: Record payment (cents + date bounds) | Design | Mapped |
+| M3-04 | P1: Edit payment (load + PATCH) | Design | Mapped |
+| M3-05 | P1: Edit payment (404) | Design | Mapped |
+| M3-06 | P1: Delete payment (confirm + DELETE) | Design | Mapped |
+| M3-07 | P1: Delete payment (unblocks holding delete) | Design | Mapped |
+| M3-08 | P1: List by holding (GET query) | Design | Mapped |
+| M3-09 | P1: List by holding (response shape) | Design | Mapped |
+| M3-10 | P2: Income summary API | Design | Mapped |
+| M3-11 | P2: Income summary defaults (calendar year) | Design | Mapped |
+| M3-12 | P2: `/income` page | Design | Mapped |
+| M3-13 | P2: byHolding breakdown API | Design | Mapped |
+| M3-14 | P2: byHolding UI | Design | Mapped |
+| M3-15 | P2: Home YTD card | Design | Mapped |
+| M3-16 | P2: Home YTD zero state | Design | Mapped |
+| M3-17 | P3: Expected amount hint | Design | Mapped |
+| M3-18 | P3: Estimate labeling | Design | Mapped |
+| M3-19 | P3: Upcoming coupons API | Design | Mapped |
+| M3-20 | P3: Calendar stepping rules | Design | Mapped |
+| M3-21 | P3: Home upcoming list | Design | Mapped |
 
 **Coverage:** 21 total; 9 P1 (MVP); 7 P2; 5 P3
 
@@ -326,4 +326,4 @@ TopNav SHALL include **Income** linking to `/income`.
 
 ## Next Phase
 
-Spec approved. Next: **Design M3** (`.specs/features/m3-coupon-income/design.md`) → **Tasks** → **Execute**.
+Design: `.specs/features/m3-coupon-income/design.md` (approved). Tasks: `.specs/features/m3-coupon-income/tasks.md`. Next: **Approve tasks** → **Execute**.

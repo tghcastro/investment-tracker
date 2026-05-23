@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-23
-**Current Work:** M3 coupon income & cash flows — spec approved; next: design (`.specs/features/m3-coupon-income/design.md`)
+**Current Work:** M3 coupon income & cash flows — tasks ready; next: approve tasks → Execute P1 (`m3-p1-api`)
 
 ---
 
@@ -132,8 +132,10 @@ _None yet._
 - [x] Update M4 roadmap scope — backup/restore + UX polish; import deferred (AD-008) (2026-05-23)
 - [x] Specify M3 — coupon income & cash flows — `.specs/features/m3-coupon-income/spec.md` (2026-05-23)
 - [x] Approve M3 spec (2026-05-23)
-- [ ] Design M3 — `.specs/features/m3-coupon-income/design.md`
-- [ ] Create tasks for M3 — `.specs/features/m3-coupon-income/tasks.md`
+- [x] Design M3 — `.specs/features/m3-coupon-income/design.md` (2026-05-23)
+- [x] Approve M3 design (2026-05-23)
+- [x] Create tasks for M3 — `.specs/features/m3-coupon-income/tasks.md` (2026-05-23)
+- [ ] Approve M3 tasks → Execute P1 (T1–T14)
 - [ ] Specify M4 — v1 polish (after M3)
 
 ---
