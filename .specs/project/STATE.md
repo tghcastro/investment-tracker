@@ -1,7 +1,7 @@
 # State
 
-**Last Updated:** 2026-05-22
-**Current Work:** M2 P2 web CRUD done — next P3 polish (see `.specs/features/m2-core/tasks.md`)
+**Last Updated:** 2026-05-23
+**Current Work:** M2 complete — next M3 coupon income & cash flows (see `.specs/project/ROADMAP.md`)
 
 ---
 
@@ -112,7 +112,8 @@ _None yet._
 - [x] Create tasks for M2 — `.specs/features/m2-core/tasks.md` (2026-05-22)
 - [x] Implement M2 P1 — backend API T1–T17 (2026-05-22)
 - [x] Implement M2 P2 — web CRUD T18–T25 (2026-05-22)
-- [ ] Implement M2 P3 — web polish T26–T29
+- [x] Implement M2 P3 — web polish T26–T29 (2026-05-23)
+- [ ] Specify M3 — coupon income & cash flows
 
 ---
 

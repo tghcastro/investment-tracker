@@ -6,11 +6,11 @@ M1 delivered a read-only web shell and API to list accounts and holdings. Users 
 
 ## Goals
 
-- [ ] Users can create, rename, and archive accounts from the web UI
-- [ ] Users can add, edit, and delete bond holdings from the web UI with domain validation surfaced as clear form errors
-- [ ] Users can filter holdings by account, maturity window, and issuer text search
-- [ ] Home and dedicated views show aggregated face value, cost basis (where purchase price exists), and an upcoming maturity ladder
-- [ ] All new API endpoints and forms have automated test coverage per TESTING.md
+- [x] Users can create, rename, and archive accounts from the web UI
+- [x] Users can add, edit, and delete bond holdings from the web UI with domain validation surfaced as clear form errors
+- [x] Users can filter holdings by account, maturity window, and issuer text search
+- [x] Home and dedicated views show aggregated face value, cost basis (where purchase price exists), and an upcoming maturity ladder
+- [x] All new API endpoints and forms have automated test coverage per TESTING.md
 
 ---
 
@@ -275,28 +275,28 @@ Forms SHALL follow `.specs/features/m1-scaffold/web-design.md` **Forms** section
 
 | Requirement ID | Story | Phase | Status |
 | --- | --- | --- | --- |
-| M2-01 | P1: Create Bond Holding (nav + route) | Execute | Pending |
-| M2-02 | P1: Create Bond Holding (submit + validation) | Execute | Pending |
-| M2-03 | P1: Create Bond Holding (account select) | Execute | Pending |
-| M2-04 | P1: Edit Bond Holding (load + route) | Execute | Pending |
-| M2-05 | P1: Edit Bond Holding (PATCH) | Execute | Pending |
-| M2-06 | P1: Edit Bond Holding (404) | Execute | Pending |
-| M2-07 | P1: Delete Bond Holding (confirm + DELETE) | Execute | Pending |
-| M2-08 | P1: Delete Bond Holding (409 with coupons) | Execute | Pending |
-| M2-09 | P1: Create Account (web form) | Execute | Pending |
-| M2-10 | P1: Create Account (validation) | Execute | Pending |
-| M2-11 | P1: Rename Account (GET by id) | Execute | Pending |
-| M2-12 | P1: Rename Account (PATCH) | Execute | Pending |
-| M2-13 | P1: Rename Account (holdings reflect name) | Execute | Pending |
-| M2-14 | P1: Archive Account (PATCH archive) | Execute | Pending |
-| M2-15 | P1: Archive Account (list filtering) | Execute | Pending |
-| M2-16 | P1: Archive Account (holding form + badge) | Execute | Pending |
-| M2-17 | P2: Filter Holdings (accountId query + link) | Execute | Pending |
-| M2-18 | P2: Filter Holdings (maturityAfter UI) | Execute | Pending |
-| M2-19 | P2: Filter Holdings (issuer client search) | Execute | Pending |
-| M2-20 | P2: Portfolio Summary (API + Home cards) | Execute | Pending |
-| M2-21 | P2: Portfolio Summary (cost basis) | Execute | Pending |
-| M2-22 | P2: Portfolio Summary (maturity ladder) | Execute | Pending |
+| M2-01 | P1: Create Bond Holding (nav + route) | Execute | Done |
+| M2-02 | P1: Create Bond Holding (submit + validation) | Execute | Done |
+| M2-03 | P1: Create Bond Holding (account select) | Execute | Done |
+| M2-04 | P1: Edit Bond Holding (load + route) | Execute | Done |
+| M2-05 | P1: Edit Bond Holding (PATCH) | Execute | Done |
+| M2-06 | P1: Edit Bond Holding (404) | Execute | Done |
+| M2-07 | P1: Delete Bond Holding (confirm + DELETE) | Execute | Done |
+| M2-08 | P1: Delete Bond Holding (409 with coupons) | Execute | Done |
+| M2-09 | P1: Create Account (web form) | Execute | Done |
+| M2-10 | P1: Create Account (validation) | Execute | Done |
+| M2-11 | P1: Rename Account (GET by id) | Execute | Done |
+| M2-12 | P1: Rename Account (PATCH) | Execute | Done |
+| M2-13 | P1: Rename Account (holdings reflect name) | Execute | Done |
+| M2-14 | P1: Archive Account (PATCH archive) | Execute | Done |
+| M2-15 | P1: Archive Account (list filtering) | Execute | Done |
+| M2-16 | P1: Archive Account (holding form + badge) | Execute | Done |
+| M2-17 | P2: Filter Holdings (accountId query + link) | Execute | Done |
+| M2-18 | P2: Filter Holdings (maturityAfter UI) | Execute | Done |
+| M2-19 | P2: Filter Holdings (issuer client search) | Execute | Done |
+| M2-20 | P2: Portfolio Summary (API + Home cards) | Execute | Done |
+| M2-21 | P2: Portfolio Summary (cost basis) | Execute | Done |
+| M2-22 | P2: Portfolio Summary (maturity ladder) | Execute | Done |
 | M2-23 | P3: Holding detail view (optional) | — | Deferred |
 
 **Coverage:** 23 total; 16 P1 (MVP); 6 P2; 1 P3
@@ -305,15 +305,15 @@ Forms SHALL follow `.specs/features/m1-scaffold/web-design.md` **Forms** section
 
 ## Success Criteria
 
-- [ ] User can add, edit, and delete a bond holding entirely through the web UI without external API tools
-- [ ] User can create, rename, and archive accounts through the web UI
-- [ ] Holdings can be filtered by account (URL + API) and maturity; issuer search works client-side
-- [ ] Home displays accurate portfolio summary and next 5 maturities from `GET /api/portfolio/summary`
-- [ ] `npm run test` passes across bonds-domain, api, and web packages
-- [ ] No regression in M1 read-only flows (list pages, CORS, design tokens)
+- [x] User can add, edit, and delete a bond holding entirely through the web UI without external API tools
+- [x] User can create, rename, and archive accounts through the web UI
+- [x] Holdings can be filtered by account (URL + API) and maturity; issuer search works client-side
+- [x] Home displays accurate portfolio summary and next 5 maturities from `GET /api/portfolio/summary`
+- [x] `npm run test` passes across bonds-domain, api, and web packages
+- [x] No regression in M1 read-only flows (list pages, CORS, design tokens)
 
 ---
 
 ## Next Phase
 
-Tasks complete → **Execute** (`.specs/features/m2-core/tasks.md` T1–T29). Start with T1 (migration).
+M2 complete. Next: **Specify M3** — coupon income & cash flows (`.specs/project/ROADMAP.md`).

@@ -86,7 +86,10 @@ describe('Accounts', () => {
     expect(screen.getByRole('heading', { name: 'Interactive Brokers' })).toBeInTheDocument();
     expect(screen.getByText('2 holdings')).toBeInTheDocument();
     expect(screen.getByText('1 holding')).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'View holdings' })).toHaveLength(2);
+    const viewHoldingsLinks = screen.getAllByRole('link', { name: 'View holdings' });
+    expect(viewHoldingsLinks).toHaveLength(2);
+    expect(viewHoldingsLinks[0]).toHaveAttribute('href', '/holdings?accountId=10');
+    expect(viewHoldingsLinks[1]).toHaveAttribute('href', '/holdings?accountId=11');
   });
 
   it('shows holdings error and avoids misleading zero counts when holdings fetch fails', () => {

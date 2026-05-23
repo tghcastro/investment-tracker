@@ -1,6 +1,6 @@
 # Roadmap
 
-**Current Milestone:** M1 — Platform & bond domain foundation
+**Current Milestone:** M3 — Coupon income & cash flows
 **Status:** Planning
 
 ---
@@ -9,22 +9,23 @@
 
 **Goal:** Runnable modular Node/TypeScript API and web shell with persistence and a bond holding model — no full UI polish required.
 **Target:** First bond can be created and retrieved via API (and minimal UI or API client).
+**Status:** Complete
 
 ### Features
 
-**Project scaffold** — PLANNED
+**Project scaffold** — DONE
 
 - Monorepo or package layout (API, web, shared types)
 - Dev tooling: TypeScript, lint, test runner
 - Health check and API bootstrap
 
-**Bond domain model** — PLANNED
+**Bond domain model** — DONE
 
 - Entities: Account (manual broker label), BondHolding, CouponPayment (or scheduled cash flow)
 - Validation for dates, rates, face value, maturity after purchase
 - Repository/service layer isolated from HTTP
 
-**Persistence** — PLANNED
+**Persistence** — DONE
 
 - Schema/migrations for accounts, holdings, coupon payments
 - Seed or fixture data for local development
@@ -35,19 +36,20 @@
 
 **Goal:** Users can manage all bond positions and group them by account without spreadsheets.
 **Target:** Complete CRUD for holdings and accounts in the web UI.
+**Status:** Complete
 
 ### Features
 
-**Account management** — PLANNED
+**Account management** — DONE
 
 - Create, rename, archive manual accounts (broker/custodian labels)
 
-**Bond holding CRUD** — PLANNED
+**Bond holding CRUD** — DONE
 
 - Add/edit/delete holdings with issuer, identifiers, face value, coupon terms, maturity, purchase details
 - List and filter holdings by account, maturity window, issuer
 
-**Bond portfolio summary** — PLANNED
+**Bond portfolio summary** — DONE
 
 - Aggregated face value and cost basis by account and total
 - Maturity ladder (upcoming maturities)

@@ -106,6 +106,21 @@ describe('Holdings', () => {
     expect(screen.getByRole('heading', { name: 'US Treasury' })).toBeInTheDocument();
   });
 
+  it('builds holdings API URL from maturityAfter search param', async () => {
+    const user = userEvent.setup();
+    mockDefaultApi('/api/holdings?maturityAfter=2028-01-01');
+
+    render(
+      <MemoryRouter>
+        <Holdings />
+      </MemoryRouter>
+    );
+
+    await user.type(screen.getByLabelText('Maturity after'), '2028-01-01');
+
+    expect(mockUseApi).toHaveBeenCalledWith('/api/holdings?maturityAfter=2028-01-01');
+  });
+
   it('filters rows client-side by issuer search', async () => {
     const user = userEvent.setup();
     mockDefaultApi();
