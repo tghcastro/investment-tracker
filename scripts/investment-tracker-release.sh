@@ -48,7 +48,7 @@ GH_RELEASE_DRAFT="${GH_RELEASE_DRAFT:-0}"
 GH_RELEASE_GENERATE_NOTES="${GH_RELEASE_GENERATE_NOTES:-0}"
 SKIP_GIT_CLEAN="${SKIP_GIT_CLEAN:-0}"
 
-info() { printf '[release] %s\n' "$1"; }
+info() { printf '[release] %s\n' "$1" >&2; }
 err() { printf '[release] ERROR: %s\n' "$1" >&2; }
 
 usage() {
