@@ -1,4 +1,4 @@
-# PRODUCTION compose — uses published Docker Hub images (tag 0.1.1).
+# PRODUCTION compose — uses published Docker Hub images (tag 0.2.0).
 #
 # Before first run, set a persistent data directory OUTSIDE this repo:
 #   export INVESTMENT_TRACKER_DATA_DIR=/var/lib/investment-tracker
@@ -16,7 +16,7 @@
 
 services:
   api:
-    image: tghcastro/investment-tracker:api-0.1.1
+    image: tghcastro/investment-tracker:api-0.2.0
     environment:
       DATABASE_URL: /data/data.db
       CORS_ORIGINS: http://localhost,http://127.0.0.1
@@ -40,7 +40,7 @@ services:
     restart: unless-stopped
 
   web:
-    image: tghcastro/investment-tracker:web-0.1.1
+    image: tghcastro/investment-tracker:web-0.2.0
     ports:
       - "80:80"
     depends_on:
