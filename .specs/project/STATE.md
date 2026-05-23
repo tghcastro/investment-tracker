@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-23
-**Current Work:** M3 coupon income & cash flows — spec drafted on branch `spec/m3-coupon-income` (see `.specs/features/m3-coupon-income/spec.md`)
+**Current Work:** M3 coupon income & cash flows — spec approved; next: design (`.specs/features/m3-coupon-income/design.md`)
 
 ---
 
@@ -131,7 +131,7 @@ _None yet._
 - [x] Release v0.1.0 + v0.1.1 — Hub images, GitHub releases; prod compose; prod seed fix (PR #10–#11) (2026-05-23)
 - [x] Update M4 roadmap scope — backup/restore + UX polish; import deferred (AD-008) (2026-05-23)
 - [x] Specify M3 — coupon income & cash flows — `.specs/features/m3-coupon-income/spec.md` (2026-05-23)
-- [ ] Approve M3 spec
+- [x] Approve M3 spec (2026-05-23)
 - [ ] Design M3 — `.specs/features/m3-coupon-income/design.md`
 - [ ] Create tasks for M3 — `.specs/features/m3-coupon-income/tasks.md`
 - [ ] Specify M4 — v1 polish (after M3)

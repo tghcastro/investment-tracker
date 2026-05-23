@@ -1,5 +1,7 @@
 # M3 — Coupon Income & Cash Flows Specification
 
+**Status:** Approved (2026-05-23)
+
 ## Problem Statement
 
 M2 delivers bond holdings and accounts CRUD, but coupon cash flows still live outside the app — typically in spreadsheets or broker statements. Users cannot record interest received, see income history, or plan upcoming coupon dates from the terms they already entered. M3 closes the income loop: link payments to holdings, view history by holding and period, and show simple upcoming expectations calculated from user-entered terms (not market data).
@@ -324,4 +326,4 @@ TopNav SHALL include **Income** linking to `/income`.
 
 ## Next Phase
 
-Spec draft complete. Next: **Review/approve spec** → **Design M3** (`.specs/features/m3-coupon-income/design.md`) → **Tasks** → **Execute**.
+Spec approved. Next: **Design M3** (`.specs/features/m3-coupon-income/design.md`) → **Tasks** → **Execute**.

@@ -60,7 +60,7 @@
 
 **Goal:** Track coupon payments against holdings and see income history.
 **Target:** Record payments and view per-holding and portfolio-level income.
-**Status:** Spec drafted — [`.specs/features/m3-coupon-income/spec.md`](../features/m3-coupon-income/spec.md)
+**Status:** Spec approved — [`.specs/features/m3-coupon-income/spec.md`](../features/m3-coupon-income/spec.md)
 
 ### Features
 
