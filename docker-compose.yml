@@ -9,6 +9,7 @@ services:
     environment:
       DATABASE_URL: /data/data.db
       CORS_ORIGINS: http://localhost,http://127.0.0.1
+      SEED_FIXTURES: "1"
     volumes:
       - ./data:/data
     expose:

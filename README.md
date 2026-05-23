@@ -106,7 +106,7 @@ make stop     # stop and remove containers
 
 | Service | Image build | Notes |
 | --- | --- | --- |
-| `api` | `docker/api/Dockerfile` | Runs migrations on start; DB at `/data/data.db` |
+| `api` | `docker/api/Dockerfile` | Runs migrations on start; seeds fixtures locally; DB at `/data/data.db` |
 | `web` | `docker/web/Dockerfile` | nginx on port 80; proxies `/api/` to the api service |
 
 Manual equivalent:
@@ -133,10 +133,14 @@ make logs-prod
 make stop-prod
 ```
 
+Production starts with an **empty database** (migrations only, no demo seed). If you previously ran prod against the same data directory, delete `$INVESTMENT_TRACKER_DATA_DIR/data/data.db` before restarting.
+
 | | Local (`make start`) | Production (`make start-prod`) |
 | --- | --- | --- |
 | Images | Built from source | `tghcastro/investment-tracker:api-0.1.0`, `:web-0.1.0` |
 | Database | `./data/data.db` | `$INVESTMENT_TRACKER_DATA_DIR/data/data.db` |
+| Fixture seed data | yes (demo accounts/holdings) | no — empty DB until you add data |
+| DEV badge | yes | no |
 | Use case | Try Docker locally | Real deploy; safe from repo deletes |
 
 ## Release (Docker Hub + GitHub)
