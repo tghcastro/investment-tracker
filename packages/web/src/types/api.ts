@@ -32,4 +32,41 @@ export interface ApiPortfolioSummary {
   maturityLadder: ApiPortfolioSummaryLadderItem[];
 }
 
+export type ApiCouponPayment = {
+  id: string;
+  bondHoldingId: string;
+  paymentDate: string;
+  amount: number;
+  recordedAt: string;
+};
+
+export type ApiIncomeSummaryByHolding = {
+  holdingId: string;
+  issuer: string;
+  totalReceived: number;
+  paymentCount: number;
+};
+
+export type ApiIncomeSummaryPaymentRow = {
+  id: string;
+  paymentDate: string;
+  amount: number;
+  holdingId: string;
+  issuer: string;
+};
+
+export interface ApiIncomeSummary {
+  totalReceived: number;
+  paymentCount: number;
+  byHolding: ApiIncomeSummaryByHolding[];
+  payments: ApiIncomeSummaryPaymentRow[];
+}
+
+export type ApiUpcomingCoupon = {
+  holdingId: string;
+  issuer: string;
+  estimatedDate: string;
+  estimatedAmount: number;
+};
+
 export type { CouponFrequency };

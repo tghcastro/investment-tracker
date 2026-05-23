@@ -5,6 +5,7 @@ import {
   holdingToFormValues,
   type HoldingFormSubmitPayload,
 } from '../components/HoldingForm';
+import { CouponPaymentsSection } from '../components/CouponPaymentsSection';
 import { ConfirmDialog } from '../components/forms';
 import { EmptyState, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi, useApiMutation } from '../hooks';
@@ -155,6 +156,8 @@ export default function HoldingFormPage({ mode }: HoldingFormPageProps) {
         onDelete={() => setDeleteOpen(true)}
         onCancel={() => navigate('/holdings')}
       />
+
+      {mode === 'edit' && holding ? <CouponPaymentsSection holding={holding} /> : null}
 
       <ConfirmDialog
         open={deleteOpen}

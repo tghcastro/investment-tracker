@@ -1,0 +1,23 @@
+.cb-coupon-payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cb-space-4);
+}
+
+.cb-coupon-payment-form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--cb-space-4);
+}
+
+.cb-coupon-payment-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cb-space-3);
+}
+
+@media (max-width: 640px) {
+  .cb-coupon-payment-form__grid {
+    grid-template-columns: 1fr;
+  }
+}

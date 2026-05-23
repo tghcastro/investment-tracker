@@ -1,0 +1,52 @@
+.cb-coupon-payments-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--cb-border-subtle);
+  border-radius: var(--cb-radius-md);
+  overflow: hidden;
+}
+
+.cb-coupon-payments-table__header,
+.cb-coupon-payments-table__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--cb-space-4);
+  align-items: center;
+  padding: var(--cb-space-3) var(--cb-space-4);
+}
+
+.cb-coupon-payments-table__header {
+  background: var(--cb-bg-subtle);
+  color: var(--cb-text-secondary);
+  font-size: var(--cb-font-size-sm);
+  font-weight: 600;
+}
+
+.cb-coupon-payments-table__row:not(:last-child) {
+  border-bottom: 1px solid var(--cb-border-subtle);
+}
+
+.cb-coupon-payments-table__actions {
+  display: flex;
+  gap: var(--cb-space-2);
+  justify-content: flex-end;
+}
+
+.cb-coupon-payments-table__actions-header {
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .cb-coupon-payments-table__header {
+    display: none;
+  }
+
+  .cb-coupon-payments-table__row {
+    grid-template-columns: 1fr;
+    gap: var(--cb-space-2);
+  }
+
+  .cb-coupon-payments-table__actions {
+    justify-content: flex-start;
+  }
+}

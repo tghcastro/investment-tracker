@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { CouponFrequency } from '../types/api';
 import type { ApiAccount } from '../types/api';
+import { parseDollarsToCents } from '../utils/money';
 import { FormField, Select, TextInput } from './forms';
 import { Button } from './ui/Button';
 import './HoldingForm.css';
@@ -76,18 +77,6 @@ function mergeFieldErrors(
     }
   }
   return merged;
-}
-
-function parseDollarsToCents(value: string): number | null {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return null;
-  }
-  const dollars = Number.parseFloat(trimmed);
-  if (!Number.isFinite(dollars) || dollars <= 0) {
-    return null;
-  }
-  return Math.round(dollars * 100);
 }
 
 function validate(values: HoldingFormValues): Record<string, string> {

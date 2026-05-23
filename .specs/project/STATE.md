@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-23
-**Current Work:** M3 coupon income — P1 backend API complete; next: P2 web payments (T15–T19)
+**Current Work:** M3 coupon income — P2 web payments complete; next: P3 income + ship (T20–T22)
 
 ---
 
@@ -137,7 +137,8 @@ _None yet._
 - [x] Create tasks for M3 — `.specs/features/m3-coupon-income/tasks.md` (2026-05-23)
 - [x] Approve M3 tasks → Execute P1 (2026-05-23)
 - [x] Implement M3 P1 — backend API T1–T14 (2026-05-23)
-- [ ] Implement M3 P2 — web payments T15–T19
+- [x] Implement M3 P2 — web payments T15–T19 (2026-05-23)
+- [ ] Implement M3 P3 — income + ship T20–T22
 - [ ] Specify M4 — v1 polish (after M3)
 
 ---
