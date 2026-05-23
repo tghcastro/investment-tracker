@@ -134,4 +134,16 @@ describe('TopNav responsive behavior', () => {
     expect(addLink).toHaveAttribute('href', '/holdings/new');
     expect(addLink.querySelector('button')).not.toBeDisabled();
   });
+
+  it('includes Income nav link to /income', () => {
+    mockMatchMedia(false);
+
+    render(
+      <MemoryRouter>
+        <TopNav />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
+  });
 });

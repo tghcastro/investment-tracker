@@ -20,6 +20,21 @@ vi.mock('../src/hooks/useApi', () => ({
         error: undefined,
       };
     }
+    if (url.startsWith('/api/portfolio/income-summary')) {
+      return {
+        data: {
+          totalReceived: 0,
+          paymentCount: 0,
+          byHolding: [],
+          payments: [],
+        },
+        loading: false,
+        error: undefined,
+      };
+    }
+    if (url.startsWith('/api/portfolio/upcoming-coupons')) {
+      return { data: [], loading: false, error: undefined };
+    }
     return {
       data: [],
       loading: false,
@@ -35,6 +50,7 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Investment Tracker' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
     expect(screen.getByRole('link', { name: 'Holdings' })).toHaveAttribute('href', '/holdings');
+    expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
     expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
     expect(screen.getByRole('heading', { name: 'Bond portfolio' })).toBeInTheDocument();
   });
@@ -51,5 +67,12 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Add account' })).toBeInTheDocument();
+  });
+
+  it('resolves /income route', () => {
+    window.history.pushState({}, '', '/income');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Coupon income' })).toBeInTheDocument();
   });
 });

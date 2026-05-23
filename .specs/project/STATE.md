@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-23
-**Current Work:** M3 coupon income — P2 web payments complete; next: P3 income + ship (T20–T22)
+**Current Work:** M3 coupon income complete on `m3-p3-income` — ready for PR/merge; next: M4 spec (backup/restore + UX polish)
 
 ---
 
@@ -138,8 +138,8 @@ _None yet._
 - [x] Approve M3 tasks → Execute P1 (2026-05-23)
 - [x] Implement M3 P1 — backend API T1–T14 (2026-05-23)
 - [x] Implement M3 P2 — web payments T15–T19 (2026-05-23)
-- [ ] Implement M3 P3 — income + ship T20–T22
-- [ ] Specify M4 — v1 polish (after M3)
+- [x] Implement M3 P3 — income + ship T20–T22 (2026-05-23)
+- [ ] Specify M4 — v1 polish (backup/restore + UX)
 
 ---
 
