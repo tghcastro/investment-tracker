@@ -1,8 +1,49 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ConfirmDialog, FormField, Select, TextInput } from '../src/components/forms';
+import { focusFirstFieldError } from '../src/utils/focusFirstFieldError';
+
+describe('focusFirstFieldError', () => {
+  it('focuses the first field in order that has an error', () => {
+    document.body.innerHTML = `
+      <input id="first-field" />
+      <input id="second-field" />
+    `;
+    const firstField = document.getElementById('first-field')!;
+    const secondField = document.getElementById('second-field')!;
+    const firstFocus = vi.spyOn(firstField, 'focus');
+    const secondFocus = vi.spyOn(secondField, 'focus');
+
+    focusFirstFieldError(
+      [
+        { id: 'first-field', errorKey: 'first' },
+        { id: 'second-field', errorKey: 'second' },
+      ],
+      { second: 'Second error', first: 'First error' }
+    );
+
+    expect(firstFocus).toHaveBeenCalledTimes(1);
+    expect(secondFocus).not.toHaveBeenCalled();
+  });
+
+  it('skips missing elements and focuses the next field with an error', () => {
+    document.body.innerHTML = `<input id="second-field" />`;
+    const secondField = document.getElementById('second-field')!;
+    const secondFocus = vi.spyOn(secondField, 'focus');
+
+    focusFirstFieldError(
+      [
+        { id: 'missing-field', errorKey: 'missing' },
+        { id: 'second-field', errorKey: 'second' },
+      ],
+      { missing: 'Missing error', second: 'Second error' }
+    );
+
+    expect(secondFocus).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('form primitives', () => {
   it('FormField renders label and error', () => {

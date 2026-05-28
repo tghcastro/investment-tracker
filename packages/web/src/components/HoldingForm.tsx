@@ -1,10 +1,23 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { CouponFrequency } from '../types/api';
 import type { ApiAccount } from '../types/api';
+import { focusFirstFieldError } from '../utils/focusFirstFieldError';
 import { parseDollarsToCents } from '../utils/money';
 import { FormField, Select, TextInput } from './forms';
 import { Button } from './ui/Button';
 import './HoldingForm.css';
+
+const HOLDING_FORM_FIELD_FOCUS_ORDER = [
+  { id: 'holding-account', errorKey: 'accountId' },
+  { id: 'holding-issuer', errorKey: 'issuer' },
+  { id: 'holding-face-value', errorKey: 'faceValue' },
+  { id: 'holding-coupon-rate', errorKey: 'couponRate' },
+  { id: 'holding-purchase-date', errorKey: 'purchaseDate' },
+  { id: 'holding-maturity-date', errorKey: 'maturityDate' },
+  { id: 'holding-isin', errorKey: 'isin' },
+  { id: 'holding-cusip', errorKey: 'cusip' },
+  { id: 'holding-purchase-price', errorKey: 'purchasePrice' },
+] as const;
 
 const COUPON_FREQUENCY_OPTIONS: { value: CouponFrequency; label: string }[] = [
   { value: 'semi-annual', label: 'Semi-annual' },
@@ -177,6 +190,21 @@ export function HoldingForm({
     }
     return mergeFieldErrors(submitted ? clientErrors : {}, serverFieldErrors);
   }, [clientErrors, serverFieldErrors, submitted]);
+
+  useEffect(() => {
+    if (Object.keys(fieldErrors).length === 0) {
+      return;
+    }
+    if (!submitted && !serverFieldErrors) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      focusFirstFieldError(HOLDING_FORM_FIELD_FOCUS_ORDER, fieldErrors);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [fieldErrors, submitted, serverFieldErrors]);
 
   const accountOptions = useMemo(
     () => [

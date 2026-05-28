@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { focusFirstFieldError } from '../utils/focusFirstFieldError';
 import { FormField, TextInput } from './forms';
 import { Button } from './ui/Button';
 import './AccountForm.css';
@@ -24,6 +25,11 @@ export interface AccountFormProps {
   onArchive?: () => void;
   onCancel: () => void;
 }
+
+const ACCOUNT_FORM_FIELD_FOCUS_ORDER = [
+  { id: 'account-name', errorKey: 'name' },
+  { id: 'account-description', errorKey: 'description' },
+] as const;
 
 export const EMPTY_ACCOUNT_FORM_VALUES: AccountFormValues = {
   name: '',
@@ -83,6 +89,21 @@ export function AccountForm({
     }
     return mergeFieldErrors(submitted ? clientErrors : {}, serverFieldErrors);
   }, [clientErrors, serverFieldErrors, submitted]);
+
+  useEffect(() => {
+    if (Object.keys(fieldErrors).length === 0) {
+      return;
+    }
+    if (!submitted && !serverFieldErrors) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      focusFirstFieldError(ACCOUNT_FORM_FIELD_FOCUS_ORDER, fieldErrors);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [fieldErrors, submitted, serverFieldErrors]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -36,6 +36,24 @@ describe('HoldingForm', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it('focuses the account field on client validation failure', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <HoldingForm
+        accounts={sampleAccounts}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Save holding' }));
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByLabelText('Account'));
+    });
+  });
+
   it('merges server field errors', () => {
     render(
       <HoldingForm
@@ -55,5 +73,28 @@ describe('HoldingForm', () => {
     );
 
     expect(screen.getByText('Account is archived')).toBeInTheDocument();
+  });
+
+  it('focuses the first server error field when client validation is clean', async () => {
+    render(
+      <HoldingForm
+        accounts={sampleAccounts}
+        initialValues={{
+          accountId: '10',
+          issuer: 'US Treasury',
+          faceValue: '1000',
+          couponRate: '4.25',
+          maturityDate: '2030-01-01',
+          purchaseDate: '2024-01-01',
+        }}
+        serverFieldErrors={{ accountId: ['Account is archived'] }}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByLabelText('Account'));
+    });
   });
 });
