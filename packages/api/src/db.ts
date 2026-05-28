@@ -19,8 +19,12 @@ export const db = createConnection();
 
 export type Database = typeof db;
 
-function getSqliteClient(database: Database): BetterSqlite3.Database {
-  return (database.session as { client: BetterSqlite3.Database }).client;
+type DatabaseWithSession = Database & {
+  session: { client: BetterSqlite3.Database };
+};
+
+export function getSqliteClient(database: Database): BetterSqlite3.Database {
+  return (database as DatabaseWithSession).session.client;
 }
 
 export function getDatabaseDirectory(dbFilePath: string): string {

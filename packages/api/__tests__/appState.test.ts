@@ -32,7 +32,7 @@ describe('createAppState', () => {
     const database = createConnection(dbFile);
     migrate(database, { migrationsFolder });
 
-    state = createAppState(database);
+    state = createAppState(database, dbFile);
     const repoBefore = state.getRepo();
     const inserted = await repoBefore.insertAccount({
       name: 'Persisted Account',
