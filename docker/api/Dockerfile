@@ -34,6 +34,9 @@ COPY docker/api/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
 
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
+
 ENV NODE_ENV=production
 ENV DATABASE_URL=/data/data.db
 

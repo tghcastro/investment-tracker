@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { FormField, TextInput } from './forms';
 import { Button } from './ui/Button';
+import { focusFirstFieldError } from '../utils/focusFirstFieldError';
 import { parseDollarsToCents } from '../utils/money';
 import './CouponPaymentForm.css';
 
@@ -22,6 +23,11 @@ export interface CouponPaymentFormProps {
   onSubmit: (payload: CouponPaymentFormSubmitPayload) => void;
   onCancel?: () => void;
 }
+
+const COUPON_PAYMENT_FORM_FIELD_FOCUS_ORDER = [
+  { id: 'payment-date', errorKey: 'paymentDate' },
+  { id: 'payment-amount', errorKey: 'amount' },
+] as const;
 
 export const EMPTY_COUPON_PAYMENT_FORM_VALUES: CouponPaymentFormValues = {
   paymentDate: '',
@@ -104,6 +110,21 @@ export function CouponPaymentForm({
     }
     return mergeFieldErrors(submitted ? clientErrors : {}, serverFieldErrors);
   }, [clientErrors, serverFieldErrors, submitted]);
+
+  useEffect(() => {
+    if (Object.keys(fieldErrors).length === 0) {
+      return;
+    }
+    if (!submitted && !serverFieldErrors) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      focusFirstFieldError(COUPON_PAYMENT_FORM_FIELD_FOCUS_ORDER, fieldErrors);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [fieldErrors, submitted, serverFieldErrors]);
 
   const handleChange = <K extends keyof CouponPaymentFormValues>(
     key: K,

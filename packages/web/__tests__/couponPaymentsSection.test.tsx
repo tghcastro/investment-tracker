@@ -44,6 +44,19 @@ describe('CouponPaymentsSection', () => {
     vi.unstubAllGlobals();
   });
 
+  it('shows skeleton panel while loading payments', () => {
+    vi.mocked(fetch).mockImplementation(
+      () => new Promise(() => {
+        /* never resolves */
+      })
+    );
+
+    render(<CouponPaymentsSection holding={sampleHolding} />);
+
+    expect(screen.getByLabelText('Loading payments')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByText('Loading payments…')).not.toBeInTheDocument();
+  });
+
   it('shows empty state when no payments', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(jsonResponse([]));
 
@@ -62,6 +75,18 @@ describe('CouponPaymentsSection', () => {
     expect(await screen.findByText('$212.50')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Record payment' }));
     expect(screen.getByRole('heading', { name: 'Record payment' })).toBeInTheDocument();
+  });
+
+  it('adds data-label attributes on payment cells for mobile card layout', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(samplePayments));
+
+    render(<CouponPaymentsSection holding={sampleHolding} />);
+
+    const table = await screen.findByRole('table', { name: 'Coupon payments' });
+    const cells = within(table).getAllByRole('cell');
+    expect(cells[0]).toHaveAttribute('data-label', 'Date');
+    expect(cells[1]).toHaveAttribute('data-label', 'Amount');
+    expect(cells[2]).toHaveAttribute('data-label', 'Actions');
   });
 
   it('creates payment and refreshes list', async () => {

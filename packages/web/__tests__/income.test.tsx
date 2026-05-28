@@ -65,6 +65,82 @@ describe('Income', () => {
     expect(screen.getAllByRole('link', { name: 'US Treasury' })[0]).toHaveAttribute('href', '/holdings/1');
   });
 
+  it('adds data-label attributes on table cells for mobile card layout', () => {
+    const { from, to } = currentUtcCalendarYearRangeStrings();
+    mockUseApi.mockImplementation((url: string) => {
+      if (url === `/api/portfolio/income-summary?from=${from}&to=${to}`) {
+        return { data: sampleIncome, loading: false, error: undefined };
+      }
+      return { data: undefined, loading: false, error: undefined };
+    });
+
+    render(
+      <MemoryRouter>
+        <Income />
+      </MemoryRouter>
+    );
+
+    const byHolding = screen.getByLabelText('Income by holding');
+    const byHoldingCells = within(byHolding).getAllByRole('cell');
+    expect(byHoldingCells[0]).toHaveAttribute('data-label', 'Issuer');
+    expect(byHoldingCells[1]).toHaveAttribute('data-label', 'Total received');
+    expect(byHoldingCells[2]).toHaveAttribute('data-label', 'Payments');
+
+    const allPayments = screen.getByLabelText('All coupon payments');
+    const paymentCells = within(allPayments).getAllByRole('cell');
+    expect(paymentCells[0]).toHaveAttribute('data-label', 'Date');
+    expect(paymentCells[1]).toHaveAttribute('data-label', 'Issuer');
+    expect(paymentCells[2]).toHaveAttribute('data-label', 'Amount');
+  });
+
+  it('shows summary skeleton on initial load', () => {
+    mockUseApi.mockReturnValue({ data: undefined, loading: true, error: undefined });
+
+    render(
+      <MemoryRouter>
+        <Income />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByLabelText('Loading income summary')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByLabelText('Income summary')).not.toBeInTheDocument();
+  });
+
+  it('shows skeleton sections while refetching after period change', async () => {
+    const user = userEvent.setup();
+
+    mockUseApi.mockImplementation((url: string) => {
+      if (url.includes('from=2025-01-01') && url.includes('to=2025-06-30')) {
+        return { data: sampleIncome, loading: true, error: undefined };
+      }
+      const { from, to } = currentUtcCalendarYearRangeStrings();
+      if (url === `/api/portfolio/income-summary?from=${from}&to=${to}`) {
+        return { data: sampleIncome, loading: false, error: undefined };
+      }
+      return { data: undefined, loading: false, error: undefined };
+    });
+
+    render(
+      <MemoryRouter>
+        <Income />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByLabelText('Income summary')).toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText('From'));
+    await user.type(screen.getByLabelText('From'), '2025-01-01');
+    await user.clear(screen.getByLabelText('To'));
+    await user.type(screen.getByLabelText('To'), '2025-06-30');
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Loading income summary')).toHaveAttribute('aria-busy', 'true');
+    });
+    expect(screen.getByLabelText('Loading income by holding')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByLabelText('Loading all coupon payments')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByLabelText('Income summary')).not.toBeInTheDocument();
+  });
+
   it('refetches when period filter changes', async () => {
     const user = userEvent.setup();
     const requestedUrls: string[] = [];

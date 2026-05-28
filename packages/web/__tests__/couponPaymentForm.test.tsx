@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -16,6 +16,18 @@ describe('CouponPaymentForm', () => {
     expect(screen.getByText('Payment date required')).toBeInTheDocument();
     expect(screen.getByText('Amount must be positive')).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('focuses the payment date field on client validation failure', async () => {
+    const user = userEvent.setup();
+
+    render(<CouponPaymentForm onSubmit={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: 'Save payment' }));
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByLabelText('Payment date'));
+    });
   });
 
   it('calls onSubmit with cents and ISO date when valid', async () => {
@@ -44,5 +56,19 @@ describe('CouponPaymentForm', () => {
     );
 
     expect(screen.getByText('Payment date is outside holding term')).toBeInTheDocument();
+  });
+
+  it('focuses the first server error field when client validation is clean', async () => {
+    render(
+      <CouponPaymentForm
+        initialValues={{ paymentDate: '2026-03-15', amount: '212.50' }}
+        serverFieldErrors={{ paymentDate: ['Payment date is outside holding term'] }}
+        onSubmit={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByLabelText('Payment date'));
+    });
   });
 });

@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/m4-v1-polish/design.md`  
 **Spec**: `.specs/features/m4-v1-polish/spec.md`  
-**Status**: P2 complete (2026-05-28) — P3 UX polish next
+**Status**: P3 complete (2026-05-28) — M4 ready for v1.0.0 release
 
 ---
 
@@ -636,4 +636,4 @@ P3 Ship: T19 → T20 [P] → T21 → T22 → T23
 
 ## Next Phase
 
-**Approve tasks** → **Execute P1** (`m4-p1-backup-api` branch).
+**M4 complete** — user triggers v1.0.0 release via `scripts/investment-tracker-release.sh` (tag, GitHub release, Docker Hub push).
