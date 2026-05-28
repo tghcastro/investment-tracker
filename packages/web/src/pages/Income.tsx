@@ -8,6 +8,7 @@ import {
   currentUtcCalendarYearRangeStrings,
   incomeSummaryUrl,
 } from '../utils/incomePeriod';
+import './Home.css';
 import './Income.css';
 
 export default function Income() {
@@ -20,6 +21,7 @@ export default function Income() {
   );
 
   const hasPayments = Boolean(summary && summary.paymentCount > 0);
+  const isRefetch = loading && summary !== undefined;
 
   return (
     <div className="cb-income">
@@ -55,7 +57,11 @@ export default function Income() {
       {error ? <ErrorBanner message={error} /> : null}
 
       {loading ? (
-        <div className="cb-income__summary cb-income__summary--loading" aria-busy="true">
+        <div
+          className="cb-income__summary cb-income__summary--loading"
+          aria-busy="true"
+          aria-label="Loading income summary"
+        >
           <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
           <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
         </div>
@@ -83,6 +89,25 @@ export default function Income() {
         />
       ) : null}
 
+      {isRefetch && summary && summary.byHolding.length > 0 ? (
+        <section
+          className="cb-income__section cb-income__section--loading"
+          aria-busy="true"
+          aria-label="Loading income by holding"
+        >
+          <div className="cb-income__section-skeleton-title" />
+          <div className="cb-income__table">
+            {Array.from({ length: 2 }, (_, index) => (
+              <div key={index} className="cb-income__table-skeleton-row">
+                <div className="cb-income__table-skeleton-cell cb-income__table-skeleton-cell--wide" />
+                <div className="cb-income__table-skeleton-cell" />
+                <div className="cb-income__table-skeleton-cell cb-income__table-skeleton-cell--narrow" />
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {!loading && !error && summary && summary.byHolding.length > 0 ? (
         <section className="cb-income__section" aria-label="Income by holding">
           <h2 className="cb-income__section-title">By holding</h2>
@@ -94,17 +119,36 @@ export default function Income() {
             </div>
             {summary.byHolding.map((row) => (
               <div key={row.holdingId} className="cb-income__table-row" role="row">
-                <span role="cell">
+                <span role="cell" data-label="Issuer">
                   <Link to={`/holdings/${row.holdingId}`} className="cb-income__holding-link">
                     {row.issuer}
                   </Link>
                 </span>
-                <span role="cell" className="cb-number-display">
+                <span role="cell" data-label="Total received" className="cb-number-display">
                   {formatCurrency(row.totalReceived)}
                 </span>
-                <span role="cell" className="cb-number-display">
+                <span role="cell" data-label="Payments" className="cb-number-display">
                   {row.paymentCount}
                 </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {isRefetch && summary && summary.payments.length > 0 ? (
+        <section
+          className="cb-income__section cb-income__section--loading"
+          aria-busy="true"
+          aria-label="Loading all coupon payments"
+        >
+          <div className="cb-income__section-skeleton-title" />
+          <div className="cb-income__table cb-income__table--payments">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="cb-income__table-skeleton-row cb-income__table-skeleton-row--payments">
+                <div className="cb-income__table-skeleton-cell" />
+                <div className="cb-income__table-skeleton-cell cb-income__table-skeleton-cell--wide" />
+                <div className="cb-income__table-skeleton-cell" />
               </div>
             ))}
           </div>
@@ -122,13 +166,15 @@ export default function Income() {
             </div>
             {summary.payments.map((payment) => (
               <div key={payment.id} className="cb-income__table-row" role="row">
-                <span role="cell">{formatDate(payment.paymentDate)}</span>
-                <span role="cell">
+                <span role="cell" data-label="Date">
+                  {formatDate(payment.paymentDate)}
+                </span>
+                <span role="cell" data-label="Issuer">
                   <Link to={`/holdings/${payment.holdingId}`} className="cb-income__holding-link">
                     {payment.issuer}
                   </Link>
                 </span>
-                <span role="cell" className="cb-number-display">
+                <span role="cell" data-label="Amount" className="cb-number-display">
                   {formatCurrency(payment.amount)}
                 </span>
               </div>

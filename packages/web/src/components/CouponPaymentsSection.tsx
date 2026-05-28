@@ -25,6 +25,24 @@ function couponRateToDecimal(rate: number): number {
   return rate <= 1 ? rate : rate / 100;
 }
 
+function CouponPaymentsSectionSkeleton() {
+  return (
+    <div
+      className="cb-coupon-payments-section__skeleton"
+      aria-busy="true"
+      aria-label="Loading payments"
+    >
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="cb-coupon-payments-section__skeleton-row">
+          <div className="cb-coupon-payments-section__skeleton-cell cb-coupon-payments-section__skeleton-cell--date" />
+          <div className="cb-coupon-payments-section__skeleton-cell cb-coupon-payments-section__skeleton-cell--amount" />
+          <div className="cb-coupon-payments-section__skeleton-cell cb-coupon-payments-section__skeleton-cell--actions" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function getExpectedPaymentCents(holding: ApiBondHolding): number | null {
   if (!holding.faceValue || holding.faceValue <= 0) {
     return null;
@@ -154,11 +172,7 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
       {listError ? <ErrorBanner message={listError} /> : null}
       {deleteMutation.error ? <ErrorBanner message={deleteMutation.error} /> : null}
 
-      {listLoading ? (
-        <p className="cb-coupon-payments-section__loading cb-body-sm" aria-busy="true">
-          Loading payments…
-        </p>
-      ) : null}
+      {listLoading ? <CouponPaymentsSectionSkeleton /> : null}
 
       {!listLoading && mode === 'list' && payments.length === 0 ? (
         <EmptyState

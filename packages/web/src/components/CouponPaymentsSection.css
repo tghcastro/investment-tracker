@@ -27,8 +27,41 @@
   color: var(--cb-body);
 }
 
-.cb-coupon-payments-section__loading {
-  color: var(--cb-body);
+.cb-coupon-payments-section__skeleton {
+  border: 1px solid var(--cb-hairline);
+  border-radius: var(--cb-radius-md);
+  overflow: hidden;
+}
+
+.cb-coupon-payments-section__skeleton-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--cb-space-base);
+  align-items: center;
+  padding: var(--cb-space-sm) var(--cb-space-base);
+}
+
+.cb-coupon-payments-section__skeleton-row:not(:last-child) {
+  border-bottom: 1px solid var(--cb-hairline);
+}
+
+.cb-coupon-payments-section__skeleton-cell {
+  height: 14px;
+  background-color: var(--cb-surface-strong);
+  border-radius: var(--cb-radius-md);
+}
+
+.cb-coupon-payments-section__skeleton-cell--date {
+  width: 96px;
+}
+
+.cb-coupon-payments-section__skeleton-cell--amount {
+  width: 72px;
+}
+
+.cb-coupon-payments-section__skeleton-cell--actions {
+  width: 120px;
+  justify-self: end;
 }
 
 @media (max-width: 640px) {

@@ -49,6 +49,49 @@
   border-radius: var(--cb-radius-xl);
 }
 
+.cb-income__section--loading {
+  min-height: 160px;
+}
+
+.cb-income__section-skeleton-title {
+  width: 140px;
+  height: 20px;
+  margin-bottom: var(--cb-space-lg);
+  background-color: var(--cb-surface-strong);
+  border-radius: var(--cb-radius-md);
+}
+
+.cb-income__table-skeleton-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 0.75fr;
+  gap: var(--cb-space-base);
+  align-items: center;
+  padding: var(--cb-space-base) 0;
+}
+
+.cb-income__table-skeleton-row--payments {
+  grid-template-columns: 1fr 1.5fr 1fr;
+}
+
+.cb-income__table-skeleton-row:not(:last-child) {
+  border-bottom: 1px solid var(--cb-hairline);
+}
+
+.cb-income__table-skeleton-cell {
+  height: 14px;
+  width: 64px;
+  background-color: var(--cb-surface-strong);
+  border-radius: var(--cb-radius-md);
+}
+
+.cb-income__table-skeleton-cell--wide {
+  width: 120px;
+}
+
+.cb-income__table-skeleton-cell--narrow {
+  width: 48px;
+}
+
 .cb-income__section-title {
   margin: 0 0 var(--cb-space-lg);
   font-family: var(--cb-font-title-md-family);
@@ -97,12 +140,52 @@
     grid-template-columns: 1fr;
   }
 
+  .cb-income__table {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cb-space-base);
+  }
+
   .cb-income__table-header {
     display: none;
   }
 
-  .cb-income__table-row {
-    grid-template-columns: 1fr;
+  .cb-income__table-row,
+  .cb-income__table-skeleton-row {
+    display: flex;
+    flex-direction: column;
     gap: var(--cb-space-sm);
+    padding: var(--cb-space-base);
+    background-color: var(--cb-canvas);
+    border: 1px solid var(--cb-hairline);
+    border-radius: var(--cb-radius-md);
+  }
+
+  .cb-income__table-row:not(:last-child),
+  .cb-income__table-skeleton-row:not(:last-child) {
+    border-bottom: 1px solid var(--cb-hairline);
+  }
+
+  .cb-income__table-row [role='cell'] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cb-space-xs);
+    min-width: 0;
+  }
+
+  .cb-income__table-row [role='cell']::before {
+    content: attr(data-label);
+    font-family: var(--cb-font-caption-strong-family);
+    font-size: var(--cb-font-caption-strong-size);
+    font-weight: var(--cb-font-caption-strong-weight);
+    color: var(--cb-muted);
+  }
+
+  .cb-income__table-row [role='cell']:first-child {
+    font-family: var(--cb-font-title-md-family);
+    font-size: var(--cb-font-title-md-size);
+    font-weight: var(--cb-font-title-md-weight);
+    line-height: var(--cb-font-title-md-line-height);
+    letter-spacing: var(--cb-font-title-md-letter-spacing);
   }
 }
