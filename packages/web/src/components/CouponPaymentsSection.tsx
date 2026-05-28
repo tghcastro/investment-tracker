@@ -6,7 +6,7 @@ import {
   type CouponPaymentFormSubmitPayload,
 } from './CouponPaymentForm';
 import { CouponPaymentsTable } from './CouponPaymentsTable';
-import { ConfirmDialog } from './forms';
+import { ConfirmDialog, FormDialog } from './forms';
 import { Button, EmptyState, ErrorBanner } from './ui';
 import { useApiMutation } from '../hooks';
 import type { ApiBondHolding, ApiCouponPayment } from '../types/api';
@@ -184,26 +184,35 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
         />
       ) : null}
 
-      {mode === 'add' ? (
-        <div className="cb-coupon-payments-section__form-panel">
-          <h3 className="cb-coupon-payments-section__form-title">Record payment</h3>
-          {activeError ? <ErrorBanner message={activeError} /> : null}
-          <CouponPaymentForm
-            submitLabel="Record payment"
-            loading={formLoading}
-            serverFieldErrors={activeFieldErrors}
-            onSubmit={(payload) => {
-              void handleCreate(payload);
-            }}
-            onCancel={() => setMode('list')}
-          />
-        </div>
-      ) : null}
+      <FormDialog
+        open={mode === 'add'}
+        title="Record payment"
+        titleId="coupon-payment-add-title"
+        onClose={() => setMode('list')}
+      >
+        {activeError ? <ErrorBanner message={activeError} /> : null}
+        <CouponPaymentForm
+          submitLabel="Record payment"
+          loading={formLoading}
+          serverFieldErrors={activeFieldErrors}
+          onSubmit={(payload) => {
+            void handleCreate(payload);
+          }}
+          onCancel={() => setMode('list')}
+        />
+      </FormDialog>
 
-      {mode === 'edit' && editingPayment ? (
-        <div className="cb-coupon-payments-section__form-panel">
-          <h3 className="cb-coupon-payments-section__form-title">Edit payment</h3>
-          {activeError ? <ErrorBanner message={activeError} /> : null}
+      <FormDialog
+        open={mode === 'edit' && editingPayment !== null}
+        title="Edit payment"
+        titleId="coupon-payment-edit-title"
+        onClose={() => {
+          setMode('list');
+          setEditingPayment(null);
+        }}
+      >
+        {activeError ? <ErrorBanner message={activeError} /> : null}
+        {editingPayment ? (
           <CouponPaymentForm
             initialValues={paymentToFormValues(editingPayment)}
             submitLabel="Save changes"
@@ -217,8 +226,8 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
               setEditingPayment(null);
             }}
           />
-        </div>
-      ) : null}
+        ) : null}
+      </FormDialog>
 
       <ConfirmDialog
         open={deleteTarget !== null}

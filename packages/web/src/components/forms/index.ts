@@ -1,5 +1,7 @@
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
+export { FormDialog } from './FormDialog';
+export type { FormDialogProps } from './FormDialog';
 export { FormField } from './FormField';
 export type { FormFieldProps } from './FormField';
 export { Select } from './Select';

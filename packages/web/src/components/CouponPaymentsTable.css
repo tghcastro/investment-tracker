@@ -1,7 +1,7 @@
 .cb-coupon-payments-table {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--cb-border-subtle);
+  border: 1px solid var(--cb-hairline);
   border-radius: var(--cb-radius-md);
   overflow: hidden;
 }
@@ -10,25 +10,26 @@
 .cb-coupon-payments-table__row {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
-  gap: var(--cb-space-4);
+  gap: var(--cb-space-base);
   align-items: center;
-  padding: var(--cb-space-3) var(--cb-space-4);
+  padding: var(--cb-space-sm) var(--cb-space-base);
 }
 
 .cb-coupon-payments-table__header {
-  background: var(--cb-bg-subtle);
-  color: var(--cb-text-secondary);
-  font-size: var(--cb-font-size-sm);
+  background: var(--cb-surface-soft);
+  color: var(--cb-body);
+  font-family: var(--cb-font-body-sm-family);
+  font-size: var(--cb-font-body-sm-size);
   font-weight: 600;
 }
 
 .cb-coupon-payments-table__row:not(:last-child) {
-  border-bottom: 1px solid var(--cb-border-subtle);
+  border-bottom: 1px solid var(--cb-hairline);
 }
 
 .cb-coupon-payments-table__actions {
   display: flex;
-  gap: var(--cb-space-2);
+  gap: var(--cb-space-xs);
   justify-content: flex-end;
 }
 
@@ -43,7 +44,7 @@
 
   .cb-coupon-payments-table__row {
     grid-template-columns: 1fr;
-    gap: var(--cb-space-2);
+    gap: var(--cb-space-xs);
   }
 
   .cb-coupon-payments-table__actions {
