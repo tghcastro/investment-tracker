@@ -3,6 +3,11 @@
   background-color: var(--cb-surface-soft);
   padding: var(--cb-space-base) var(--cb-space-lg);
   border-radius: var(--cb-radius-md);
+  margin-bottom: var(--cb-space-base);
+}
+
+.cb-error-banner + .cb-error-banner {
+  margin-top: var(--cb-space-base);
 }
 
 .cb-error-banner__message {

@@ -4,6 +4,7 @@ import { Button, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi } from '../hooks';
 import type { ApiSystemInfo } from '../types/api';
 import { formatDateTime } from '../utils/format';
+import { parseApiErrorResponse } from '../utils/parseApiError';
 import './Home.css';
 import './Settings.css';
 
@@ -61,7 +62,7 @@ export default function Settings() {
     try {
       const response = await fetch(`${API_BASE}/api/system/backup`);
       if (!response.ok) {
-        throw new Error(`Request failed (${response.status})`);
+        throw new Error(await parseApiErrorResponse(response));
       }
 
       const blob = await response.blob();
@@ -128,7 +129,7 @@ export default function Settings() {
       });
 
       if (!response.ok) {
-        throw new Error(`Request failed (${response.status})`);
+        throw new Error(await parseApiErrorResponse(response));
       }
 
       window.location.href = '/';

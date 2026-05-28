@@ -162,4 +162,69 @@ describe('Settings', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  it('restore 400 shows descriptive validation message', async () => {
+    const user = userEvent.setup();
+    mockSystemInfo();
+
+    const restoreFile = new File(['not-sqlite'], 'bad.db', {
+      type: 'application/octet-stream',
+    });
+
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid backup file',
+          fields: { file: ['File is not a valid SQLite database'] },
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    );
+
+    render(<Settings />);
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await user.upload(fileInput, restoreFile);
+    await user.click(screen.getByRole('button', { name: 'Restore' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Invalid backup file: File is not a valid SQLite database')
+      ).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
+
+  it('restore 413 shows payload too large message', async () => {
+    const user = userEvent.setup();
+    mockSystemInfo();
+
+    const restoreFile = new File(['x'.repeat(1024)], 'huge.db', {
+      type: 'application/octet-stream',
+    });
+
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          code: 'PAYLOAD_TOO_LARGE',
+          message: 'Uploaded backup file is too large',
+        }),
+        { status: 413, headers: { 'Content-Type': 'application/json' } }
+      )
+    );
+
+    render(<Settings />);
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await user.upload(fileInput, restoreFile);
+    await user.click(screen.getByRole('button', { name: 'Restore' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Uploaded backup file is too large')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  });
 });
