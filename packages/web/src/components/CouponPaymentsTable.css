@@ -37,17 +37,50 @@
   text-align: right;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 639px) {
+  .cb-coupon-payments-table {
+    gap: var(--cb-space-base);
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    background: transparent;
+  }
+
   .cb-coupon-payments-table__header {
     display: none;
   }
 
   .cb-coupon-payments-table__row {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: var(--cb-space-sm);
+    padding: var(--cb-space-base);
+    background-color: var(--cb-canvas);
+    border: 1px solid var(--cb-hairline);
+    border-radius: var(--cb-radius-md);
+  }
+
+  .cb-coupon-payments-table__row:not(:last-child) {
+    border-bottom: 1px solid var(--cb-hairline);
+  }
+
+  .cb-coupon-payments-table__row [role='cell'] {
+    display: flex;
+    flex-direction: column;
     gap: var(--cb-space-xs);
+    min-width: 0;
+  }
+
+  .cb-coupon-payments-table__row [role='cell']::before {
+    content: attr(data-label);
+    font-family: var(--cb-font-caption-strong-family);
+    font-size: var(--cb-font-caption-strong-size);
+    font-weight: var(--cb-font-caption-strong-weight);
+    color: var(--cb-muted);
   }
 
   .cb-coupon-payments-table__actions {
+    flex-wrap: wrap;
     justify-content: flex-start;
   }
 }

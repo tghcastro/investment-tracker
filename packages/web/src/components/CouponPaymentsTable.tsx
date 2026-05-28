@@ -27,13 +27,13 @@ export function CouponPaymentsTable({
       </div>
       {payments.map((payment) => (
         <div key={payment.id} className="cb-coupon-payments-table__row" role="row">
-          <span role="cell" className="cb-coupon-payments-table__date">
+          <span role="cell" data-label="Date" className="cb-coupon-payments-table__date">
             {formatDate(payment.paymentDate)}
           </span>
-          <span role="cell" className="cb-coupon-payments-table__amount cb-number-display">
+          <span role="cell" data-label="Amount" className="cb-coupon-payments-table__amount cb-number-display">
             {formatCurrency(payment.amount)}
           </span>
-          <div role="cell" className="cb-coupon-payments-table__actions">
+          <div role="cell" data-label="Actions" className="cb-coupon-payments-table__actions">
             <Button
               type="button"
               variant="tertiary-text"
