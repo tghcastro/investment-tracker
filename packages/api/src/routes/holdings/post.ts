@@ -7,8 +7,9 @@ import {
   toApiBondHolding,
 } from './serialize.js';
 
-export function registerPostHolding(app: FastifyInstance, repo: Repo): void {
+export function registerPostHolding(app: FastifyInstance, getRepo: () => Repo): void {
   app.post('/api/holdings', async (request, reply) => {
+    const repo = getRepo();
     const parsed = createBondHoldingSchema.parse(request.body);
     const { couponRate, ...rest } = parsed;
 

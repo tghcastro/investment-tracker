@@ -1,9 +1,9 @@
 import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 
+import { createAppState } from './appState.js';
 import { db, type Database } from './db.js';
 import { registerErrorHandler } from './middleware/errors.js';
-import { createRepo } from './repo.js';
 import { registerArchiveAccount } from './routes/accounts/archive.js';
 import { registerGetAccountById } from './routes/accounts/get-by-id.js';
 import { registerAccountHoldings } from './routes/accounts/holdings.js';
@@ -42,7 +42,7 @@ export function getCorsOrigins(): string[] {
   return fromEnv?.length ? fromEnv : DEFAULT_CORS_ORIGINS;
 }
 
-export async function createServer(database: Database = db): Promise<FastifyInstance> {
+export async function createServer(initialDb: Database = db): Promise<FastifyInstance> {
   const app = Fastify({ logger: true });
 
   const allowedOrigins = getCorsOrigins();
@@ -62,26 +62,27 @@ export async function createServer(database: Database = db): Promise<FastifyInst
 
   registerErrorHandler(app);
 
-  const repo = createRepo(database);
-  registerPostAccount(app, repo);
-  registerListAccounts(app, repo);
-  registerGetAccountById(app, repo);
-  registerPatchAccount(app, repo);
-  registerArchiveAccount(app, repo);
-  registerAccountHoldings(app, repo);
-  registerPostHolding(app, repo);
-  registerListHoldings(app, repo);
-  registerGetHoldingById(app, repo);
-  registerPatchHolding(app, repo);
-  registerDeleteHolding(app, repo);
-  registerPortfolioSummary(app, repo);
-  registerPortfolioIncomeSummary(app, repo);
-  registerPortfolioUpcomingCoupons(app, repo);
-  registerPostCouponPayment(app, repo);
-  registerListCouponPayments(app, repo);
-  registerGetCouponPaymentById(app, repo);
-  registerPatchCouponPayment(app, repo);
-  registerDeleteCouponPayment(app, repo);
+  const state = createAppState(initialDb);
+  const getRepo = () => state.getRepo();
+  registerPostAccount(app, getRepo);
+  registerListAccounts(app, getRepo);
+  registerGetAccountById(app, getRepo);
+  registerPatchAccount(app, getRepo);
+  registerArchiveAccount(app, getRepo);
+  registerAccountHoldings(app, getRepo);
+  registerPostHolding(app, getRepo);
+  registerListHoldings(app, getRepo);
+  registerGetHoldingById(app, getRepo);
+  registerPatchHolding(app, getRepo);
+  registerDeleteHolding(app, getRepo);
+  registerPortfolioSummary(app, getRepo);
+  registerPortfolioIncomeSummary(app, getRepo);
+  registerPortfolioUpcomingCoupons(app, getRepo);
+  registerPostCouponPayment(app, getRepo);
+  registerListCouponPayments(app, getRepo);
+  registerGetCouponPaymentById(app, getRepo);
+  registerPatchCouponPayment(app, getRepo);
+  registerDeleteCouponPayment(app, getRepo);
 
   return app;
 }

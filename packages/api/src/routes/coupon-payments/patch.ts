@@ -6,8 +6,9 @@ import type { Repo } from '../../repo.js';
 import { toApiCouponPayment } from './serialize.js';
 import { assertPaymentDateWithinHoldingOrThrow } from './validate.js';
 
-export function registerPatchCouponPayment(app: FastifyInstance, repo: Repo): void {
+export function registerPatchCouponPayment(app: FastifyInstance, getRepo: () => Repo): void {
   app.patch('/api/coupon-payments/:id', async (request, reply) => {
+    const repo = getRepo();
     const { id } = request.params as { id: string };
     const parsed = updateCouponPaymentSchema.parse(request.body);
 

@@ -31,8 +31,9 @@ function currentUtcCalendarYearRange(): { from: Date; to: Date } {
   };
 }
 
-export function registerPortfolioIncomeSummary(app: FastifyInstance, repo: Repo): void {
+export function registerPortfolioIncomeSummary(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/portfolio/income-summary', async (request, reply) => {
+    const repo = getRepo();
     const { from: fromParam, to: toParam } = request.query as {
       from?: string;
       to?: string;

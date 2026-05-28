@@ -3,8 +3,9 @@ import type { FastifyInstance } from 'fastify';
 import type { Repo } from '../../repo.js';
 import { toApiBondHoldings } from '../holdings/serialize.js';
 
-export function registerAccountHoldings(app: FastifyInstance, repo: Repo): void {
+export function registerAccountHoldings(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/accounts/:id/holdings', async (request, reply) => {
+    const repo = getRepo();
     const { id } = request.params as { id: string };
 
     const holdings = await repo.listBondHoldingsByAccount(id);

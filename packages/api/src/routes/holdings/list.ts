@@ -31,8 +31,9 @@ function parseAccountId(value: string): { accountId: string } | { message: strin
   return { accountId: value };
 }
 
-export function registerListHoldings(app: FastifyInstance, repo: Repo): void {
+export function registerListHoldings(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/holdings', async (request, reply) => {
+    const repo = getRepo();
     const { maturityAfter, accountId } = request.query as {
       maturityAfter?: string;
       accountId?: string;

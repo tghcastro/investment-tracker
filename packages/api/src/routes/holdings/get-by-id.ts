@@ -4,8 +4,9 @@ import { NotFoundError } from '../../middleware/errors.js';
 import type { Repo } from '../../repo.js';
 import { toApiBondHolding } from './serialize.js';
 
-export function registerGetHoldingById(app: FastifyInstance, repo: Repo): void {
+export function registerGetHoldingById(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/holdings/:id', async (request, reply) => {
+    const repo = getRepo();
     const { id } = request.params as { id: string };
 
     const holding = await repo.getBondHolding(id);
