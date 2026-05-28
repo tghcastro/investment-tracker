@@ -1,7 +1,7 @@
 # State
 
-**Last Updated:** 2026-05-23
-**Current Work:** M3 coupon income complete on `m3-p3-income` — ready for PR/merge; next: M4 spec (backup/restore + UX polish)
+**Last Updated:** 2026-05-28
+**Current Work:** M4 v1 polish — P1 backup API done on `m4-p1-backup-api`; next: P2 settings UI (`m4-p2-settings`)
 
 ---
 
@@ -139,7 +139,12 @@ _None yet._
 - [x] Implement M3 P1 — backend API T1–T14 (2026-05-23)
 - [x] Implement M3 P2 — web payments T15–T19 (2026-05-23)
 - [x] Implement M3 P3 — income + ship T20–T22 (2026-05-23)
-- [ ] Specify M4 — v1 polish (backup/restore + UX)
+- [x] Approve M4 spec (2026-05-23)
+- [x] Approve M4 design (2026-05-23)
+- [x] Create tasks for M4 — `.specs/features/m4-v1-polish/tasks.md` (2026-05-23)
+- [x] Approve M4 tasks → Execute P1 (2026-05-28)
+- [x] Implement M4 P1 — backup API T1–T13 on `m4-p1-backup-api` (2026-05-28)
+- [ ] Implement M4 P2 — settings UI T14–T18
 
 ---
 

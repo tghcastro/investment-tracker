@@ -80,11 +80,11 @@
 
 **Goal:** Reliable day-to-day use for bond-only portfolios; users can inspect system state and back up or restore their data.
 **Target:** Declared v1 release for bonds-only scope.
-**Status:** Planned
+**Status:** In progress (P1 backup API complete on branch `m4-p1-backup-api`)
 
 ### Features
 
-**Backup & system info** — PLANNED
+**Backup & system info** — IN PROGRESS (API done; settings UI in P2)
 
 - Settings page: app version, database location (from config), last backup timestamp
 - Trigger backup → download SQLite snapshot (browser file download)
