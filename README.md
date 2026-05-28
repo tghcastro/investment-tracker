@@ -189,7 +189,7 @@ wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && make releas
 
 **What the release script does:**
 
-1. Build `api` and `web` Docker images
+1. Build `api` and `web` Docker images (`APP_VERSION` on the api image is set from the tag without the `v` prefix, e.g. `v1.0.0` → `1.0.0`, exposed via `GET /api/system/info`)
 2. Create an annotated git tag and push to `origin`
 3. Push images to Docker Hub:
    - `tghcastro/investment-tracker:api-<tag>`

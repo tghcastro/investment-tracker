@@ -186,11 +186,16 @@ push_git_tag() {
 
 build_docker_images() {
   local tag="$1"
+  local app_version="${tag#v}"
   local api_image="${DOCKER_IMAGE}:api-${tag}"
   local web_image="${DOCKER_IMAGE}:web-${tag}"
 
-  info "Building API -> ${api_image}"
-  docker build -f docker/api/Dockerfile -t "$api_image" .
+  info "Building API -> ${api_image} (APP_VERSION=${app_version})"
+  docker build \
+    -f docker/api/Dockerfile \
+    --build-arg "APP_VERSION=${app_version}" \
+    -t "$api_image" \
+    .
 
   info "Building web -> ${web_image}"
   docker build \
