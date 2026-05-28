@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/m4-v1-polish/design.md`  
 **Spec**: `.specs/features/m4-v1-polish/spec.md`  
-**Status**: P1 complete (2026-05-28) — P2 settings UI next
+**Status**: P2 complete (2026-05-28) — P3 UX polish next
 
 ---
 

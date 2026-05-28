@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-28
-**Current Work:** M4 v1 polish — P1 backup API done on `m4-p1-backup-api`; next: P2 settings UI (`m4-p2-settings`)
+**Current Work:** M4 v1 polish — P2 settings UI done on `m4-p2-settings`; next: P3 UX polish (`m4-p3-ship`)
 
 ---
 
@@ -144,7 +144,8 @@ _None yet._
 - [x] Create tasks for M4 — `.specs/features/m4-v1-polish/tasks.md` (2026-05-23)
 - [x] Approve M4 tasks → Execute P1 (2026-05-28)
 - [x] Implement M4 P1 — backup API T1–T13 on `m4-p1-backup-api` (2026-05-28)
-- [ ] Implement M4 P2 — settings UI T14–T18
+- [x] Implement M4 P2 — settings UI T14–T18 on `m4-p2-settings` (2026-05-28)
+- [ ] Implement M4 P3 — UX polish T19–T23
 
 ---
 
