@@ -21,6 +21,16 @@ export function formatDate(iso: string): string {
   }).format(new Date(iso));
 }
 
+export function formatDateTime(iso: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(iso));
+}
+
 export function issuerInitials(issuer: string): string {
   const words = issuer.trim().split(/\s+/).filter(Boolean);
   if (words.length >= 2) {

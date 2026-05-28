@@ -3,6 +3,7 @@ import { ConfirmDialog } from '../components/forms';
 import { Button, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi } from '../hooks';
 import type { ApiSystemInfo } from '../types/api';
+import { formatDateTime } from '../utils/format';
 import './Home.css';
 import './Settings.css';
 
@@ -174,7 +175,7 @@ export default function Settings() {
             <div className="cb-home__metric-card">
               <p className="cb-home__metric-label">Last backup</p>
               <p className="cb-home__metric-value">
-                {info.lastBackupAt ?? 'Never'}
+                {info.lastBackupAt ? formatDateTime(info.lastBackupAt) : 'Never'}
               </p>
             </div>
           </div>
