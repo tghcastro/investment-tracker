@@ -19,8 +19,9 @@ function parseBondHoldingId(value: string | undefined):
   return { bondHoldingId: value };
 }
 
-export function registerListCouponPayments(app: FastifyInstance, repo: Repo): void {
+export function registerListCouponPayments(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/coupon-payments', async (request, reply) => {
+    const repo = getRepo();
     const { bondHoldingId } = request.query as { bondHoldingId?: string };
     const parsed = parseBondHoldingId(bondHoldingId);
     if ('message' in parsed) {

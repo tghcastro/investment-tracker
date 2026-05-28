@@ -35,6 +35,17 @@ vi.mock('../src/hooks/useApi', () => ({
     if (url.startsWith('/api/portfolio/upcoming-coupons')) {
       return { data: [], loading: false, error: undefined };
     }
+    if (url.startsWith('/api/system/info')) {
+      return {
+        data: {
+          version: '1.0.0',
+          databasePath: '/data/investment-tracker.db',
+          lastBackupAt: null,
+        },
+        loading: false,
+        error: undefined,
+      };
+    }
     return {
       data: [],
       loading: false,
@@ -51,6 +62,7 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
     expect(screen.getByRole('link', { name: 'Holdings' })).toHaveAttribute('href', '/holdings');
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
     expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
     expect(screen.getByRole('heading', { name: 'Bond portfolio' })).toBeInTheDocument();
   });
@@ -74,5 +86,12 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Coupon income' })).toBeInTheDocument();
+  });
+
+  it('resolves /settings route', () => {
+    window.history.pushState({}, '', '/settings');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
   });
 });

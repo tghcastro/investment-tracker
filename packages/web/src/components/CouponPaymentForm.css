@@ -1,19 +1,19 @@
 .cb-coupon-payment-form {
   display: flex;
   flex-direction: column;
-  gap: var(--cb-space-4);
+  gap: var(--cb-space-lg);
 }
 
 .cb-coupon-payment-form__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--cb-space-4);
+  gap: var(--cb-space-base);
 }
 
 .cb-coupon-payment-form__actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--cb-space-3);
+  gap: var(--cb-space-xs);
 }
 
 @media (max-width: 640px) {

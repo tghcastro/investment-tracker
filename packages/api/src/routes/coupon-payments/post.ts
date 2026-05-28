@@ -6,8 +6,9 @@ import type { Repo } from '../../repo.js';
 import { toApiCouponPayment } from './serialize.js';
 import { assertPaymentDateWithinHoldingOrThrow } from './validate.js';
 
-export function registerPostCouponPayment(app: FastifyInstance, repo: Repo): void {
+export function registerPostCouponPayment(app: FastifyInstance, getRepo: () => Repo): void {
   app.post('/api/coupon-payments', async (request, reply) => {
+    const repo = getRepo();
     const parsed = createCouponPaymentSchema.parse(request.body);
 
     const holding = await repo.getBondHolding(parsed.bondHoldingId);

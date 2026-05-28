@@ -1,9 +1,10 @@
 import cors from '@fastify/cors';
+import multipart from '@fastify/multipart';
 import Fastify, { type FastifyInstance } from 'fastify';
 
-import { db, type Database } from './db.js';
+import { createAppState } from './appState.js';
+import { db, dbPath, type Database } from './db.js';
 import { registerErrorHandler } from './middleware/errors.js';
-import { createRepo } from './repo.js';
 import { registerArchiveAccount } from './routes/accounts/archive.js';
 import { registerGetAccountById } from './routes/accounts/get-by-id.js';
 import { registerAccountHoldings } from './routes/accounts/holdings.js';
@@ -23,8 +24,24 @@ import { registerPostCouponPayment } from './routes/coupon-payments/post.js';
 import { registerPortfolioIncomeSummary } from './routes/portfolio/income-summary.js';
 import { registerPortfolioSummary } from './routes/portfolio/summary.js';
 import { registerPortfolioUpcomingCoupons } from './routes/portfolio/upcoming-coupons.js';
+import { registerSystemBackup } from './routes/system/backup.js';
+import { registerSystemInfo } from './routes/system/info.js';
+import { registerSystemRestore } from './routes/system/restore.js';
 
 export const DEFAULT_PORT = 3000;
+
+const DEFAULT_RESTORE_MAX_BYTES = 32 * 1024 * 1024;
+
+export function parseRestoreMaxBytes(): number {
+  const raw = process.env.RESTORE_MAX_BYTES?.trim();
+  if (!raw) {
+    return DEFAULT_RESTORE_MAX_BYTES;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0
+    ? parsed
+    : DEFAULT_RESTORE_MAX_BYTES;
+}
 
 /** Dev web origins. Override with CORS_ORIGINS (comma-separated). */
 const DEFAULT_CORS_ORIGINS = [
@@ -42,10 +59,17 @@ export function getCorsOrigins(): string[] {
   return fromEnv?.length ? fromEnv : DEFAULT_CORS_ORIGINS;
 }
 
-export async function createServer(database: Database = db): Promise<FastifyInstance> {
+export async function createServer(
+  initialDb: Database = db,
+  databaseFilePath: string = dbPath
+): Promise<FastifyInstance> {
   const app = Fastify({ logger: true });
 
   const allowedOrigins = getCorsOrigins();
+
+  await app.register(multipart, {
+    limits: { fileSize: parseRestoreMaxBytes() },
+  });
 
   await app.register(cors, {
     origin: (origin, cb) => {
@@ -62,26 +86,32 @@ export async function createServer(database: Database = db): Promise<FastifyInst
 
   registerErrorHandler(app);
 
-  const repo = createRepo(database);
-  registerPostAccount(app, repo);
-  registerListAccounts(app, repo);
-  registerGetAccountById(app, repo);
-  registerPatchAccount(app, repo);
-  registerArchiveAccount(app, repo);
-  registerAccountHoldings(app, repo);
-  registerPostHolding(app, repo);
-  registerListHoldings(app, repo);
-  registerGetHoldingById(app, repo);
-  registerPatchHolding(app, repo);
-  registerDeleteHolding(app, repo);
-  registerPortfolioSummary(app, repo);
-  registerPortfolioIncomeSummary(app, repo);
-  registerPortfolioUpcomingCoupons(app, repo);
-  registerPostCouponPayment(app, repo);
-  registerListCouponPayments(app, repo);
-  registerGetCouponPaymentById(app, repo);
-  registerPatchCouponPayment(app, repo);
-  registerDeleteCouponPayment(app, repo);
+  const state = createAppState(initialDb, databaseFilePath);
+  const getRepo = () => state.getRepo();
+
+  registerSystemInfo(app, state);
+  registerSystemBackup(app, state);
+  registerSystemRestore(app, state);
+
+  registerPostAccount(app, getRepo);
+  registerListAccounts(app, getRepo);
+  registerGetAccountById(app, getRepo);
+  registerPatchAccount(app, getRepo);
+  registerArchiveAccount(app, getRepo);
+  registerAccountHoldings(app, getRepo);
+  registerPostHolding(app, getRepo);
+  registerListHoldings(app, getRepo);
+  registerGetHoldingById(app, getRepo);
+  registerPatchHolding(app, getRepo);
+  registerDeleteHolding(app, getRepo);
+  registerPortfolioSummary(app, getRepo);
+  registerPortfolioIncomeSummary(app, getRepo);
+  registerPortfolioUpcomingCoupons(app, getRepo);
+  registerPostCouponPayment(app, getRepo);
+  registerListCouponPayments(app, getRepo);
+  registerGetCouponPaymentById(app, getRepo);
+  registerPatchCouponPayment(app, getRepo);
+  registerDeleteCouponPayment(app, getRepo);
 
   return app;
 }

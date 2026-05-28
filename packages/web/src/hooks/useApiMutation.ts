@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 
+import { parseApiMutationError } from '../utils/parseApiError';
+
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
 export type HttpMethod = 'POST' | 'PATCH' | 'DELETE';
@@ -9,31 +11,6 @@ export interface UseApiMutationResult<T> {
   loading: boolean;
   error: string | null;
   fieldErrors: Record<string, string[]> | null;
-}
-
-interface ApiErrorBody {
-  message?: string;
-  fields?: Record<string, string[]>;
-}
-
-async function parseErrorResponse(
-  response: Response
-): Promise<{ error: string; fieldErrors: Record<string, string[]> | null }> {
-  try {
-    const body = (await response.json()) as ApiErrorBody;
-    if (response.status === 400 && body.fields) {
-      return {
-        error: body.message ?? 'Validation failed',
-        fieldErrors: body.fields,
-      };
-    }
-    if (body.message) {
-      return { error: body.message, fieldErrors: null };
-    }
-  } catch {
-    // ignore JSON parse failures
-  }
-  return { error: `Request failed (${response.status})`, fieldErrors: null };
 }
 
 export function useApiMutation<T>(
@@ -60,7 +37,7 @@ export function useApiMutation<T>(
         const response = await fetch(`${API_BASE}${url}`, init);
 
         if (!response.ok) {
-          const parsed = await parseErrorResponse(response);
+          const parsed = await parseApiMutationError(response);
           setError(parsed.error);
           setFieldErrors(parsed.fieldErrors);
           setLoading(false);

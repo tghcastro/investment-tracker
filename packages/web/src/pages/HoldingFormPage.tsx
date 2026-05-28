@@ -10,6 +10,7 @@ import { ConfirmDialog } from '../components/forms';
 import { EmptyState, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi, useApiMutation } from '../hooks';
 import type { ApiAccount, ApiBondHolding } from '../types/api';
+import './HoldingFormPage.css';
 
 export interface HoldingFormPageProps {
   mode: 'create' | 'edit';
@@ -143,21 +144,43 @@ export default function HoldingFormPage({ mode }: HoldingFormPageProps) {
       {activeMutation.error ? <ErrorBanner message={activeMutation.error} /> : null}
       {deleteMutation.error ? <ErrorBanner message={deleteMutation.error} /> : null}
 
-      <HoldingForm
-        accounts={accounts ?? []}
-        initialValues={initialValues}
-        serverFieldErrors={activeMutation.fieldErrors}
-        submitLabel={mode === 'create' ? 'Create holding' : 'Save changes'}
-        loading={activeMutation.loading || deleteMutation.loading}
-        showDelete={mode === 'edit'}
-        onSubmit={(payload) => {
-          void handleSubmit(payload);
-        }}
-        onDelete={() => setDeleteOpen(true)}
-        onCancel={() => navigate('/holdings')}
-      />
-
-      {mode === 'edit' && holding ? <CouponPaymentsSection holding={holding} /> : null}
+      {mode === 'edit' && holding ? (
+        <div className="cb-holding-form-page__layout">
+          <div className="cb-holding-form-page__panel">
+            <h2 className="cb-holding-form-page__panel-title">Bond details</h2>
+            <HoldingForm
+              accounts={accounts ?? []}
+              initialValues={initialValues}
+              serverFieldErrors={activeMutation.fieldErrors}
+              submitLabel="Save changes"
+              loading={activeMutation.loading || deleteMutation.loading}
+              showDelete
+              onSubmit={(payload) => {
+                void handleSubmit(payload);
+              }}
+              onDelete={() => setDeleteOpen(true)}
+              onCancel={() => navigate('/holdings')}
+            />
+          </div>
+          <div className="cb-holding-form-page__panel cb-holding-form-page__panel--aside">
+            <CouponPaymentsSection holding={holding} />
+          </div>
+        </div>
+      ) : (
+        <HoldingForm
+          accounts={accounts ?? []}
+          initialValues={initialValues}
+          serverFieldErrors={activeMutation.fieldErrors}
+          submitLabel={mode === 'create' ? 'Create holding' : 'Save changes'}
+          loading={activeMutation.loading || deleteMutation.loading}
+          showDelete={mode === 'edit'}
+          onSubmit={(payload) => {
+            void handleSubmit(payload);
+          }}
+          onDelete={() => setDeleteOpen(true)}
+          onCancel={() => navigate('/holdings')}
+        />
+      )}
 
       <ConfirmDialog
         open={deleteOpen}

@@ -8,6 +8,7 @@ dist/
 *.db-shm
 *.db-wal
 data.db
+e2e-test.db
 data/
 
 # Environment

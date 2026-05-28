@@ -17,8 +17,9 @@ function parseLimit(value: string | undefined): number | { message: string } {
   return parsed;
 }
 
-export function registerPortfolioUpcomingCoupons(app: FastifyInstance, repo: Repo): void {
+export function registerPortfolioUpcomingCoupons(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/portfolio/upcoming-coupons', async (request, reply) => {
+    const repo = getRepo();
     const { limit: limitParam } = request.query as { limit?: string };
     const parsed = parseLimit(limitParam);
     if (typeof parsed !== 'number') {

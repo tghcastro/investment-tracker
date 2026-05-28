@@ -118,3 +118,24 @@
 .cb-confirm-dialog__confirm:not(:disabled):hover {
   background-color: #a81a26;
 }
+
+.cb-form-dialog__panel {
+  width: 100%;
+  max-width: 480px;
+  max-height: min(90vh, 640px);
+  overflow-y: auto;
+  padding: var(--cb-space-lg);
+  border: 1px solid var(--cb-hairline);
+  border-radius: var(--cb-radius-xl);
+  background-color: var(--cb-canvas);
+}
+
+.cb-form-dialog__title {
+  margin: 0 0 var(--cb-space-base);
+  font-family: var(--cb-font-title-md-family);
+  font-size: var(--cb-font-title-md-size);
+  font-weight: var(--cb-font-title-md-weight);
+  line-height: var(--cb-font-title-md-line-height);
+  letter-spacing: var(--cb-font-title-md-letter-spacing);
+  color: var(--cb-ink);
+}

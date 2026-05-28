@@ -69,4 +69,16 @@ export type ApiUpcomingCoupon = {
   estimatedAmount: number;
 };
 
+/** JSON shape returned by GET /api/system/info */
+export interface ApiSystemInfo {
+  version: string;
+  databasePath: string;
+  lastBackupAt: string | null;
+}
+
+/** JSON shape returned by POST /api/system/restore */
+export interface ApiRestoreResult {
+  restoredAt: string;
+}
+
 export type { CouponFrequency };

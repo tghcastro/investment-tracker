@@ -1,0 +1,49 @@
+.cb-holding-form-page__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--cb-space-xl);
+  align-items: start;
+}
+
+.cb-holding-form-page__panel {
+  min-width: 0;
+  padding: var(--cb-space-lg);
+  border: 1px solid var(--cb-hairline);
+  border-radius: var(--cb-radius-lg);
+  background-color: var(--cb-canvas);
+}
+
+.cb-holding-form-page__panel--aside {
+  position: sticky;
+  top: var(--cb-space-lg);
+}
+
+.cb-holding-form-page__panel-title {
+  margin: 0 0 var(--cb-space-lg);
+  font-family: var(--cb-font-title-sm-family);
+  font-size: var(--cb-font-title-sm-size);
+  font-weight: var(--cb-font-title-sm-weight);
+  line-height: var(--cb-font-title-sm-line-height);
+  letter-spacing: var(--cb-font-title-sm-letter-spacing);
+  color: var(--cb-ink);
+}
+
+.cb-holding-form-page__panel .cb-holding-form {
+  max-width: none;
+}
+
+.cb-holding-form-page__panel .cb-coupon-payments-section {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+@media (max-width: 900px) {
+  .cb-holding-form-page__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cb-holding-form-page__panel--aside {
+    position: static;
+  }
+}

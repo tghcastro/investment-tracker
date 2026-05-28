@@ -3,8 +3,9 @@ import type { FastifyInstance } from 'fastify';
 
 import type { Repo } from '../../repo.js';
 
-export function registerPostAccount(app: FastifyInstance, repo: Repo): void {
+export function registerPostAccount(app: FastifyInstance, getRepo: () => Repo): void {
   app.post('/api/accounts', async (request, reply) => {
+    const repo = getRepo();
     const parsed = createAccountSchema.parse(request.body);
     const account = await repo.insertAccount(parsed);
     return reply.status(201).send(account);

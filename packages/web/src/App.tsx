@@ -7,6 +7,7 @@ import HoldingFormPage from './pages/HoldingFormPage';
 import Home from './pages/Home';
 import Holdings from './pages/Holdings';
 import Income from './pages/Income';
+import Settings from './pages/Settings';
 import './App.css';
 
 function AppLayout() {
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/holdings/:id" element={<HoldingFormPage mode="edit" />} />
             <Route path="/holdings" element={<Holdings />} />
             <Route path="/income" element={<Income />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/accounts/new" element={<AccountFormPage mode="create" />} />
             <Route path="/accounts/:id" element={<AccountFormPage mode="edit" />} />
             <Route path="/accounts" element={<Accounts />} />

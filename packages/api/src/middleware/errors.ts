@@ -10,6 +10,13 @@ export class NotFoundError extends Error {
   }
 }
 
+export class ConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConflictError';
+  }
+}
+
 export class FieldValidationError extends Error {
   constructor(
     public readonly fields: Record<string, string[]>,
@@ -76,6 +83,13 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
+    if (error instanceof ConflictError) {
+      return reply.status(409).send({
+        code: 'CONFLICT',
+        message: error.message,
+      });
+    }
+
     if (error instanceof FieldValidationError) {
       return reply.status(400).send({
         code: 'VALIDATION_ERROR',
@@ -87,6 +101,18 @@ export function registerErrorHandler(app: FastifyInstance): void {
     if (error instanceof RepoError) {
       const mapped = mapRepoError(error);
       return reply.status(mapped.statusCode).send(mapped.body);
+    }
+
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'statusCode' in error &&
+      (error as { statusCode: number }).statusCode === 413
+    ) {
+      return reply.status(413).send({
+        code: 'PAYLOAD_TOO_LARGE',
+        message: 'Uploaded backup file is too large',
+      });
     }
 
     request.log.error(error);

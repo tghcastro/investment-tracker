@@ -8,8 +8,9 @@ import {
   toApiBondHolding,
 } from './serialize.js';
 
-export function registerPatchHolding(app: FastifyInstance, repo: Repo): void {
+export function registerPatchHolding(app: FastifyInstance, getRepo: () => Repo): void {
   app.patch('/api/holdings/:id', async (request, reply) => {
+    const repo = getRepo();
     const { id } = request.params as { id: string };
     const parsed = updateBondHoldingSchema.parse(request.body);
     const { couponRate, ...rest } = parsed;

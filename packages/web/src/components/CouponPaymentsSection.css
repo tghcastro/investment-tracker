@@ -1,45 +1,34 @@
 .cb-coupon-payments-section {
-  margin-top: var(--cb-space-8);
-  padding-top: var(--cb-space-8);
-  border-top: 1px solid var(--cb-border-subtle);
+  margin-top: var(--cb-space-xl);
+  padding-top: var(--cb-space-xl);
+  border-top: 1px solid var(--cb-hairline);
 }
 
 .cb-coupon-payments-section__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--cb-space-4);
-  margin-bottom: var(--cb-space-4);
+  gap: var(--cb-space-base);
+  margin-bottom: var(--cb-space-base);
 }
 
 .cb-coupon-payments-section__title {
   margin: 0;
-  font-size: var(--cb-font-size-lg);
-  font-weight: 600;
-  color: var(--cb-text-primary);
+  font-family: var(--cb-font-title-sm-family);
+  font-size: var(--cb-font-title-sm-size);
+  font-weight: var(--cb-font-title-sm-weight);
+  line-height: var(--cb-font-title-sm-line-height);
+  letter-spacing: var(--cb-font-title-sm-letter-spacing);
+  color: var(--cb-ink);
 }
 
 .cb-coupon-payments-section__estimate {
-  margin: var(--cb-space-2) 0 0;
-  color: var(--cb-text-secondary);
+  margin: var(--cb-space-xs) 0 0;
+  color: var(--cb-body);
 }
 
 .cb-coupon-payments-section__loading {
-  color: var(--cb-text-secondary);
-}
-
-.cb-coupon-payments-section__form-panel {
-  margin-top: var(--cb-space-4);
-  padding: var(--cb-space-4);
-  border: 1px solid var(--cb-border-subtle);
-  border-radius: var(--cb-radius-md);
-  background: var(--cb-bg-subtle);
-}
-
-.cb-coupon-payments-section__form-title {
-  margin: 0 0 var(--cb-space-4);
-  font-size: var(--cb-font-size-md);
-  font-weight: 600;
+  color: var(--cb-body);
 }
 
 @media (max-width: 640px) {
