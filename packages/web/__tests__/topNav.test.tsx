@@ -146,4 +146,16 @@ describe('TopNav responsive behavior', () => {
 
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
   });
+
+  it('includes Settings nav link to /settings', () => {
+    mockMatchMedia(false);
+
+    render(
+      <MemoryRouter>
+        <TopNav />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
+  });
 });
