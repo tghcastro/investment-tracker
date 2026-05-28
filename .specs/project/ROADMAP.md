@@ -1,7 +1,7 @@
 # Roadmap
 
 **Current Milestone:** M4 — v1 polish
-**Status:** Planned
+**Status:** Complete
 
 ---
 
@@ -80,19 +80,19 @@
 
 **Goal:** Reliable day-to-day use for bond-only portfolios; users can inspect system state and back up or restore their data.
 **Target:** Declared v1 release for bonds-only scope.
-**Status:** In progress (P1 backup API complete on branch `m4-p1-backup-api`)
+**Status:** Complete
 
 ### Features
 
-**Backup & system info** — IN PROGRESS (API done; settings UI in P2)
+**Backup & system info** — DONE
 
 - Settings page: app version, database location (from config), last backup timestamp
 - Trigger backup → download SQLite snapshot (browser file download)
 - Restore from a previously downloaded backup file
 
-**UX polish** — PLANNED
+**UX polish** — DONE
 
-- Remaining gaps only: form validation UX, responsive tables, loading states (M1/M2 already ship core empty states)
+- Form validation focus UX, responsive income/payment tables, loading skeletons (M1/M2 already ship core empty states)
 
 ---
 
