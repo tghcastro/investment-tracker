@@ -714,4 +714,60 @@ describe('Repo integration', () => {
     expect(summary.maturityLadder).toHaveLength(3);
     expect(summary.maturityLadder[0].issuer).toBe('Soon Bond');
   });
+
+  it('lists seeded holding types in sort order', async () => {
+    const types = await repo.listHoldingTypes();
+    expect(types).toHaveLength(2);
+    expect(types[0]).toMatchObject({ slug: 'bond', name: 'Bond', sortOrder: 10 });
+    expect(types[1]).toMatchObject({
+      slug: 'brazilian-fixed-income',
+      name: 'Brazilian Fixed Income',
+      sortOrder: 20,
+    });
+  });
+
+  it('assigns Bond holding type to new bond holdings', async () => {
+    const account = await repo.insertAccount({ name: 'Type Test' });
+    const inserted = await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Typed Bond',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+
+    expect(inserted.holdingType).toMatchObject({
+      slug: 'bond',
+      name: 'Bond',
+    });
+  });
+
+  it('filters bond holdings by holdingTypeId', async () => {
+    const account = await repo.insertAccount({ name: 'Filter Type' });
+    await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Filter Bond',
+      faceValue: 10_000,
+      couponRate: 0.03,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+
+    const bondType = (await repo.listHoldingTypes()).find((type) => type.slug === 'bond');
+    const brfiType = (await repo.listHoldingTypes()).find(
+      (type) => type.slug === 'brazilian-fixed-income'
+    );
+    expect(bondType).toBeDefined();
+    expect(brfiType).toBeDefined();
+
+    const bondRows = await repo.listBondHoldingsFiltered({ holdingTypeId: bondType!.id });
+    expect(bondRows.length).toBeGreaterThanOrEqual(1);
+    expect(bondRows.every((row) => row.holdingType.slug === 'bond')).toBe(true);
+
+    const brfiRows = await repo.listBondHoldingsFiltered({ holdingTypeId: brfiType!.id });
+    expect(brfiRows).toEqual([]);
+  });
 });
