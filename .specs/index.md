@@ -16,12 +16,12 @@ Catalog for agents and humans. **Default agent entry:** [`AGENTS.md`](../AGENTS.
 | `.specs/codebase/TESTING.md` | Agent | Active | 2026-05-28 |
 | `.specs/codebase/INTEGRATIONS.md` | Agent | Active | 2026-05-29 |
 | `docs/harness.md` | Agent + human | Active | 2026-05-29 |
-| `docs/FRONTEND.md` | Agent (UI) | Active | 2026-05-29 |
+| `docs/FRONTEND.md` | Agent (UI) | Active | 2026-05-29 (M6 routes) |
 | `docs/references/node22-wsl.md` | Agent | Active | 2026-05-29 |
 | `DESIGN.md` | Agent (UI tasks) | Active | 2026-05-20 |
-| `.specs/features/active/m5-holdings-framework/` | Agent | Complete — M5 shipped on branch | 2026-05-29 |
-| `.specs/features/active/m6-multi-currency/` | Agent | Draft — M6 spec/design/tasks | 2026-05-29 |
-| `.specs/features/active/m7-brazilian-fixed-income/` | Agent | Draft — M7 spec/design/tasks | 2026-05-29 |
+| `.specs/features/completed/m5-holdings-framework/` | Archive | Shipped M5 | 2026-05-29 |
+| `.specs/features/completed/m6-multi-currency/` | Archive | Shipped M6 | 2026-05-29 |
+| `.specs/features/active/m7-brazilian-fixed-income/` | Agent | Specified — deferred until after M6.1 | 2026-05-29 |
 | `.specs/features/completed/m1-scaffold/` | Archive | Shipped | 2026-05-21 |
 | `.specs/features/completed/m2-core/` | Archive | Shipped | 2026-05-23 |
 | `.specs/features/completed/m3-coupon-income/` | Archive | Shipped | 2026-05-23 |

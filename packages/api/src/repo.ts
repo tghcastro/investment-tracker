@@ -552,7 +552,7 @@ export function createRepo(database: Db) {
       .where(eq(accounts.id, numericId))
       .returning()
       .all();
-    return mapAccount(row);
+    return mapAccount(row, loadAccountCurrencyCodes(numericId));
   }
 
   async function isAccountArchived(id: string): Promise<boolean> {

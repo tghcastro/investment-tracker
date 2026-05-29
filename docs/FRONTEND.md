@@ -33,7 +33,8 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 
 - `TopNav` 64px, canvas background, hairline bottom border; **Holdings** opens a type submenu from `GET /api/holding-types` (Bond → `/holdings`; BRFI placeholder until M7).
 - Main: `.cb-app__main`, max-width ~1200px, padding 32px / 24px.
-- Routes: `/`, `/holdings`, `/holdings/new`, `/holdings/:id`, `/accounts`, `/accounts/new`, `/accounts/:id`, `/income`, `/settings`.
+- Routes: `/`, `/holdings`, `/holdings/new`, `/holdings/:id`, `/accounts`, `/accounts/new`, `/accounts/:id`, `/income`, `/currencies`, `/currencies/quotes`, `/settings`.
+- **Display currency:** `DisplayCurrencyProvider` (`contexts/DisplayCurrencyContext.tsx`) loads `GET /api/currencies/available`; preference in `localStorage` key `displayCurrency`. Append `?displayCurrency=` via `appendDisplayCurrencyParam` on Home/Holdings summary and list fetches.
 
 ## Components to reuse
 
@@ -46,11 +47,14 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 | `ErrorBanner` | Fetch/validation errors (text on soft surface) |
 | `TextInput` / `FormField` / `Select` | All CRUD forms |
 | `HoldingsTable`, `CouponPaymentsTable` | Data tables |
+| `CurrencySelector` | Display-currency dropdown (Home, Holdings toolbar) |
 
 ## Forms
 
 - Labels above fields; errors below in `semantic-down` color (text only).
-- Use domain-aligned names: `faceValue`, `couponRate`, `couponFrequency`, `maturityDate`.
+- Use domain-aligned names: `faceValue`, `couponRate`, `couponFrequency`, `maturityDate`, `currencyCode`, `currencyCodes`.
+- **AccountForm:** multi-select checkboxes for allowed account currencies (`GET /api/currencies`).
+- **HoldingForm:** currency `<Select>` limited to selected account’s `currencyCodes`.
 - On submit failure, call `focusFirstFieldError` (`utils/focusFirstFieldError.ts`).
 - `couponRate` in API is **percent** (0–100) in JSON.
 

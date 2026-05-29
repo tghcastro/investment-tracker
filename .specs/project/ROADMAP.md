@@ -1,8 +1,8 @@
 # Roadmap
 
-**Current Milestone:** M6 — Multi-currency  
-**Status:** M5 complete; M6 specified (v2.0.0 after M7)  
-**Active specs:** [m6-multi-currency](../features/active/m6-multi-currency/spec.md) → [m7-brazilian-fixed-income](../features/active/m7-brazilian-fixed-income/spec.md)
+**Current Milestone:** M6.1 — Multi-currency follow-ups (spec pending)  
+**Status:** M6 complete; M6.1 next; M7 specified but deferred (v2.0.0 after M7)  
+**Active specs:** _None — awaiting M6.1 spec_
 
 ---
 
@@ -101,7 +101,7 @@
 
 **Goal:** Support multiple investment categories through a common holdings framework so new asset types can be added without major architectural changes.
 **Target:** Every holding belongs to a Holding Type; bonds remain fully functional under the framework; navigation and reporting organized by type.
-**Status:** Complete — [spec](../features/active/m5-holdings-framework/spec.md) · [design](../features/active/m5-holdings-framework/design.md) · [tasks](../features/active/m5-holdings-framework/tasks.md)
+**Status:** Complete — [spec](../features/completed/m5-holdings-framework/spec.md) · [design](../features/completed/m5-holdings-framework/design.md) · [tasks](../features/completed/m5-holdings-framework/tasks.md)
 
 ### Features
 
@@ -124,23 +124,23 @@
 
 **Goal:** Support investments and accounts across multiple currencies with USD as the system base currency; portfolio calculations displayable in any quoted currency.
 **Target:** Currency list, manual exchange-rate management, account currency configuration, and currency selector on Holdings and Home.
-**Status:** Specified — [spec](../features/active/m6-multi-currency/spec.md) · [design](../features/active/m6-multi-currency/design.md) · [tasks](../features/active/m6-multi-currency/tasks.md)
+**Status:** Complete — [spec](../features/completed/m6-multi-currency/spec.md) · [design](../features/completed/m6-multi-currency/design.md) · [tasks](../features/completed/m6-multi-currency/tasks.md)
 
 ### Features
 
-**Currency catalog** — PLANNED
+**Currency catalog** — DONE
 
 - System-defined currencies (ISO 4217): ARS, AUD, EUR, BRL, CAD, CNY, DKK, GBP, USD
 - Read-only list page: code, name, symbol, country/region
 - New currencies added via DB script only (no user CRUD)
 
-**Currency quotes** — PLANNED
+**Currency quotes** — DONE
 
 - Daily exchange rates (base USD → target currency)
 - Create, update, delete quotes; one quote per currency per day
 - Only currencies with at least one quote available for valuation/display
 
-**Account & portfolio currency** — PLANNED
+**Account & portfolio currency** — DONE
 
 - Accounts define allowed currencies for their holdings
 - Holdings restricted to account-configured currencies
@@ -150,11 +150,19 @@
 
 ---
 
+## M6.1 — Multi-currency follow-ups
+
+**Goal:** Ship important currency gaps discovered during M6 usage before starting M7.  
+**Target:** TBD — user to define scope in `.specs/features/active/m6.1-multi-currency/`.  
+**Status:** Not started — spec pending
+
+---
+
 ## M7 — Brazilian fixed income
 
 **Goal:** Support Brazilian fixed-income investments as a dedicated Holding Type, distinct from international bonds.
 **Target:** Full CRUD for common Brazilian products with indexing configuration; accounts may hold both bonds and Brazilian fixed income; **v2.0.0** release.
-**Status:** Specified — [spec](../features/active/m7-brazilian-fixed-income/spec.md) · [design](../features/active/m7-brazilian-fixed-income/design.md) · [tasks](../features/active/m7-brazilian-fixed-income/tasks.md)
+**Status:** Specified (deferred) — [spec](../features/active/m7-brazilian-fixed-income/spec.md) · [design](../features/active/m7-brazilian-fixed-income/design.md) · [tasks](../features/active/m7-brazilian-fixed-income/tasks.md)
 
 ### Features
 

@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-29
-**Current Work:** M5 complete — execute [M6 multi-currency](../features/active/m6-multi-currency/tasks.md) next. v2.0.0 ships after M7 (M6 → M7).
+**Current Work:** M6 complete — **M6.1** multi-currency follow-ups next (user to spec). M7 BRFI draft exists but deferred until after M6.1. v2.0.0 ships after M7 (AD-009).
 
 ---
 
@@ -104,14 +104,15 @@ _None yet._
 
 ## Todos
 
-- [x] Approve M5 spec → Execute P1 [tasks](../features/active/m5-holdings-framework/tasks.md)
+- [x] Approve M5 spec → Execute P1 [tasks](../features/completed/m5-holdings-framework/tasks.md)
 - [x] Implement M5 — holdings framework on `m5-holdings-framework` (2026-05-29)
-- [ ] Execute M6 — multi-currency after M5 ship
-- [ ] Approve M6 spec (draft ready) — execute after M5 ship
-- [ ] Approve M7 spec (draft ready) — execute after M6 ship
+- [x] Execute M6 — multi-currency on `m6-multi-currency` (2026-05-29)
+- [x] Approve M6 spec → shipped (2026-05-29)
+- [ ] Specify M6.1 — multi-currency follow-ups (user to create spec)
+- [ ] Approve M7 spec (draft ready) — execute after M6.1
 - [ ] v2.0.0 release after M7 P3 (AD-009)
-- [x] Specify M5 — `.specs/features/active/m5-holdings-framework/` (2026-05-29)
-- [x] Specify M6 — `.specs/features/active/m6-multi-currency/` (2026-05-29)
+- [x] Specify M5 — `.specs/features/completed/m5-holdings-framework/` (2026-05-29)
+- [x] Specify M6 — `.specs/features/completed/m6-multi-currency/` (2026-05-29)
 - [x] Specify M7 — `.specs/features/active/m7-brazilian-fixed-income/` (2026-05-29)
 - [x] Map codebase (`/tlc-spec-driven map codebase`) — pre-scaffold baseline in `.specs/codebase/` (2026-05-20); re-map after M1
 - [x] Specify first feature: M1 project scaffold — `/.specs/features/completed/m1-scaffold/spec.md` (2026-05-20)
