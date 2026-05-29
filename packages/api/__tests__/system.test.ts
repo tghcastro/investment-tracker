@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fixtureAccountDefs,
   fixtureBondDefs,
-} from '../src/fixtures/seed.js';
+} from '../src/fixtures/defs.js';
 import { createRepo } from '../src/repo.js';
 import { createAppState } from '../src/appState.js';
 import { createServer } from '../src/server.js';

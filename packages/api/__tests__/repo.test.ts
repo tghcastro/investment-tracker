@@ -9,7 +9,7 @@ import { createRepo, RepoError } from '../src/repo.js';
 import {
   fixtureAccountDefs,
   fixtureBondDefs,
-} from '../src/fixtures/seed.js';
+} from '../src/fixtures/defs.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageDir = path.resolve(__dirname, '..');
