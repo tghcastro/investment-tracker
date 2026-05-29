@@ -31,13 +31,16 @@ const bondHoldingFieldsSchema = z.object({
   purchasePrice: z.number().int().positive().optional(),
 });
 
-export const createBondHoldingSchema = bondHoldingFieldsSchema.refine(
-  (data) => data.maturityDate > data.purchaseDate,
-  {
+const createBondHoldingSchemaWithType = bondHoldingFieldsSchema
+  .extend({
+    holdingTypeId: positiveIntegerId('Holding type ID').optional(),
+  })
+  .refine((data) => data.maturityDate > data.purchaseDate, {
     message: 'Maturity date must be after purchase date',
     path: ['maturityDate'],
-  }
-);
+  });
+
+export const createBondHoldingSchema = createBondHoldingSchemaWithType;
 
 export const createCouponPaymentSchema = z.object({
   bondHoldingId: positiveIntegerId('Holding ID'),
