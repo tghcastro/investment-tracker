@@ -25,7 +25,7 @@ Codebase reference (stack, architecture, testing):
 | [.specs/codebase/TESTING.md](.specs/codebase/TESTING.md) | Test strategy and commands |
 | [.specs/codebase/STRUCTURE.md](.specs/codebase/STRUCTURE.md) | Repo layout |
 
-Full index: [`.specs/codebase/`](.specs/codebase/)
+Full index: [`.specs/index.md`](.specs/index.md) · Agent map: [`AGENTS.md`](AGENTS.md) · UI: [`docs/FRONTEND.md`](docs/FRONTEND.md)
 
 ## Development setup (WSL)
 

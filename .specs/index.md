@@ -8,13 +8,15 @@ Catalog for agents and humans. **Default agent entry:** [`AGENTS.md`](../AGENTS.
 | `.specs/project/PROJECT.md` | Agent + human | Active | 2026-05-29 |
 | `.specs/project/ROADMAP.md` | Agent + human | Active | 2026-05-29 |
 | `.specs/project/STATE.md` | Agent + human | Active | 2026-05-29 |
-| `.specs/codebase/ARCHITECTURE.md` | Agent | Stale — says pre-scaffold | 2026-05-20 |
-| `.specs/codebase/STRUCTURE.md` | Agent | Stale — says pre-scaffold | 2026-05-20 |
-| `.specs/codebase/STACK.md` | Agent | Stale — says pre-scaffold | 2026-05-20 |
-| `.specs/codebase/CONVENTIONS.md` | Agent | Stale — partial pre-scaffold | 2026-05-20 |
-| `.specs/codebase/CONCERNS.md` | Agent | Stale — empty repo narrative | 2026-05-20 |
+| `.specs/codebase/ARCHITECTURE.md` | Agent | Active | 2026-05-29 |
+| `.specs/codebase/STRUCTURE.md` | Agent | Active | 2026-05-29 |
+| `.specs/codebase/STACK.md` | Agent | Active | 2026-05-29 |
+| `.specs/codebase/CONVENTIONS.md` | Agent | Active | 2026-05-29 |
+| `.specs/codebase/CONCERNS.md` | Agent | Active | 2026-05-29 |
 | `.specs/codebase/TESTING.md` | Agent | Active | 2026-05-28 |
 | `.specs/codebase/INTEGRATIONS.md` | Agent | Active | 2026-05-23 |
+| `docs/FRONTEND.md` | Agent (UI) | Active | 2026-05-29 |
+| `docs/references/node22-wsl.md` | Agent | Active | 2026-05-29 |
 | `DESIGN.md` | Agent (UI tasks) | Active | 2026-05-20 |
 | `.specs/features/active/` | Agent | Empty — next feature specs go here | — |
 | `.specs/features/completed/m1-scaffold/` | Archive | Shipped | 2026-05-21 |
@@ -28,5 +30,4 @@ Catalog for agents and humans. **Default agent entry:** [`AGENTS.md`](../AGENTS.
 ## Conventions
 
 - **Active:** safe default for implementation tasks.
-- **Stale:** may contradict `packages/` — prefer code; refresh in a follow-up PR.
 - **Archive:** historical specs; decisions copied to `STATE.md` where relevant.

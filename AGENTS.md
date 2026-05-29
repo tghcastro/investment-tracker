@@ -39,12 +39,20 @@ Full catalog and freshness: [`.specs/index.md`](.specs/index.md).
 
 | Doc | Use when |
 | --- | --- |
-| [`DESIGN.md`](DESIGN.md) | Colors, typography, components (YAML tokens) |
-| [`.specs/features/completed/m1-scaffold/web-design.md`](.specs/features/completed/m1-scaffold/web-design.md) | How tokens map to `packages/web/` (historical; prefer `DESIGN.md` + code) |
+| [`docs/FRONTEND.md`](docs/FRONTEND.md) | **Start here** — components, routes, CSS conventions |
+| [`DESIGN.md`](DESIGN.md) | Full token YAML (colors, typography, components) |
+| [`.specs/features/completed/m1-scaffold/web-design.md`](.specs/features/completed/m1-scaffold/web-design.md) | Historical M1 page specs (archive) |
+
+## Environment reference
+
+| Doc | Use when |
+| --- | --- |
+| [`docs/references/node22-wsl.md`](docs/references/node22-wsl.md) | WSL + Node 22 commands (condensed) |
+| [`.cursor/rules/wsl-shell.mdc`](.cursor/rules/wsl-shell.mdc) | Cursor always-on WSL rule |
 
 ## Environment (always apply)
 
-- **Shell:** WSL Ubuntu — see [`.cursor/rules/wsl-shell.mdc`](.cursor/rules/wsl-shell.mdc)
+- **Shell:** WSL Ubuntu — [`docs/references/node22-wsl.md`](docs/references/node22-wsl.md)
 - **Node:** 22 (`.nvmrc`) — never run bare PowerShell `npm`/`git` on Windows host
 - **Repo path in WSL:** `/mnt/d/workspace/investment-tracker`
 
