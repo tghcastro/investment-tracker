@@ -12,7 +12,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "node ../../node_modules/eslint/bin/eslint.js src",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
@@ -28,10 +28,10 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.4",
-    "jsdom": "^26.1.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "jsdom": "^29.1.0",
     "typescript": "^6.0.3",
-    "vite": "^7.3.1",
-    "vitest": "^1.6.1"
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
   }
 }

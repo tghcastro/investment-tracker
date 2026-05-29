@@ -12,7 +12,7 @@
 | Package manager | npm workspaces | Root `package.json` → `packages/*` |
 | Persistence | SQLite file (`better-sqlite3` + Drizzle ORM) | `packages/api` |
 | API | Fastify **5** REST | `packages/api/src` |
-| Web | React **19** SPA, Vite **7**, React Router **7** | `packages/web` |
+| Web | React **19** SPA, Vite **8**, React Router **7** | `packages/web` |
 | Domain | `bonds-domain` package (Zod validators, types, coupon math) | `packages/bonds-domain` |
 
 ## Workspace packages
@@ -31,7 +31,7 @@
 | --- | --- | --- |
 | ESLint | flat config `eslint.config.mjs`, `@typescript-eslint` | `npm run lint` |
 | Prettier | devDependency | (format on save in editor) |
-| Vitest | per-package configs | `npm run test` |
+| Vitest | **4.x** (root hoisted; per-package configs) | `npm run test` |
 | TypeScript | `tsc` in api + bonds-domain; Vite handles web | `npm run build` in packages |
 
 ## Dev servers
