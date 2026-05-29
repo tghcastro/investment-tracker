@@ -59,7 +59,8 @@
 | --- | --- |
 | Health | `GET /health` |
 | Accounts | CRUD + `PATCH` archive, `GET :id/holdings` |
-| Holdings | CRUD under accounts |
+| Holding types | `GET /api/holding-types` (read-only catalog) |
+| Holdings | CRUD under accounts; optional `holdingTypeId` filter on list |
 | Coupon payments | CRUD linked to holdings |
 | Portfolio | `summary`, `income-summary`, `upcoming-coupons` |
 | System | `GET /api/system/info`, backup download, restore multipart upload |
@@ -71,7 +72,8 @@ Exact paths live in `packages/api/src/server.ts` and route modules.
 Tables (Drizzle in `schema.ts`):
 
 - `accounts` — name, description, `archived_at`
-- `bond_holdings` — FK → account; issuer, identifiers, face value, coupon rate (decimal in DB), frequency, dates
+- `holding_types` — slug, display name, sort order (seed: Bond, Brazilian Fixed Income)
+- `bond_holdings` — FK → account + holding type; issuer, identifiers, face value, coupon rate (decimal in DB), frequency, dates
 - `coupon_payments` — FK → holding; payment date, amount
 
 **API convention:** `couponRate` in JSON is **percent** (0–100); stored as decimal fraction in SQLite (see route serializers).

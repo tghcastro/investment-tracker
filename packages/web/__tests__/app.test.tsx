@@ -46,6 +46,21 @@ vi.mock('../src/hooks/useApi', () => ({
         error: undefined,
       };
     }
+    if (url === '/api/holding-types') {
+      return {
+        data: [
+          { id: '1', slug: 'bond', name: 'Bond', sortOrder: 10 },
+          {
+            id: '2',
+            slug: 'brazilian-fixed-income',
+            name: 'Brazilian Fixed Income',
+            sortOrder: 20,
+          },
+        ],
+        loading: false,
+        error: undefined,
+      };
+    }
     return {
       data: [],
       loading: false,
@@ -60,7 +75,8 @@ describe('App', () => {
 
     expect(screen.getByRole('link', { name: 'Investment Tracker' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('link', { name: 'Holdings' })).toHaveAttribute('href', '/holdings');
+    expect(screen.getByRole('button', { name: 'Holdings' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Bond' })).toHaveAttribute('href', '/holdings');
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
     expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');

@@ -44,6 +44,24 @@
   min-width: 0;
 }
 
+.cb-holdings-table__title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--cb-space-sm);
+}
+
+.cb-holdings-table__type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--cb-radius-full);
+  background-color: var(--cb-surface-strong);
+  font-family: var(--cb-font-caption-family);
+  font-size: var(--cb-font-caption-size);
+  color: var(--cb-ink);
+}
+
 .cb-holdings-table__issuer {
   margin: 0;
   font-family: var(--cb-font-title-md-family);

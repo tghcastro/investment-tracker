@@ -71,6 +71,7 @@ api/
 │   ├── migrations/           # SQL files + run.ts
 │   ├── routes/
 │   │   ├── accounts/
+│   │   ├── holding-types/
 │   │   ├── holdings/
 │   │   ├── coupon-payments/
 │   │   ├── portfolio/

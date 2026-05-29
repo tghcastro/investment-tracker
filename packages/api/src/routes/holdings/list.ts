@@ -23,20 +23,24 @@ function parseMaturityAfter(value: string): Date | { message: string } {
   return date;
 }
 
-function parseAccountId(value: string): { accountId: string } | { message: string } {
+function parsePositiveIntegerId(
+  value: string,
+  label: string
+): { id: string } | { message: string } {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0 || String(parsed) !== value) {
-    return { message: 'Account ID must be a positive integer' };
+    return { message: `${label} must be a positive integer` };
   }
-  return { accountId: value };
+  return { id: value };
 }
 
 export function registerListHoldings(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/holdings', async (request, reply) => {
     const repo = getRepo();
-    const { maturityAfter, accountId } = request.query as {
+    const { maturityAfter, accountId, holdingTypeId } = request.query as {
       maturityAfter?: string;
       accountId?: string;
+      holdingTypeId?: string;
     };
 
     let parsedMaturityAfter: Date | undefined;
@@ -50,7 +54,7 @@ export function registerListHoldings(app: FastifyInstance, getRepo: () => Repo):
 
     let parsedAccountId: string | undefined;
     if (accountId !== undefined) {
-      const parsed = parseAccountId(accountId);
+      const parsed = parsePositiveIntegerId(accountId, 'Account ID');
       if ('message' in parsed) {
         return reply.status(400).send({
           code: 'VALIDATION_ERROR',
@@ -58,12 +62,26 @@ export function registerListHoldings(app: FastifyInstance, getRepo: () => Repo):
           fields: { accountId: [parsed.message] },
         });
       }
-      parsedAccountId = parsed.accountId;
+      parsedAccountId = parsed.id;
+    }
+
+    let parsedHoldingTypeId: string | undefined;
+    if (holdingTypeId !== undefined) {
+      const parsed = parsePositiveIntegerId(holdingTypeId, 'Holding type ID');
+      if ('message' in parsed) {
+        return reply.status(400).send({
+          code: 'VALIDATION_ERROR',
+          message: parsed.message,
+          fields: { holdingTypeId: [parsed.message] },
+        });
+      }
+      parsedHoldingTypeId = parsed.id;
     }
 
     const holdings = await repo.listBondHoldingsFiltered({
       accountId: parsedAccountId,
       maturityAfter: parsedMaturityAfter,
+      holdingTypeId: parsedHoldingTypeId,
     });
     return reply.status(200).send(toApiBondHoldings(holdings));
   });

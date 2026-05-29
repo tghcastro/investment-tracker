@@ -4,6 +4,9 @@ import type {
   BondHolding,
   CouponFrequency,
   CouponPayment,
+  HoldingType,
+  HoldingTypeRef,
+  HoldingTypeSlug,
 } from 'bonds-domain';
 import {
   expectedCouponAmountCents,
@@ -11,7 +14,7 @@ import {
 } from 'bonds-domain';
 
 import type { Database } from './db.js';
-import { accounts, bondHoldings, couponPayments } from './schema.js';
+import { accounts, bondHoldings, couponPayments, holdingTypes } from './schema.js';
 
 type Db = Database;
 
@@ -32,6 +35,7 @@ export type InsertAccountData = {
 
 export type InsertBondHoldingData = {
   accountId: string;
+  holdingTypeId?: string;
   issuer: string;
   isin?: string;
   cusip?: string;
@@ -152,9 +156,28 @@ function mapAccount(row: typeof accounts.$inferSelect): Account {
   };
 }
 
-function mapBondHolding(row: typeof bondHoldings.$inferSelect): BondHolding {
+function mapHoldingTypeRef(row: typeof holdingTypes.$inferSelect): HoldingTypeRef {
   return {
     id: String(row.id),
+    slug: row.slug as HoldingTypeSlug,
+    name: row.name,
+  };
+}
+
+function mapHoldingType(row: typeof holdingTypes.$inferSelect): HoldingType {
+  return {
+    ...mapHoldingTypeRef(row),
+    sortOrder: row.sortOrder,
+  };
+}
+
+function mapBondHolding(
+  row: typeof bondHoldings.$inferSelect,
+  holdingTypeRow: typeof holdingTypes.$inferSelect
+): BondHolding {
+  return {
+    id: String(row.id),
+    holdingType: mapHoldingTypeRef(holdingTypeRow),
     accountId: String(row.accountId),
     issuer: row.issuer,
     isin: row.isin ?? undefined,
@@ -209,6 +232,44 @@ async function assertAccountNotArchived(
 }
 
 export function createRepo(database: Db) {
+  function selectBondHoldingsWithType() {
+    return database
+      .select({
+        bond: bondHoldings,
+        holdingType: holdingTypes,
+      })
+      .from(bondHoldings)
+      .innerJoin(holdingTypes, eq(bondHoldings.holdingTypeId, holdingTypes.id));
+  }
+
+  async function getHoldingTypeBySlug(slug: HoldingTypeSlug): Promise<HoldingType | null> {
+    const [row] = database
+      .select()
+      .from(holdingTypes)
+      .where(eq(holdingTypes.slug, slug))
+      .all();
+    return row ? mapHoldingType(row) : null;
+  }
+
+  async function getHoldingTypeById(id: string): Promise<HoldingType | null> {
+    const numericId = parseId(id, 'holding type id');
+    const [row] = database
+      .select()
+      .from(holdingTypes)
+      .where(eq(holdingTypes.id, numericId))
+      .all();
+    return row ? mapHoldingType(row) : null;
+  }
+
+  async function listHoldingTypes(): Promise<HoldingType[]> {
+    const rows = database
+      .select()
+      .from(holdingTypes)
+      .orderBy(holdingTypes.sortOrder, holdingTypes.id)
+      .all();
+    return rows.map(mapHoldingType);
+  }
+
   async function insertAccount(data: InsertAccountData): Promise<Account> {
     try {
       const [row] = database
@@ -307,10 +368,27 @@ export function createRepo(database: Db) {
   async function insertBondHolding(data: InsertBondHoldingData): Promise<BondHolding> {
     await assertAccountNotArchived(database, data.accountId);
     const accountId = parseId(data.accountId, 'account id');
+
+    let holdingTypeId: number;
+    if (data.holdingTypeId !== undefined) {
+      const holdingType = await getHoldingTypeById(data.holdingTypeId);
+      if (!holdingType) {
+        throw new RepoError('FOREIGN_KEY', 'Referenced record does not exist');
+      }
+      holdingTypeId = parseId(data.holdingTypeId, 'holding type id');
+    } else {
+      const bondType = await getHoldingTypeBySlug('bond');
+      if (!bondType) {
+        throw new RepoError('HOLDING_TYPE_NOT_FOUND', 'Bond holding type is not configured');
+      }
+      holdingTypeId = parseId(bondType.id, 'holding type id');
+    }
+
     try {
       const [row] = database
         .insert(bondHoldings)
         .values({
+          holdingTypeId,
           accountId,
           issuer: data.issuer,
           isin: data.isin,
@@ -324,7 +402,11 @@ export function createRepo(database: Db) {
         })
         .returning()
         .all();
-      return mapBondHolding(row);
+      const holding = await getBondHolding(String(row.id));
+      if (!holding) {
+        throw new RepoError('HOLDING_NOT_FOUND', 'Created bond holding could not be loaded');
+      }
+      return holding;
     } catch (error) {
       wrapDbError(error);
     }
@@ -332,12 +414,10 @@ export function createRepo(database: Db) {
 
   async function getBondHolding(id: string): Promise<BondHolding | null> {
     const numericId = parseId(id, 'holding id');
-    const [row] = database
-      .select()
-      .from(bondHoldings)
+    const [row] = selectBondHoldingsWithType()
       .where(eq(bondHoldings.id, numericId))
       .all();
-    return row ? mapBondHolding(row) : null;
+    return row ? mapBondHolding(row.bond, row.holdingType) : null;
   }
 
   async function updateBondHolding(
@@ -388,13 +468,12 @@ export function createRepo(database: Db) {
       updates.purchasePrice = data.purchasePrice;
     }
 
-    const [row] = database
+    database
       .update(bondHoldings)
       .set(updates)
       .where(eq(bondHoldings.id, numericId))
-      .returning()
-      .all();
-    return mapBondHolding(row);
+      .run();
+    return getBondHolding(id);
   }
 
   async function deleteBondHolding(id: string): Promise<boolean> {
@@ -417,40 +496,44 @@ export function createRepo(database: Db) {
   }
 
   async function listBondHoldings(): Promise<BondHolding[]> {
-    const rows = database.select().from(bondHoldings).orderBy(bondHoldings.id).all();
-    return rows.map(mapBondHolding);
+    const rows = selectBondHoldingsWithType().orderBy(bondHoldings.id).all();
+    return rows.map((row) => mapBondHolding(row.bond, row.holdingType));
   }
 
   async function listBondHoldingsByAccount(accountId: string): Promise<BondHolding[]> {
     const numericAccountId = parseId(accountId, 'account id');
-    const rows = database
-      .select()
-      .from(bondHoldings)
+    const rows = selectBondHoldingsWithType()
       .where(eq(bondHoldings.accountId, numericAccountId))
       .orderBy(bondHoldings.id)
       .all();
-    return rows.map(mapBondHolding);
+    return rows.map((row) => mapBondHolding(row.bond, row.holdingType));
   }
 
   async function listBondHoldingsByMaturity(afterDate: Date): Promise<BondHolding[]> {
-    const rows = database
-      .select()
-      .from(bondHoldings)
+    const rows = selectBondHoldingsWithType()
       .where(gt(bondHoldings.maturityDate, afterDate))
       .orderBy(bondHoldings.maturityDate)
       .all();
-    return rows.map(mapBondHolding);
+    return rows.map((row) => mapBondHolding(row.bond, row.holdingType));
   }
 
   async function listBondHoldingsFiltered(filters: {
     accountId?: string;
     maturityAfter?: Date;
+    holdingTypeId?: string;
   }): Promise<BondHolding[]> {
-    const { accountId, maturityAfter } = filters;
+    const { accountId, maturityAfter, holdingTypeId } = filters;
 
     if (accountId !== undefined) {
       const account = await getAccount(accountId);
       if (!account) {
+        return [];
+      }
+    }
+
+    if (holdingTypeId !== undefined) {
+      const holdingType = await getHoldingTypeById(holdingTypeId);
+      if (!holdingType) {
         return [];
       }
     }
@@ -462,6 +545,11 @@ export function createRepo(database: Db) {
     if (maturityAfter !== undefined) {
       conditions.push(gt(bondHoldings.maturityDate, maturityAfter));
     }
+    if (holdingTypeId !== undefined) {
+      conditions.push(
+        eq(bondHoldings.holdingTypeId, parseId(holdingTypeId, 'holding type id'))
+      );
+    }
 
     const whereClause =
       conditions.length === 0
@@ -470,13 +558,11 @@ export function createRepo(database: Db) {
           ? conditions[0]
           : and(...conditions);
 
-    const rows = database
-      .select()
-      .from(bondHoldings)
+    const rows = selectBondHoldingsWithType()
       .where(whereClause)
       .orderBy(bondHoldings.maturityDate, bondHoldings.id)
       .all();
-    return rows.map(mapBondHolding);
+    return rows.map((row) => mapBondHolding(row.bond, row.holdingType));
   }
 
   async function getPortfolioSummary(): Promise<PortfolioSummary> {
@@ -729,6 +815,9 @@ export function createRepo(database: Db) {
     updateAccount,
     archiveAccount,
     isAccountArchived,
+    listHoldingTypes,
+    getHoldingTypeById,
+    getHoldingTypeBySlug,
     insertBondHolding,
     getBondHolding,
     updateBondHolding,

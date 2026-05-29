@@ -35,7 +35,12 @@ export function HoldingsTable({ holdings, accountInfo, onDelete }: HoldingsTable
                 {issuerInitials(holding.issuer)}
               </div>
               <div className="cb-holdings-table__labels">
-                <h2 className="cb-holdings-table__issuer">{holding.issuer}</h2>
+                <div className="cb-holdings-table__title-row">
+                  <h2 className="cb-holdings-table__issuer">{holding.issuer}</h2>
+                  {holding.holdingType ? (
+                    <span className="cb-holdings-table__type-badge">{holding.holdingType.name}</span>
+                  ) : null}
+                </div>
                 <p className="cb-holdings-table__account">{accountLabel}</p>
               </div>
             </div>

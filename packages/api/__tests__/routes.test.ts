@@ -332,6 +332,130 @@ describe('API routes', () => {
     expect(treasury.couponRate).toBe(4.25);
   });
 
+  it('GET /api/holding-types returns seeded types in sort order', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/holding-types',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body).toHaveLength(2);
+    expect(body[0]).toMatchObject({
+      slug: 'bond',
+      name: 'Bond',
+      sortOrder: 10,
+    });
+    expect(body[1]).toMatchObject({
+      slug: 'brazilian-fixed-income',
+      name: 'Brazilian Fixed Income',
+      sortOrder: 20,
+    });
+  });
+
+  it('GET /api/holdings includes holdingType on each row', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/holdings',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.length).toBeGreaterThan(0);
+    expect(body[0].holdingType).toMatchObject({
+      slug: 'bond',
+      name: 'Bond',
+    });
+  });
+
+  it('GET /api/holdings?holdingTypeId filters by holding type', async () => {
+    const typesResponse = await app.inject({
+      method: 'GET',
+      url: '/api/holding-types',
+    });
+    const types = typesResponse.json() as Array<{ id: string; slug: string }>;
+    const bondType = types.find((type) => type.slug === 'bond');
+    const brfiType = types.find((type) => type.slug === 'brazilian-fixed-income');
+    expect(bondType).toBeDefined();
+    expect(brfiType).toBeDefined();
+
+    const bondResponse = await app.inject({
+      method: 'GET',
+      url: `/api/holdings?holdingTypeId=${bondType!.id}`,
+    });
+    expect(bondResponse.statusCode).toBe(200);
+    const bondBody = bondResponse.json();
+    expect(bondBody.length).toBeGreaterThan(0);
+    expect(bondBody.every((row: { holdingType: { slug: string } }) => row.holdingType.slug === 'bond')).toBe(
+      true
+    );
+
+    const brfiResponse = await app.inject({
+      method: 'GET',
+      url: `/api/holdings?holdingTypeId=${brfiType!.id}`,
+    });
+    expect(brfiResponse.statusCode).toBe(200);
+    expect(brfiResponse.json()).toEqual([]);
+  });
+
+  it('POST /api/holdings assigns Bond holding type', async () => {
+    const accountId = seededAccountIds.get('vanguard')!;
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        issuer: 'Bond Type Route Test',
+        faceValue: 10_000,
+        couponRate: 3,
+        couponFrequency: 'annual',
+        maturityDate: '2031-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json().holdingType).toMatchObject({
+      slug: 'bond',
+      name: 'Bond',
+    });
+  });
+
+  it('POST /api/holdings rejects non-bond holdingTypeId', async () => {
+    const accountId = seededAccountIds.get('vanguard')!;
+    const typesResponse = await app.inject({
+      method: 'GET',
+      url: '/api/holding-types',
+    });
+    const brfiType = (typesResponse.json() as Array<{ id: string; slug: string }>).find(
+      (type) => type.slug === 'brazilian-fixed-income'
+    );
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        holdingTypeId: brfiType!.id,
+        issuer: 'Invalid Type Bond',
+        faceValue: 10_000,
+        couponRate: 3,
+        couponFrequency: 'annual',
+        maturityDate: '2031-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      code: 'VALIDATION_ERROR',
+      fields: {
+        holdingTypeId: expect.arrayContaining([expect.any(String)]),
+      },
+    });
+  });
+
   it('GET /api/accounts/:id returns account with archivedAt when archived', async () => {
     const accountId = seededAccountIds.get('vanguard')!;
 

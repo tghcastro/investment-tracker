@@ -31,7 +31,7 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 
 ## App shell
 
-- `TopNav` 64px, canvas background, hairline bottom border.
+- `TopNav` 64px, canvas background, hairline bottom border; **Holdings** opens a type submenu from `GET /api/holding-types` (Bond → `/holdings`; BRFI placeholder until M7).
 - Main: `.cb-app__main`, max-width ~1200px, padding 32px / 24px.
 - Routes: `/`, `/holdings`, `/holdings/new`, `/holdings/:id`, `/accounts`, `/accounts/new`, `/accounts/:id`, `/income`, `/settings`.
 
@@ -40,7 +40,7 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 | Component | Use |
 | --- | --- |
 | `Button` | `primary`, `secondary`, `tertiary`, `disabled` |
-| `TopNav` | Global nav; `activePath` for highlight |
+| `TopNav` | Global nav; Holdings submenu by holding type |
 | `PageHeader` | Title + subtitle + optional action |
 | `EmptyState` | Zero-data lists |
 | `ErrorBanner` | Fetch/validation errors (text on soft surface) |

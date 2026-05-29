@@ -15,6 +15,20 @@
       "when": 1747785600000,
       "tag": "002_accounts_archived_at",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1748563200000,
+      "tag": "003_holding_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1748649600000,
+      "tag": "004_bond_holdings_holding_type_id",
+      "breakpoints": true
     }
   ]
 }

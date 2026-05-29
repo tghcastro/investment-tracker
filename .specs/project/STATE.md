@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-29
-**Current Work:** M4 complete — v1.0.0 ready for release on `m4-p3-ship`
+**Current Work:** M5 complete — execute [M6 multi-currency](../features/active/m6-multi-currency/tasks.md) next. v2.0.0 ships after M7 (M6 → M7).
 
 ---
 
@@ -56,6 +56,15 @@
 **Trade-off:** Two images to version and pull; SQLite still file-backed (`./data` volume locally).
 **Impact:** `docker/`, `docker-compose.yml`, `Makefile`, Hub repo `tghcastro/investment-tracker` with tags `api-<version>` and `web-<version>`.
 
+### AD-009: v2 scope — M5–M7, single release at v2.0.0 (2026-05-29)
+
+**Decision:** Post-v1 work is three milestones in order: M5 holdings framework, M6 multi-currency, M7 Brazilian fixed income. **v2.0.0** is declared only after M7 completes (not per-milestone tags).
+**Reason:** Features form one cohesive v2 (multi-type + FX + BRFI); user confirmed order and bundled release.
+**Trade-off:** No intermediate tagged releases until M7 ship gate.
+**Impact:** Active specs in `.specs/features/active/`; ROADMAP M5–M7; M7 tasks include release + archive to `completed/`.
+
+---
+
 ### AD-008: M4 scope is backup/restore + UX polish, not CSV import (2026-05-23)
 
 **Decision:** M4 delivers a settings/backup page (version, DB path, backup download, restore) and remaining UX polish. Spreadsheet import moves to Future Considerations.
@@ -95,6 +104,15 @@ _None yet._
 
 ## Todos
 
+- [x] Approve M5 spec → Execute P1 [tasks](../features/active/m5-holdings-framework/tasks.md)
+- [x] Implement M5 — holdings framework on `m5-holdings-framework` (2026-05-29)
+- [ ] Execute M6 — multi-currency after M5 ship
+- [ ] Approve M6 spec (draft ready) — execute after M5 ship
+- [ ] Approve M7 spec (draft ready) — execute after M6 ship
+- [ ] v2.0.0 release after M7 P3 (AD-009)
+- [x] Specify M5 — `.specs/features/active/m5-holdings-framework/` (2026-05-29)
+- [x] Specify M6 — `.specs/features/active/m6-multi-currency/` (2026-05-29)
+- [x] Specify M7 — `.specs/features/active/m7-brazilian-fixed-income/` (2026-05-29)
 - [x] Map codebase (`/tlc-spec-driven map codebase`) — pre-scaffold baseline in `.specs/codebase/` (2026-05-20); re-map after M1
 - [x] Specify first feature: M1 project scaffold — `/.specs/features/completed/m1-scaffold/spec.md` (2026-05-20)
 - [x] Design M1 — `/.specs/features/completed/m1-scaffold/design.md` (2026-05-20)

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TopNav } from '../src/components/ui/TopNav';
 
 const MOBILE_QUERY = '(max-width: 767px)';
+
+const MOCK_HOLDING_TYPES = [
+  { id: '1', slug: 'bond', name: 'Bond', sortOrder: 10 },
+  { id: '2', slug: 'brazilian-fixed-income', name: 'Brazilian Fixed Income', sortOrder: 20 },
+];
 
 function mockMatchMedia(isMobile: boolean) {
   Object.defineProperty(window, 'matchMedia', {
@@ -24,16 +29,38 @@ function mockMatchMedia(isMobile: boolean) {
   });
 }
 
+function mockHoldingTypesFetch() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/holding-types')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => MOCK_HOLDING_TYPES,
+        });
+      }
+      return Promise.resolve({
+        ok: false,
+        status: 404,
+        json: async () => ({}),
+      });
+    })
+  );
+}
+
 describe('TopNav responsive behavior', () => {
   beforeEach(() => {
     mockMatchMedia(true);
+    mockHoldingTypesFetch();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
-  it('keeps mobile nav closed until the hamburger toggle is clicked', () => {
+  it('keeps mobile nav closed until the hamburger toggle is clicked', async () => {
     render(
       <MemoryRouter>
         <TopNav />
@@ -47,7 +74,9 @@ describe('TopNav responsive behavior', () => {
     expect(menuToggle).toHaveClass('cb-top-nav__menu-toggle');
     expect(menuToggle).toHaveAttribute('aria-expanded', 'false');
     expect(mainNav).not.toHaveClass('cb-top-nav__center--open');
-    expect(screen.getByRole('link', { name: 'Holdings' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Holdings' })).toBeInTheDocument();
+    });
   });
 
   it('opens mobile nav sheet when menu toggle is clicked', async () => {
@@ -91,7 +120,7 @@ describe('TopNav responsive behavior', () => {
     );
   });
 
-  it('does not require a menu toggle interaction on wide viewports', () => {
+  it('does not require a menu toggle interaction on wide viewports', async () => {
     mockMatchMedia(false);
 
     render(
@@ -104,7 +133,9 @@ describe('TopNav responsive behavior', () => {
 
     expect(window.matchMedia(MOBILE_QUERY).matches).toBe(false);
     expect(mainNav).not.toHaveClass('cb-top-nav__center--open');
-    expect(screen.getByRole('link', { name: 'Accounts' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Accounts' })).toBeInTheDocument();
+    });
     expect(screen.queryByRole('button', { name: 'Close menu' })).not.toBeInTheDocument();
   });
 
@@ -157,5 +188,29 @@ describe('TopNav responsive behavior', () => {
     );
 
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
+  });
+
+  it('renders holdings submenu from API with Bond link and BRFI placeholder', async () => {
+    mockMatchMedia(false);
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter>
+        <TopNav />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('menuitem', { name: 'Bond' })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Holdings' }));
+
+    expect(screen.getByRole('menuitem', { name: 'Bond' })).toHaveAttribute('href', '/holdings');
+    expect(screen.getByRole('menuitem', { name: /Brazilian Fixed Income/i })).toHaveAttribute(
+      'aria-disabled',
+      'true'
+    );
+    expect(screen.getByText('Coming in v2')).toBeInTheDocument();
   });
 });

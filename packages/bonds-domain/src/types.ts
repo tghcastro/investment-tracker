@@ -3,6 +3,8 @@
  * These are the core data structures with no HTTP or DB knowledge.
  */
 
+import type { HoldingTypeRef } from './holdingTypes.js';
+
 export interface Account {
   id: string;
   name: string;
@@ -16,6 +18,7 @@ export type CouponFrequency = 'semi-annual' | 'quarterly' | 'monthly' | 'annual'
 
 export interface BondHolding {
   id: string;
+  holdingType: HoldingTypeRef;
   accountId: string;
   issuer: string;
   isin?: string;
