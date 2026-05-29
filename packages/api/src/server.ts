@@ -63,7 +63,7 @@ export async function createServer(
   initialDb: Database = db,
   databaseFilePath: string = dbPath
 ): Promise<FastifyInstance> {
-  const app = Fastify({ logger: true });
+  const app = Fastify({ logger: process.env.VITEST !== 'true' });
 
   const allowedOrigins = getCorsOrigins();
 
