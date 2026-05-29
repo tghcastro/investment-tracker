@@ -11,7 +11,7 @@ export function registerPostHolding(app: FastifyInstance, getRepo: () => Repo): 
   app.post('/api/holdings', async (request, reply) => {
     const repo = getRepo();
     const parsed = createBondHoldingSchema.parse(request.body);
-    const { couponRate, holdingTypeId, ...rest } = parsed;
+    const { couponRate, holdingTypeId, currencyCode, ...rest } = parsed;
 
     if (holdingTypeId !== undefined) {
       const holdingType = await repo.getHoldingTypeById(holdingTypeId);
@@ -34,6 +34,7 @@ export function registerPostHolding(app: FastifyInstance, getRepo: () => Repo): 
     const holding = await repo.insertBondHolding({
       ...rest,
       holdingTypeId,
+      currencyCode,
       couponRate: couponRatePercentToDecimal(couponRate),
     });
     return reply.status(201).send(toApiBondHolding(holding));

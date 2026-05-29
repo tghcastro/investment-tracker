@@ -8,6 +8,24 @@ type SerializeDates<T> = {
       : T[K];
 };
 
+/** JSON shape returned by GET /api/currencies */
+export interface ApiCurrency {
+  code: string;
+  number: string;
+  name: string;
+  symbol: string;
+  region: string;
+}
+
+/** JSON shape returned by GET /api/currency-quotes */
+export interface ApiCurrencyQuote {
+  id: string;
+  quoteDate: string;
+  targetCurrencyCode: string;
+  rate: number;
+  createdAt: string;
+}
+
 /** JSON shape returned by GET /api/holding-types */
 export interface ApiHoldingType {
   id: string;
@@ -26,13 +44,17 @@ export interface ApiHoldingTypeRef {
 export type ApiAccount = SerializeDates<Account>;
 
 /** JSON shape returned by GET /api/holdings */
-export type ApiBondHolding = SerializeDates<BondHolding>;
+export type ApiBondHolding = SerializeDates<BondHolding> & {
+  displayFaceValue?: number;
+  displayPurchasePrice?: number;
+};
 
 export interface ApiPortfolioSummaryLadderItem {
   holdingId: string;
   issuer: string;
   maturityDate: string;
   faceValue: number;
+  displayFaceValue?: number;
 }
 
 /** JSON shape returned by GET /api/portfolio/summary */
@@ -43,6 +65,9 @@ export interface ApiPortfolioSummary {
   totalCostBasis: number;
   holdingsWithCostBasis: number;
   holdingsMissingCostBasis: number;
+  displayCurrency?: string;
+  displayTotalFaceValue?: number;
+  displayTotalCostBasis?: number;
   maturityLadder: ApiPortfolioSummaryLadderItem[];
 }
 

@@ -61,6 +61,21 @@ vi.mock('../src/hooks/useApi', () => ({
         error: undefined,
       };
     }
+    if (url === '/api/currencies' || url === '/api/currencies/available') {
+      return {
+        data: [
+          {
+            code: 'USD',
+            number: '840',
+            name: 'US Dollar',
+            symbol: '$',
+            region: 'United States',
+          },
+        ],
+        loading: false,
+        error: undefined,
+      };
+    }
     return {
       data: [],
       loading: false,
@@ -78,6 +93,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Holdings' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Bond' })).toHaveAttribute('href', '/holdings');
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
+    expect(screen.getByRole('link', { name: 'Currencies' })).toHaveAttribute('href', '/currencies');
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
     expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
     expect(screen.getByRole('heading', { name: 'Bond portfolio' })).toBeInTheDocument();

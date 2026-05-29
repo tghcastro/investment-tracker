@@ -32,3 +32,15 @@
   flex-wrap: wrap;
   gap: var(--cb-space-xs);
 }
+
+.cb-account-form__currency-grid {
+  display: grid;
+  gap: var(--cb-space-xs);
+}
+
+.cb-account-form__currency-option {
+  display: flex;
+  gap: var(--cb-space-xs);
+  align-items: center;
+  font-size: var(--cb-font-body-md-size);
+}

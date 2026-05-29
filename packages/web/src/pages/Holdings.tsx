@@ -5,13 +5,19 @@ import {
   HoldingsTableSkeleton,
   type AccountInfo,
 } from '../components/HoldingsTable';
+import { CurrencySelector } from '../components/CurrencySelector';
 import { ConfirmDialog, FormField, TextInput } from '../components/forms';
 import { Button, EmptyState, ErrorBanner, PageHeader } from '../components/ui';
+import {
+  appendDisplayCurrencyParam,
+  useDisplayCurrency,
+} from '../contexts/DisplayCurrencyContext';
 import { useApi, useApiMutation } from '../hooks';
 import type { ApiAccount, ApiBondHolding } from '../types/api';
 import './Holdings.css';
 
 export default function Holdings() {
+  const { displayCurrency } = useDisplayCurrency();
   const [searchParams, setSearchParams] = useSearchParams();
   const [issuerFilter, setIssuerFilter] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -30,8 +36,9 @@ export default function Holdings() {
       params.set('maturityAfter', maturityAfter);
     }
     const qs = params.toString();
-    return qs ? `/api/holdings?${qs}` : '/api/holdings';
-  }, [accountId, maturityAfter]);
+    const base = qs ? `/api/holdings?${qs}` : '/api/holdings';
+    return appendDisplayCurrencyParam(base, displayCurrency);
+  }, [accountId, maturityAfter, displayCurrency]);
 
   const { data: holdings, loading, error } = useApi<ApiBondHolding[]>(holdingsUrl);
   const { data: accounts } = useApi<ApiAccount[]>('/api/accounts?includeArchived=true');
@@ -112,6 +119,12 @@ export default function Holdings() {
     <div className="cb-holdings-page">
       <PageHeader title="Holdings" subtitle="All bond positions" />
 
+      {!loading && !error ? (
+        <div className="cb-holdings-toolbar">
+          <CurrencySelector />
+        </div>
+      ) : null}
+
       {error ? <ErrorBanner message={error} /> : null}
       {deleteMutation.error ? <ErrorBanner message={deleteMutation.error} /> : null}
 
@@ -172,6 +185,7 @@ export default function Holdings() {
         <HoldingsTable
           holdings={visibleHoldings}
           accountInfo={accountInfo}
+          displayCurrency={displayCurrency}
           onDelete={handleDeleteRequest}
         />
       ) : null}

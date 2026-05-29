@@ -1,5 +1,10 @@
 import { Link } from 'react-router-dom';
+import { CurrencySelector } from '../components/CurrencySelector';
 import { Button, EmptyState, ErrorBanner, PageHeader } from '../components/ui';
+import {
+  appendDisplayCurrencyParam,
+  useDisplayCurrency,
+} from '../contexts/DisplayCurrencyContext';
 import { useApi } from '../hooks';
 import type { ApiIncomeSummary, ApiPortfolioSummary, ApiUpcomingCoupon } from '../types/api';
 import { formatCurrency, formatDate } from '../utils/format';
@@ -7,8 +12,10 @@ import { currentUtcCalendarYearRangeStrings, incomeSummaryUrl } from '../utils/i
 import './Home.css';
 
 export default function Home() {
+  const { displayCurrency } = useDisplayCurrency();
   const calendarYear = currentUtcCalendarYearRangeStrings();
-  const { data: summary, loading, error } = useApi<ApiPortfolioSummary>('/api/portfolio/summary');
+  const summaryUrl = appendDisplayCurrencyParam('/api/portfolio/summary', displayCurrency);
+  const { data: summary, loading, error } = useApi<ApiPortfolioSummary>(summaryUrl);
   const {
     data: incomeSummary,
     loading: incomeLoading,
@@ -38,6 +45,12 @@ export default function Home() {
 
       {fetchError ? <ErrorBanner message={fetchError} /> : null}
 
+      {!pageLoading && !fetchError && hasPositions ? (
+        <div className="cb-home__toolbar">
+          <CurrencySelector />
+        </div>
+      ) : null}
+
       {pageLoading ? (
         <div className="cb-home__summary cb-home__summary--loading" aria-busy="true">
           <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
@@ -53,7 +66,10 @@ export default function Home() {
           <div className="cb-home__metric-card">
             <p className="cb-home__metric-label">Total face value</p>
             <p className="cb-home__metric-value cb-number-display">
-              {formatCurrency(summary.totalFaceValue)}
+              {formatCurrency(
+                summary.displayTotalFaceValue ?? summary.totalFaceValue,
+                summary.displayCurrency ?? displayCurrency
+              )}
             </p>
           </div>
           <div className="cb-home__metric-card">
@@ -75,7 +91,10 @@ export default function Home() {
           <div className="cb-home__metric-card">
             <p className="cb-home__metric-label">Total cost basis</p>
             <p className="cb-home__metric-value cb-number-display">
-              {formatCurrency(summary.totalCostBasis)}
+              {formatCurrency(
+                summary.displayTotalCostBasis ?? summary.totalCostBasis,
+                summary.displayCurrency ?? displayCurrency
+              )}
             </p>
           </div>
           {summary.holdingsMissingCostBasis > 0 ? (
@@ -99,7 +118,10 @@ export default function Home() {
                   {formatDate(item.maturityDate)}
                 </span>
                 <span className="cb-home__ladder-value cb-number-display">
-                  {formatCurrency(item.faceValue)}
+                  {formatCurrency(
+                    item.displayFaceValue ?? item.faceValue,
+                    summary.displayCurrency ?? displayCurrency
+                  )}
                 </span>
               </li>
             ))}

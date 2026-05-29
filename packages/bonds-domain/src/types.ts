@@ -9,6 +9,7 @@ export interface Account {
   id: string;
   name: string;
   description?: string;
+  currencyCodes: string[];
   createdAt: Date;
   updatedAt: Date;
   archivedAt?: Date;
@@ -20,6 +21,7 @@ export interface BondHolding {
   id: string;
   holdingType: HoldingTypeRef;
   accountId: string;
+  currencyCode: string;
   issuer: string;
   isin?: string;
   cusip?: string;

@@ -4,7 +4,7 @@ import { AccountForm, type AccountFormSubmitPayload } from '../components/Accoun
 import { ConfirmDialog } from '../components/forms';
 import { EmptyState, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi, useApiMutation } from '../hooks';
-import type { ApiAccount } from '../types/api';
+import type { ApiAccount, ApiCurrency } from '../types/api';
 
 export interface AccountFormPageProps {
   mode: 'create' | 'edit';
@@ -32,11 +32,23 @@ export default function AccountFormPage({ mode }: AccountFormPageProps) {
 
   const activeMutation = mode === 'create' ? createMutation : updateMutation;
 
+  const { data: currencies } = useApi<ApiCurrency[]>('/api/currencies');
+
+  const currencyOptions = useMemo(
+    () =>
+      (currencies ?? []).map((currency) => ({
+        code: currency.code,
+        name: currency.name,
+      })),
+    [currencies]
+  );
+
   const initialValues = useMemo(() => {
     if (mode === 'edit' && account) {
       return {
         name: account.name,
         description: account.description ?? '',
+        currencyCodes: account.currencyCodes,
       };
     }
     return undefined;
@@ -100,6 +112,7 @@ export default function AccountFormPage({ mode }: AccountFormPageProps) {
 
       <AccountForm
         initialValues={initialValues}
+        currencyOptions={currencyOptions}
         serverFieldErrors={activeMutation.fieldErrors}
         submitLabel={mode === 'create' ? 'Create account' : 'Save changes'}
         loading={activeMutation.loading || archiveMutation.loading}

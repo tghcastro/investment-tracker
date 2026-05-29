@@ -7,6 +7,12 @@
   max-width: 36rem;
 }
 
+.cb-home__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--cb-space-base);
+}
+
 .cb-home__summary {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

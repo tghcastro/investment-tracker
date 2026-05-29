@@ -11,6 +11,13 @@ import { registerAccountHoldings } from './routes/accounts/holdings.js';
 import { registerListAccounts } from './routes/accounts/list.js';
 import { registerPatchAccount } from './routes/accounts/patch.js';
 import { registerPostAccount } from './routes/accounts/post.js';
+import { registerListAvailableCurrencies, registerListCurrencies } from './routes/currencies/list.js';
+import {
+  registerDeleteCurrencyQuote,
+  registerListCurrencyQuotes,
+  registerPatchCurrencyQuote,
+  registerPostCurrencyQuote,
+} from './routes/currency-quotes/crud.js';
 import { registerListHoldingTypes } from './routes/holding-types/list.js';
 import { registerDeleteHolding } from './routes/holdings/delete.js';
 import { registerGetHoldingById } from './routes/holdings/get-by-id.js';
@@ -100,6 +107,12 @@ export async function createServer(
   registerPatchAccount(app, getRepo);
   registerArchiveAccount(app, getRepo);
   registerAccountHoldings(app, getRepo);
+  registerListCurrencies(app, getRepo);
+  registerListAvailableCurrencies(app, getRepo);
+  registerListCurrencyQuotes(app, getRepo);
+  registerPostCurrencyQuote(app, getRepo);
+  registerPatchCurrencyQuote(app, getRepo);
+  registerDeleteCurrencyQuote(app, getRepo);
   registerListHoldingTypes(app, getRepo);
   registerPostHolding(app, getRepo);
   registerListHoldings(app, getRepo);

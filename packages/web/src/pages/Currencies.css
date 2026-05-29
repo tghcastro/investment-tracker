@@ -1,0 +1,59 @@
+.cb-currencies-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cb-currencies-table {
+  border: 1px solid var(--cb-border-hairline);
+  border-radius: var(--cb-radius-xl);
+  overflow: hidden;
+  background: var(--cb-surface);
+}
+
+.cb-currencies-table__head,
+.cb-currencies-table__row {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px 1.2fr;
+  gap: 16px;
+  padding: 14px 20px;
+  align-items: center;
+}
+
+.cb-currencies-table__head {
+  background: var(--cb-surface-strong);
+  font-size: var(--cb-font-size-sm);
+  color: var(--cb-text-muted);
+  border-bottom: 1px solid var(--cb-border-hairline);
+}
+
+.cb-currencies-table__row:not(:last-child) {
+  border-bottom: 1px solid var(--cb-border-hairline);
+}
+
+.cb-currencies-table--loading {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
+.cb-currencies-table__skeleton-row {
+  height: 44px;
+  border-radius: var(--cb-radius-md);
+  background: var(--cb-surface-strong);
+}
+
+@media (max-width: 768px) {
+  .cb-currencies-table__head,
+  .cb-currencies-table__row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cb-currencies-table__head span:nth-child(3),
+  .cb-currencies-table__head span:nth-child(4),
+  .cb-currencies-table__row span:nth-child(3),
+  .cb-currencies-table__row span:nth-child(4) {
+    display: none;
+  }
+}
