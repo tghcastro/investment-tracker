@@ -16,7 +16,7 @@
 
 - Platform: Web application + REST backend API
 - Backend: Node.js + TypeScript
-- Frontend: React (SPA consuming the API); UI follows [`DESIGN.md`](../DESIGN.md) (institutional / Coinbase-inspired tokens — see `.specs/features/m1-scaffold/web-design.md`)
+- Frontend: React (SPA consuming the API); UI follows [`DESIGN.md`](../../DESIGN.md) (institutional / Coinbase-inspired tokens — see `.specs/features/completed/m1-scaffold/web-design.md`)
 - Architecture: Modular monorepo or packages (domain modules isolated from transport/UI)
 - Database: SQLite (local file; suitable for solo use and low ops overhead)
 

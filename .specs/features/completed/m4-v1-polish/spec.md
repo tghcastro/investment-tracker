@@ -337,4 +337,4 @@ Design phase SHALL confirm this checklist against current UI; implement only ite
 
 ## Next Phase
 
-**Review & approve spec** → **Design**: `.specs/features/m4-v1-polish/design.md` → **Tasks**: `.specs/features/m4-v1-polish/tasks.md` → **Execute**.
+**Review & approve spec** → **Design**: `.specs/features/completed/m4-v1-polish/design.md` → **Tasks**: `.specs/features/completed/m4-v1-polish/tasks.md` → **Execute**.

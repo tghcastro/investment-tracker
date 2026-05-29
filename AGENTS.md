@@ -1,0 +1,76 @@
+# Agent map (Investment Tracker)
+
+Short index for coding agents. Read only what your task needs — do not load the whole repo docs tree.
+
+**Product:** Personal bond portfolio tracker (React SPA + Fastify API + SQLite). v1.0 bonds-only; M1–M4 shipped.
+
+## Start here
+
+| Task | Read first (in order) |
+| --- | --- |
+| Any change | [`.specs/project/STATE.md`](.specs/project/STATE.md) — current work, AD decisions, blockers |
+| Scope / what not to build | [`.specs/project/PROJECT.md`](.specs/project/PROJECT.md) |
+| Milestones / future work | [`.specs/project/ROADMAP.md`](.specs/project/ROADMAP.md) |
+| New feature (M5+) | Create specs under [`.specs/features/active/`](.specs/features/active/) — see [`.specs/index.md`](.specs/index.md) |
+
+## Codebase (source of truth for implementation)
+
+| Doc | Use when |
+| --- | --- |
+| [`.specs/codebase/ARCHITECTURE.md`](.specs/codebase/ARCHITECTURE.md) | Module boundaries, data flow |
+| [`.specs/codebase/STRUCTURE.md`](.specs/codebase/STRUCTURE.md) | Repo layout, package paths |
+| [`.specs/codebase/STACK.md`](.specs/codebase/STACK.md) | Node 22, workspaces, SQLite, Docker |
+| [`.specs/codebase/CONVENTIONS.md`](.specs/codebase/CONVENTIONS.md) | Naming, imports, lint |
+| [`.specs/codebase/TESTING.md`](.specs/codebase/TESTING.md) | Test commands, coverage gates |
+| [`.specs/codebase/INTEGRATIONS.md`](.specs/codebase/INTEGRATIONS.md) | External services (v1: none) |
+| [`.specs/codebase/CONCERNS.md`](.specs/codebase/CONCERNS.md) | Known risks and tech debt |
+
+Full catalog and freshness: [`.specs/index.md`](.specs/index.md).
+
+## Packages (quick paths)
+
+| Package | Role |
+| --- | --- |
+| `packages/bonds-domain/` | Entities, validation, domain services |
+| `packages/api/` | Fastify REST, SQLite repo, migrations |
+| `packages/web/` | React + Vite SPA, `src/styles/tokens.css` from design tokens |
+
+## UI / design
+
+| Doc | Use when |
+| --- | --- |
+| [`DESIGN.md`](DESIGN.md) | Colors, typography, components (YAML tokens) |
+| [`.specs/features/completed/m1-scaffold/web-design.md`](.specs/features/completed/m1-scaffold/web-design.md) | How tokens map to `packages/web/` (historical; prefer `DESIGN.md` + code) |
+
+## Environment (always apply)
+
+- **Shell:** WSL Ubuntu — see [`.cursor/rules/wsl-shell.mdc`](.cursor/rules/wsl-shell.mdc)
+- **Node:** 22 (`.nvmrc`) — never run bare PowerShell `npm`/`git` on Windows host
+- **Repo path in WSL:** `/mnt/d/workspace/investment-tracker`
+
+## Run locally (minimal)
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 22
+cd /mnt/d/workspace/investment-tracker && npm install
+npm run test
+npm run dev:web    # port 80 — see README.md for sudo
+npm run dev:api    # port 3000
+```
+
+Human runbook (deploy, Docker, URLs): [`README.md`](README.md) — load only if the task needs ops detail.
+
+## Not indexed by default (open explicitly if needed)
+
+| Path | Why excluded |
+| --- | --- |
+| `.specs/features/completed/` | Shipped M1–M4 specs (~6.5k lines); use for archaeology or requirement IDs only |
+| `README.md` | Long human onboarding |
+| `bruno/` | Manual HTTP collection |
+| `.cursor/JIRA-MCP.md` | Atlassian MCP setup |
+
+Configured in [`.cursorignore`](.cursorignore).
+
+## Jira
+
+Project **INVTR** — setup: [`.cursor/JIRA-MCP.md`](.cursor/JIRA-MCP.md).

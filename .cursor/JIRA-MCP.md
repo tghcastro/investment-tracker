@@ -35,7 +35,7 @@
 
 Ask Cursor (with MCP enabled):
 
-> In project INVTR, create Epic "M2 — Bond holdings & accounts" and three Stories: P1 Backend API (T1–T17), P2 Web CRUD (T18–T25), P3 Web polish (T26–T29). Link to repo spec `.specs/features/m2-core/tasks.md`.
+> In project INVTR, create Epic "M2 — Bond holdings & accounts" and three Stories: P1 Backend API (T1–T17), P2 Web CRUD (T18–T25), P3 Web polish (T26–T29). Link to repo spec `.specs/features/completed/m2-core/tasks.md`.
 
 ## Security
 

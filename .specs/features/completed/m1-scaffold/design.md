@@ -1,6 +1,6 @@
 # M1 Design
 
-**Spec**: `.specs/features/m1-scaffold/spec.md`
+**Spec**: `.specs/features/completed/m1-scaffold/spec.md`
 **Status**: Draft
 
 ---

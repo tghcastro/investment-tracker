@@ -326,4 +326,4 @@ TopNav SHALL include **Income** linking to `/income`.
 
 ## Next Phase
 
-Design: `.specs/features/m3-coupon-income/design.md` (approved). Tasks: `.specs/features/m3-coupon-income/tasks.md`. Next: **Approve tasks** → **Execute**.
+Design: `.specs/features/completed/m3-coupon-income/design.md` (approved). Tasks: `.specs/features/completed/m3-coupon-income/tasks.md`. Next: **Approve tasks** → **Execute**.

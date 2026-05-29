@@ -254,7 +254,7 @@ Existing M1 endpoints unchanged unless noted above.
 
 TopNav **Add holding** SHALL link to `/holdings/new` (enabled in M2).
 
-Forms SHALL follow `.specs/features/m1-scaffold/web-design.md` **Forms** section and DESIGN.md `text-input` patterns.
+Forms SHALL follow `.specs/features/completed/m1-scaffold/web-design.md` **Forms** section and DESIGN.md `text-input` patterns.
 
 ---
 

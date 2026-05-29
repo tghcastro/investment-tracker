@@ -1,7 +1,7 @@
 # M2 Tasks
 
-**Design**: `.specs/features/m2-core/design.md`  
-**Spec**: `.specs/features/m2-core/spec.md`  
+**Design**: `.specs/features/completed/m2-core/design.md`  
+**Spec**: `.specs/features/completed/m2-core/spec.md`  
 **Status**: Approved
 
 ---

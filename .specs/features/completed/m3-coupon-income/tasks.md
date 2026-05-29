@@ -1,7 +1,7 @@
 # M3 Tasks — Coupon Income & Cash Flows
 
-**Design**: `.specs/features/m3-coupon-income/design.md`  
-**Spec**: `.specs/features/m3-coupon-income/spec.md`  
+**Design**: `.specs/features/completed/m3-coupon-income/design.md`  
+**Spec**: `.specs/features/completed/m3-coupon-income/spec.md`  
 **Status**: Complete (P3 done)
 
 ---
