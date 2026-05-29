@@ -12,7 +12,9 @@ Start here for **what** we're building and **what's next**:
 | [.specs/project/ROADMAP.md](.specs/project/ROADMAP.md) | Milestones (M1–M4) and future work |
 | [.specs/project/STATE.md](.specs/project/STATE.md) | Current work, decisions, todos, blockers |
 
-Feature specs (when present): [`.specs/features/`](.specs/features/)
+**Agents:** start at [`AGENTS.md`](AGENTS.md). Doc catalog: [`.specs/index.md`](.specs/index.md).
+
+Feature specs: active work in [`.specs/features/active/`](.specs/features/active/); shipped M1–M4 in [`.specs/features/completed/`](.specs/features/completed/).
 
 Codebase reference (stack, architecture, testing):
 
@@ -23,7 +25,7 @@ Codebase reference (stack, architecture, testing):
 | [.specs/codebase/TESTING.md](.specs/codebase/TESTING.md) | Test strategy and commands |
 | [.specs/codebase/STRUCTURE.md](.specs/codebase/STRUCTURE.md) | Repo layout |
 
-Full index: [`.specs/codebase/`](.specs/codebase/)
+Full index: [`.specs/index.md`](.specs/index.md) · Agent map: [`AGENTS.md`](AGENTS.md) · UI: [`docs/FRONTEND.md`](docs/FRONTEND.md)
 
 ## Development setup (WSL)
 

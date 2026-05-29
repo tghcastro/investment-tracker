@@ -1,6 +1,6 @@
 # M3 Design — Coupon Income & Cash Flows
 
-**Spec**: `.specs/features/m3-coupon-income/spec.md`  
+**Spec**: `.specs/features/completed/m3-coupon-income/spec.md`  
 **Status**: Approved (2026-05-23)  
 **Scope**: Large — full design + task breakdown required before Execute
 
@@ -552,4 +552,4 @@ Gate: `npm run test` + `npm run lint` before merge.
 
 ## Next Phase
 
-**Tasks** (`.specs/features/m3-coupon-income/tasks.md`) → **Approve tasks** → **Execute**
+**Tasks** (`.specs/features/completed/m3-coupon-income/tasks.md`) → **Approve tasks** → **Execute**

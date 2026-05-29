@@ -1,68 +1,75 @@
 # Tech Stack
 
-**Analyzed:** 2026-05-20
-**Status:** Pre-scaffold — no dependency manifests or application code exist yet. Stack below is **planned** (from `.specs/project/PROJECT.md`, `.specs/project/STATE.md`) unless marked *observed*.
+**Analyzed:** 2026-05-29  
+**Status:** Implemented in `packages/*` (npm workspaces monorepo).
 
 ## Core
 
-- **Platform:** Web application + REST backend API (planned)
-- **Language:** TypeScript (planned)
-- **Runtime:** Node.js (planned; version TBD at M1 scaffold)
-- **Package manager:** TBD at M1 (likely npm or pnpm for monorepo)
-- **Architecture:** Modular monorepo or multi-package layout — `api`, `web`, shared types/domain (planned, AD-002)
+| Layer | Choice | Where |
+| --- | --- | --- |
+| Runtime | Node.js **22** (`.nvmrc`, `engines` in root + web) | WSL Ubuntu for dev |
+| Language | TypeScript **6.x** | All packages |
+| Package manager | npm workspaces | Root `package.json` → `packages/*` |
+| Persistence | SQLite file (`better-sqlite3` + Drizzle ORM) | `packages/api` |
+| API | Fastify **5** REST | `packages/api/src` |
+| Web | React **19** SPA, Vite **7**, React Router **7** | `packages/web` |
+| Domain | `bonds-domain` package (Zod validators, types, coupon math) | `packages/bonds-domain` |
 
-## Frontend (planned)
+## Workspace packages
 
-- **UI Framework:** React (SPA consuming REST API) — AD-004
-- **Styling:** TBD at M1 scaffold
-- **State Management:** TBD (likely React hooks + fetch/API client initially)
-- **Form Handling:** TBD (likely React-controlled forms + server-side validation)
+| Package | Name | Role |
+| --- | --- | --- |
+| `packages/bonds-domain` | `bonds-domain` | Shared types, Zod schemas, `couponSchedule` helpers — no I/O |
+| `packages/api` | `@investment-tracker/api` | HTTP server, Drizzle schema, `Repo`, migrations, system backup/restore |
+| `packages/web` | `@investment-tracker/web` | SPA, CSS tokens from `DESIGN.md`, fetch to API |
 
-## Backend (planned)
+**Dependency rule:** `web` and `api` depend on `bonds-domain`; `bonds-domain` depends on nothing in-repo. `api` does not import `web`.
 
-- **API Style:** REST (default; tRPC listed as open question in STATE.md)
-- **Database:** SQLite (local file) — AD-003
-- **ORM / query layer:** TBD (candidates noted in PROJECT.md: Drizzle or Prisma)
-- **Validation:** TBD (Zod mentioned as candidate)
-- **HTTP framework:** TBD (Fastify mentioned as candidate)
-- **Authentication:** None in v1 scope (multi-user explicitly out of scope)
+## Tooling (root)
 
-## Testing (planned — not yet present)
+| Tool | Version / notes | Command |
+| --- | --- | --- |
+| ESLint | flat config `eslint.config.mjs`, `@typescript-eslint` | `npm run lint` |
+| Prettier | devDependency | (format on save in editor) |
+| Vitest | per-package configs | `npm run test` |
+| TypeScript | `tsc` in api + bonds-domain; Vite handles web | `npm run build` in packages |
 
-- **Unit:** TBD at M1 (Vitest or Jest expected)
-- **Integration:** TBD at M1 (API + SQLite in-memory or temp file)
-- **E2E:** TBD (optional for M1; Playwright/Cypress candidate for M2+)
-- **Coverage:** TBD
+## Dev servers
 
-## External Services
+| Service | Port | Command |
+| --- | --- | --- |
+| API | 3000 | `npm run dev:api` |
+| Web (Vite) | **80** (`strictPort`) | `npm run dev:web` (Node 22 via `scripts/dev-web.sh`) |
 
-- **Market data:** None in v1 — manual entry only (AD-005)
-- **Broker sync:** None in v1
-- **Hosting / deploy:** Docker Compose (local) + Docker Hub (`tghcastro/investment-tracker`); release script → git tag + GitHub release (AD-007)
+Web uses `VITE_API_URL` (optional) for API base; default empty string = same-origin or proxy setup in deploy.
 
-## Development Tools
+## Environment variables (API)
 
-- **IDE terminal:** WSL Ubuntu (*observed* — `.vscode/settings.json`)
-- **Spec workflow:** tlc-spec-driven skill (`.cursor/skills/`, `.claude/skills/`)
-- **Version control:** Git (*observed*)
-- **License:** Apache 2.0 (*observed* — `LICENSE`)
-- **Containers:** Docker + Compose (`docker-compose.yml`, `docker/`); release via `scripts/investment-tracker-release.sh` (*observed*)
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | `packages/api/data.db` | SQLite file path |
+| `CORS_ORIGINS` | localhost variants | Comma-separated allowed origins |
+| `RESTORE_MAX_BYTES` | 32 MiB | Max upload for DB restore |
+| `APP_VERSION` | unset | Injected in Docker build for `/api/system/info` |
 
-## Observed Artifacts (no app stack yet)
+## Docker / release
 
-| Artifact | Notes |
-| -------- | ----- |
-| `README.md` | Describes intended stack; links to `.specs/project/` |
-| `.gitignore` | Gradle/Java patterns only — **mismatch** with planned Node/TS stack (see CONCERNS.md) |
-| Git tracked files | `README.md`, `LICENSE`, `.gitignore` only (commit `6799fc0`) |
-| Dependency manifests | **None** — no `package.json`, `pnpm-workspace.yaml`, `tsconfig.json`, etc. |
+| Artifact | Location |
+| --- | --- |
+| Local compose | `docker-compose.yml` |
+| Prod compose | `docker-compose.prod.yml` |
+| Images | `docker/api/Dockerfile`, `docker/web/Dockerfile` (nginx → API proxy) |
+| Release script | `scripts/investment-tracker-release.sh` |
+| Makefile | `make build`, `make start`, `make release TAG=…` |
 
-## Next Stack Decisions (M1)
+Hub images: `tghcastro/investment-tracker` tags `api-<version>`, `web-<version>` (see AD-007 in `STATE.md`).
 
-Resolve during M1 specify/implement:
+## External services (v1)
 
-1. Monorepo tool (npm workspaces vs pnpm vs Turborepo)
-2. API framework (Fastify vs Express vs other)
-3. ORM (Drizzle vs Prisma) with SQLite
-4. Validation library (Zod vs alternatives)
-5. Test runner and lint/format toolchain (ESLint, Prettier, Vitest/Jest)
+None — manual bond data entry only. See [INTEGRATIONS.md](./INTEGRATIONS.md).
+
+## Out of scope (v1)
+
+- Auth / multi-user
+- Market data or broker APIs
+- PostgreSQL (SQLite only; migrate later if needed)

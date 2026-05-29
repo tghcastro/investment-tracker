@@ -1,6 +1,6 @@
 # M1 Tasks
 
-**Design**: `.specs/features/m1-scaffold/design.md`  
+**Design**: `.specs/features/completed/m1-scaffold/design.md`  
 **Status**: Draft
 
 ---

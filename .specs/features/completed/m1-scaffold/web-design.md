@@ -1,7 +1,7 @@
 # M1 Web Application Design
 
-**Spec**: `.specs/features/m1-scaffold/spec.md`  
-**Technical design**: `.specs/features/m1-scaffold/design.md`  
+**Spec**: `.specs/features/completed/m1-scaffold/spec.md`  
+**Technical design**: `.specs/features/completed/m1-scaffold/design.md`  
 **Design system source of truth**: [`DESIGN.md`](../../../DESIGN.md) (repo root — Coinbase-inspired institutional UI)  
 **Status**: Draft
 

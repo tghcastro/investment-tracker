@@ -1,128 +1,115 @@
 # Architecture
 
-**Analyzed:** 2026-05-20
-**Status:** Pre-scaffold — architecture is **planned**, not yet implemented in code.
+**Analyzed:** 2026-05-29  
+**Status:** Implemented — modular monorepo (domain / API / web).
 
-**Pattern:** Modular monolith (monorepo with separated domain, API transport, and web UI packages)
-
-## High-Level Structure (planned)
+## High-level diagram
 
 ```
-┌─────────────┐     HTTP/REST      ┌─────────────┐     repository     ┌──────────┐
-│  web (React)│ ◄────────────────► │  api (Node) │ ◄────────────────► │  SQLite  │
-│     SPA     │                    │   routes    │                    │   file   │
-└─────────────┘                    └──────┬──────┘                    └──────────┘
-                                          │
-                                   ┌──────▼──────┐
-                                   │ bonds domain │
-                                   │ (entities,   │
-                                   │  validation, │
-                                   │  services)   │
-                                   └─────────────┘
+┌──────────────────┐     HTTP (JSON)      ┌──────────────────┐     Drizzle      ┌─────────────┐
+│  @investment-    │ ◄──────────────────► │  @investment-    │ ◄──────────────► │   SQLite    │
+│  tracker/web     │                      │  tracker/api     │                  │  (file)     │
+│  React + Vite    │                      │  Fastify + Repo  │                  └─────────────┘
+└────────┬─────────┘                      └────────┬─────────┘
+         │ imports types/schemas                 │ imports
+         └──────────────────┬────────────────────┘
+                            ▼
+                   ┌─────────────────┐
+                   │  bonds-domain   │
+                   │  Zod + types +  │
+                   │  coupon math    │
+                   └─────────────────┘
 ```
 
-**Design intent (AD-002):** Domain logic (bond holdings, accounts, coupon payments) stays isolated from HTTP handlers and React components so future asset classes and broker adapters can plug in as modules.
+## Layer responsibilities
 
-## Identified Patterns (planned)
+### `bonds-domain`
 
-### Layered domain module
+- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers (`expectedCouponAmountCents`, `generateEstimatedCouponDates`).
+- **Must not:** Import Fastify, React, Drizzle, or filesystem APIs.
+- **Consumers:** API route handlers validate request bodies with the same schemas; web may import types for forms.
 
-**Location:** Planned `packages/bonds` or `src/domain/bonds` (TBD at M1)
-**Purpose:** Encapsulate bond-specific entities, validation, and business rules without HTTP or DB details leaking in.
-**Implementation:** Entities (`Account`, `BondHolding`, `CouponPayment`), value objects (rates, dates), service layer orchestrating repositories.
-**Example:** Not yet in codebase — specified in `.specs/project/ROADMAP.md` M1.
+### `packages/api`
 
-### Repository pattern for persistence
+| Layer | Files | Responsibility |
+| --- | --- | --- |
+| Transport | `server.ts`, `routes/**` | HTTP mapping, status codes, JSON shapes |
+| Validation | Route modules + `bonds-domain` Zod | Parse/validate at boundary |
+| Application | `repo.ts` | Queries, transactions, business errors as `RepoError` |
+| Persistence | `schema.ts`, `db.ts`, `migrations/` | Drizzle models, SQLite connection |
+| Cross-cutting | `middleware/errors.ts`, `appState.ts` | Unified errors; DB swap on restore |
+| System | `routes/system/*`, `system/backup.ts` | Backup download, restore upload |
 
-**Location:** Planned alongside domain or in `packages/db`
-**Purpose:** Abstract SQLite access from domain services; enable test doubles and future DB migration.
-**Implementation:** Interface in domain layer; SQLite/ORM implementation in infrastructure layer.
-**Example:** Not yet in codebase.
+**Pattern:** Each route file exports `registerX(app, getRepo)` — keeps `server.ts` as a route table only.
 
-### REST API as transport boundary
+### `packages/web`
 
-**Location:** Planned `packages/api` or `apps/api`
-**Purpose:** Expose CRUD for accounts, holdings, coupon payments; map HTTP ↔ domain DTOs.
-**Implementation:** Route handlers delegate to services; validation at boundary (request schemas).
-**Example:** Not yet in codebase — M1 target: health check + create/retrieve bond via API.
+| Layer | Responsibility |
+| --- | --- |
+| Pages | Route-level composition (`pages/*`) |
+| Components | Reusable UI + forms |
+| Hooks | `useApi` / `useApiMutation` — fetch to API |
+| Styles | `tokens.css` + per-component CSS (no Tailwind) |
 
-### Manual data entry (no integration layer in v1)
+**No direct DB access.** All data via REST.
 
-**Location:** N/A in v1
-**Purpose:** All bond terms and cash flows are user-entered; no market-data or broker sync pipeline.
-**Implementation:** Form-driven CRUD only (AD-005).
-**Example:** Documented in `.specs/project/PROJECT.md` out-of-scope list.
+## API surface (v1)
 
-## Data Flow (planned)
+| Area | Examples |
+| --- | --- |
+| Health | `GET /health` |
+| Accounts | CRUD + `PATCH` archive, `GET :id/holdings` |
+| Holdings | CRUD under accounts |
+| Coupon payments | CRUD linked to holdings |
+| Portfolio | `summary`, `income-summary`, `upcoming-coupons` |
+| System | `GET /api/system/info`, backup download, restore multipart upload |
 
-### Create bond holding
+Exact paths live in `packages/api/src/server.ts` and route modules.
 
-```
-User (web form)
-  → POST /holdings (API route)
-  → Request validation (schema)
-  → BondHoldingService.create()
-  → Domain validation (maturity after purchase, positive face value, etc.)
-  → BondHoldingRepository.insert()
-  → SQLite
-  ← JSON response
-  ← React updates list view
-```
+## Data model
 
-### Record coupon payment
+Tables (Drizzle in `schema.ts`):
 
-```
-User (web form)
-  → POST /coupon-payments
-  → CouponPaymentService.create(holdingId, amount, date)
-  → Verify holding exists
-  → CouponPaymentRepository.insert()
-  → SQLite
-  ← Income views aggregate by holding / period (M3)
-```
+- `accounts` — name, description, `archived_at`
+- `bond_holdings` — FK → account; issuer, identifiers, face value, coupon rate (decimal in DB), frequency, dates
+- `coupon_payments` — FK → holding; payment date, amount
 
-### Portfolio summary (M2)
+**API convention:** `couponRate` in JSON is **percent** (0–100); stored as decimal fraction in SQLite (see route serializers).
+
+## Key flows
+
+### Create holding
 
 ```
-User (dashboard)
-  → GET /portfolio/summary (or composed from holdings endpoints)
-  → BondHoldingService.list(filter by account, maturity)
-  → Aggregate face value, cost basis, maturity ladder
-  ← JSON → React tables/charts
+Browser form → POST /api/holdings (Zod) → Repo.insert → SQLite
+         ↑ bonds-domain validators
 ```
 
-## Code Organization (planned)
-
-**Approach:** Package-based modular monorepo — feature/domain packages with clear boundaries.
-
-**Structure (target from ROADMAP M1):**
+### Backup / restore
 
 ```
-investment-tracker/
-├── apps/ or packages/
-│   ├── api/          # HTTP server, routes, middleware
-│   ├── web/          # React SPA
-│   └── bonds/        # Domain: entities, services, validation (shared types)
-├── packages/
-│   └── db/           # Schema, migrations, repository implementations (optional split)
-└── .specs/           # Project & feature specs (observed)
+Settings UI → GET backup (file) / POST restore (multipart)
+           → appState replaces DB connection + repo
 ```
 
-**Module boundaries:**
+### Income view
 
-| Module | Owns | Must not depend on |
-| ------ | ---- | ------------------ |
-| `bonds` (domain) | Entities, validation, service interfaces | React, HTTP framework |
-| `api` | Routes, DTO mapping, HTTP errors | React |
-| `web` | UI, client state, API client | Direct DB access |
-| `db` | Migrations, ORM models, repository impl | React |
+```
+GET portfolio/income-summary + coupon list routes
+     → Repo aggregates + bonds-domain schedule helpers for estimates
+```
 
-## Current State (observed)
+## Invariants (enforced by structure, not a custom linter)
 
-No `apps/`, `packages/`, or `src/` directories exist. The only committed application-adjacent content is documentation:
+1. Domain rules live in `bonds-domain` or `repo.ts`, not duplicated in React.
+2. API returns structured errors via error middleware (consistent JSON).
+3. SQLite file path is configurable; tests use isolated temp DBs.
+4. CORS allowlist is explicit (dev localhost + env override).
 
-- `.specs/project/PROJECT.md` — vision, scope, stack intent
-- `.specs/project/ROADMAP.md` — M1–M4 milestones
-- `.specs/project/STATE.md` — architecture decisions AD-001 through AD-005
+## Extension points (future)
 
-Architecture docs should be **re-mapped after M1 scaffold** when real directory layout and sample flows exist in code.
+- New asset class → new domain package + API route namespace + web module
+- Broker adapter → new package behind repo interface (not in v1)
+- Auth → middleware layer in Fastify + web session (not in v1)
+
+See [PROJECT.md](../project/PROJECT.md) out-of-scope list.

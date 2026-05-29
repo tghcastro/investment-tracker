@@ -1,6 +1,6 @@
 # M2 Design
 
-**Spec**: `.specs/features/m2-core/spec.md`  
+**Spec**: `.specs/features/completed/m2-core/spec.md`  
 **Status**: Approved (spec 2026-05-21)  
 **Scope**: Large — full design + task breakdown required before Execute
 
@@ -52,7 +52,7 @@ M2 extends the M1 modular monorepo without new packages. Same flow: **Web → Fa
 | `HoldingsTable` | `components/HoldingsTable.tsx` | Add row actions (Edit/Delete), archived account badge |
 | `useApi` | `hooks/useApi.ts` | Unchanged for GET |
 | `formatCurrency`, `formatDate`, `formatCouponRate` | `utils/format.ts` | Forms + tables |
-| web-design.md Forms | `.specs/features/m1-scaffold/web-design.md` | `TextInput`, labels, `semantic-down` errors |
+| web-design.md Forms | `.specs/features/completed/m1-scaffold/web-design.md` | `TextInput`, labels, `semantic-down` errors |
 
 ### Integration Points
 
@@ -379,4 +379,4 @@ Gate: `npm run test` + `npm run lint` before merge.
 
 ## Next Phase
 
-**Tasks** → `.specs/features/m2-core/tasks.md` with atomic tasks, verification criteria, and requirement IDs per task.
+**Tasks** → `.specs/features/completed/m2-core/tasks.md` with atomic tasks, verification criteria, and requirement IDs per task.

@@ -1,113 +1,69 @@
 # Code Conventions
 
-**Analyzed:** 2026-05-20
-**Status:** No application source code exists yet. Conventions below combine **observed repo/doc patterns** and **planned targets** from project decisions. Revisit after M1 scaffold when real code samples are available.
+**Analyzed:** 2026-05-29  
+**Status:** Observed in `packages/*` + enforced by ESLint.
 
-## Naming Conventions (planned for TypeScript monorepo)
+## TypeScript
 
-**Files:**
+- **Modules:** ESM only (`"type": "module"` in package.json).
+- **Imports:** Use `.js` extension in **API** relative imports (Node16/NodeNext resolution), e.g. `from './db.js'`.
+- **Web:** Extensionless imports via Vite (`./App.tsx`).
+- **Types:** Prefer `import type` for type-only imports where used.
 
-- React components: PascalCase — e.g. `BondHoldingForm.tsx`, `PortfolioSummary.tsx`
-- Hooks: camelCase with `use` prefix — e.g. `useHoldings.ts`
-- Domain/services: camelCase or kebab-case matching package tooling — e.g. `bondHoldingService.ts` or `bond-holding-service.ts` (pick one at M1 and enforce via lint)
-- API routes: kebab-case or REST resource names — e.g. `holdings.ts`, `coupon-payments.ts`
-- Test files: co-located `*.test.ts` / `*.spec.ts` or `__tests__/` (decide at M1)
+## Naming
 
-**Functions/Methods:**
+| Kind | Convention | Example |
+| --- | --- | --- |
+| React components | PascalCase file + export | `HoldingForm.tsx`, `TopNav.tsx` |
+| Hooks | `use` prefix, camelCase file | `useApi.ts`, `useApiMutation.ts` |
+| API route registrars | `registerPostAccount`, `registerListHoldings` | `routes/accounts/post.ts` |
+| Repo methods | camelCase verbs | `createBondHolding`, `listCouponPayments` |
+| DB columns (SQL) | snake_case | `face_value`, `coupon_rate` |
+| Drizzle TS fields | camelCase in schema | `faceValue`, `couponRate` |
+| CSS variables | `--cb-*` prefix | `--cb-primary`, `--cb-space-lg` |
+| React class names | BEM-ish `cb-` block | `cb-app`, `cb-app__main` |
 
-- camelCase for functions and methods — e.g. `createBondHolding`, `validateMaturityDate`
-- PascalCase for classes/types — e.g. `BondHolding`, `CouponPaymentService`
+## File layout
 
-**Variables:**
+- **Co-located tests:** `__tests__/*.test.ts` / `*.test.tsx` next to package root (not inside every `src/` folder).
+- **One route concern per file** under `api/src/routes/<resource>/`.
+- **CSS:** ComponentName.css beside ComponentName.tsx (no CSS-in-JS).
 
-- camelCase — e.g. `faceValue`, `couponRate`, `holdingId`
-- Descriptive domain names aligned with bond terminology (issuer, maturity, face value, not generic `item`/`data`)
+## ESLint
 
-**Constants:**
+Root flat config (`eslint.config.mjs`):
 
-- SCREAMING_SNAKE_CASE for true constants — e.g. `MAX_FACE_VALUE`, `DEFAULT_CURRENCY`
-- Enum members: PascalCase (if TypeScript enums used) or `as const` objects
+- Targets: `packages/bonds-domain/src`, `packages/api/src`, `packages/web/src`
+- `@typescript-eslint/no-unused-vars`: error; `_` prefix ignored for args/vars
 
-## Code Organization (planned)
+Run: `npm run lint` from repo root.
 
-**Import/Dependency Declaration:**
+## API conventions
 
-Expected order (to enforce at M1):
+- **IDs in URLs:** Positive integer strings without leading zeros (`"1"`, `"42"`) — matches Zod `positiveIntegerId` in `bonds-domain`.
+- **Errors:** Thrown `RepoError` with `code` → mapped by `middleware/errors.ts` to HTTP status + JSON body.
+- **Coupon rate:** Request/response **percent** at HTTP layer; DB stores decimal (document in serializers when touching holdings).
 
-1. External packages (react, fastify, zod, etc.)
-2. Internal workspace packages (`@investment-tracker/bonds`, etc.)
-3. Relative imports (`./`, `../`)
-4. Type-only imports grouped or inline `import type`
+## Web conventions
 
-**File Structure (domain service example — planned):**
+- **Data fetching:** `useApi<T>(url)` for GET; `useApiMutation` for writes — no Redux/React Query in v1.
+- **API base:** `import.meta.env.VITE_API_URL ?? ''` — production nginx proxies `/api/` to backend.
+- **Forms:** `components/forms/TextInput`, `FormField`, `focusFirstFieldError` on validation failure.
+- **Money display:** `utils/money.ts` for formatting; mono font class for numeric columns (`number-display`).
 
-```typescript
-// Types / interfaces
-// Constants
-// Private helpers
-// Exported service / public API
-```
+## Design / UI
 
-**Package boundaries (AD-002):**
+- Source tokens: root `DESIGN.md` → `packages/web/src/styles/tokens.css`.
+- Agent summary: `docs/FRONTEND.md`.
+- Do not introduce Tailwind or a component library without an AD in `STATE.md`.
 
-- Domain packages must not import from `web` or HTTP layer
-- Shared types exported from domain package for API and web consumers
+## Git / commits
 
-## Type Safety / Documentation (planned)
+- Conventional-style subjects common: `feat(scope):`, `fix(scope):`, `chore(scope):`, `docs:`.
+- Milestone branches existed as `m4-p*`; harness/docs use topic branches like `harness/agent-docs`.
 
-**Approach:** Strict TypeScript (`strict: true` in tsconfig) with runtime validation at API boundaries (e.g. Zod schemas).
+## When adding code
 
-**Domain types:** Prefer explicit interfaces/types for `BondHolding`, `Account`, `CouponPayment` rather than anonymous objects.
-
-**API contracts:** Request/response types shared between API and web where possible (shared package or OpenAPI-generated types).
-
-## Error Handling (planned)
-
-**Pattern:**
-
-- Domain layer: throw typed domain errors (e.g. `ValidationError`, `NotFoundError`)
-- API layer: map domain errors to HTTP status codes (400, 404, 409)
-- Web layer: display user-friendly messages from API error payloads
-
-**Example shape (planned, not yet in repo):**
-
-```typescript
-// Domain
-if (maturity <= purchaseDate) {
-  throw new ValidationError('Maturity must be after purchase date');
-}
-
-// API
-reply.status(400).send({ error: 'ValidationError', message: err.message });
-```
-
-## Comments / Documentation
-
-**Observed (spec/docs):**
-
-- Markdown specs use clear headings, tables, and decision IDs (AD-001, etc.) in `.specs/project/STATE.md`
-- README is concise with links to spec docs
-
-**Planned (code):**
-
-- JSDoc on non-obvious domain rules (e.g. coupon accrual assumptions in v1)
-- Avoid redundant comments; prefer self-explanatory names
-- ADRs/decisions stay in `.specs/project/STATE.md`, not scattered in code
-
-## Formatting & Lint (planned at M1)
-
-- **Formatter:** Prettier (typical for Node/React monorepos)
-- **Linter:** ESLint with TypeScript and React plugins
-- **Pre-commit:** Optional lint-staged (TBD)
-
-No `.editorconfig`, `eslint.config.*`, or `prettier.config.*` exist yet.
-
-## Git Conventions (observed)
-
-- Single initial commit: `6799fc0 Initial commit`
-- Commit message style not yet established — recommend conventional commits when scaffold lands
-
-## Exceptions / Variations
-
-- `.gitignore` follows Gradle/Java conventions — inconsistent with planned Node stack (update at M1)
-- Agent/skill directories (`.cursor/`, `.claude/`, `.windsurf/`) duplicate tlc-spec-driven skill — not part of application conventions
+1. Domain validation → `bonds-domain` Zod first, then API route, then web form rules if needed.
+2. New API route → register in `server.ts`, add integration test in `api/__tests__/routes.test.ts` or dedicated file.
+3. New page → route in `App.tsx`, page under `pages/`, tests in `web/__tests__/`.

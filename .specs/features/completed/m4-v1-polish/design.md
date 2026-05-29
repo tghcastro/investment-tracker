@@ -1,6 +1,6 @@
 # M4 Design — v1 Polish (Backup/Restore & UX)
 
-**Spec**: `.specs/features/m4-v1-polish/spec.md`  
+**Spec**: `.specs/features/completed/m4-v1-polish/spec.md`  
 **Status**: Approved (2026-05-23)  
 **Scope**: Large — backup/restore touches DB lifecycle; full design + task breakdown before Execute
 

@@ -1,6 +1,6 @@
 # State
 
-**Last Updated:** 2026-05-28
+**Last Updated:** 2026-05-29
 **Current Work:** M4 complete — v1.0.0 ready for release on `m4-p3-ship`
 
 ---
@@ -37,7 +37,7 @@
 
 ### AD-006: Web UI follows DESIGN.md (Coinbase-inspired) (2026-05-20)
 
-**Decision:** All web UI uses the institutional design system in repo-root `DESIGN.md`, applied via `.specs/features/m1-scaffold/web-design.md` (CSS token layer, Inter/JetBrains Mono substitutes).
+**Decision:** All web UI uses the institutional design system in repo-root `DESIGN.md`, applied via `.specs/features/completed/m1-scaffold/web-design.md` (CSS token layer, Inter/JetBrains Mono substitutes).
 **Reason:** User-provided design spec; ensures calm financial-brand aesthetic from M1 shell onward.
 **Trade-off:** No Tailwind/component library in M1; manual CSS variables. Licensed Coinbase fonts replaced with Inter + JetBrains Mono.
 **Impact:** Web tasks T22a–T29 reference web-design.md; P3 spec requirements M1-15–M1-21 added.
@@ -96,9 +96,9 @@ _None yet._
 ## Todos
 
 - [x] Map codebase (`/tlc-spec-driven map codebase`) — pre-scaffold baseline in `.specs/codebase/` (2026-05-20); re-map after M1
-- [x] Specify first feature: M1 project scaffold — `/.specs/features/m1-scaffold/spec.md` (2026-05-20)
-- [x] Design M1 — `/.specs/features/m1-scaffold/design.md` (2026-05-20)
-- [x] Create tasks for M1 — `/.specs/features/m1-scaffold/tasks.md` (2026-05-20)
+- [x] Specify first feature: M1 project scaffold — `/.specs/features/completed/m1-scaffold/spec.md` (2026-05-20)
+- [x] Design M1 — `/.specs/features/completed/m1-scaffold/design.md` (2026-05-20)
+- [x] Create tasks for M1 — `/.specs/features/completed/m1-scaffold/tasks.md` (2026-05-20)
 - [x] Implement T11 — repo query layer (`packages/api/src/repo.ts`) (2026-05-20)
 - [x] Implement T12 — repo integration tests (`packages/api/__tests__/repo.test.ts`, 9 tests) (2026-05-20)
 - [x] Implement T13 — Fastify bootstrap + GET /health (`packages/api/src/server.ts`) (2026-05-20)
@@ -107,7 +107,7 @@ _None yet._
 - [x] Implement T16 — GET /api/accounts/:id/holdings (`packages/api/src/routes/accounts/holdings.ts`) (2026-05-20)
 - [x] Implement T17 — POST /api/holdings (`packages/api/src/routes/holdings/post.ts`; `list.ts`/`get-by-id.ts` stubs for T18/T19; validators `accountId`/`bondHoldingId` positive int strings; API `couponRate` % in body, decimal in DB) (2026-05-20)
 - [x] Implement T19 — GET /api/holdings (`packages/api/src/routes/holdings/list.ts`; optional `maturityAfter` YYYY-MM-DD filter) (2026-05-20)
-- [x] Web application design — `/.specs/features/m1-scaffold/web-design.md` from DESIGN.md (2026-05-20)
+- [x] Web application design — `/.specs/features/completed/m1-scaffold/web-design.md` from DESIGN.md (2026-05-20)
 - [x] Implement T20 — API error middleware (`packages/api/src/middleware/errors.ts`) (2026-05-20)
 - [x] Implement T21 — API route integration tests (`packages/api/__tests__/routes.test.ts`, 11 tests) (2026-05-20)
 - [x] Implement T22 — React + Vite web scaffold (`packages/web/`) (2026-05-20)
@@ -120,28 +120,28 @@ _None yet._
 - [x] Implement T27 — ErrorBoundary (2026-05-21)
 - [x] Implement T28 — Wire Holdings/Accounts to useApi (2026-05-21)
 - [x] Implement T29 — Web component unit tests (8 tests, vitest + RTL) (2026-05-21)
-- [x] Specify M2 — bond holdings & accounts CRUD — `.specs/features/m2-core/spec.md` (2026-05-21)
+- [x] Specify M2 — bond holdings & accounts CRUD — `.specs/features/completed/m2-core/spec.md` (2026-05-21)
 - [x] Approve M2 spec (2026-05-22)
-- [x] Design M2 — `.specs/features/m2-core/design.md` (2026-05-22)
-- [x] Create tasks for M2 — `.specs/features/m2-core/tasks.md` (2026-05-22)
+- [x] Design M2 — `.specs/features/completed/m2-core/design.md` (2026-05-22)
+- [x] Create tasks for M2 — `.specs/features/completed/m2-core/tasks.md` (2026-05-22)
 - [x] Implement M2 P1 — backend API T1–T17 (2026-05-22)
 - [x] Implement M2 P2 — web CRUD T18–T25 (2026-05-22)
 - [x] Implement M2 P3 — web polish T26–T29 (2026-05-23)
 - [x] Docker deployment + release script — PR #9, `scripts/investment-tracker-release.sh` (2026-05-23)
 - [x] Release v0.1.0 + v0.1.1 — Hub images, GitHub releases; prod compose; prod seed fix (PR #10–#11) (2026-05-23)
 - [x] Update M4 roadmap scope — backup/restore + UX polish; import deferred (AD-008) (2026-05-23)
-- [x] Specify M3 — coupon income & cash flows — `.specs/features/m3-coupon-income/spec.md` (2026-05-23)
+- [x] Specify M3 — coupon income & cash flows — `.specs/features/completed/m3-coupon-income/spec.md` (2026-05-23)
 - [x] Approve M3 spec (2026-05-23)
-- [x] Design M3 — `.specs/features/m3-coupon-income/design.md` (2026-05-23)
+- [x] Design M3 — `.specs/features/completed/m3-coupon-income/design.md` (2026-05-23)
 - [x] Approve M3 design (2026-05-23)
-- [x] Create tasks for M3 — `.specs/features/m3-coupon-income/tasks.md` (2026-05-23)
+- [x] Create tasks for M3 — `.specs/features/completed/m3-coupon-income/tasks.md` (2026-05-23)
 - [x] Approve M3 tasks → Execute P1 (2026-05-23)
 - [x] Implement M3 P1 — backend API T1–T14 (2026-05-23)
 - [x] Implement M3 P2 — web payments T15–T19 (2026-05-23)
 - [x] Implement M3 P3 — income + ship T20–T22 (2026-05-23)
 - [x] Approve M4 spec (2026-05-23)
 - [x] Approve M4 design (2026-05-23)
-- [x] Create tasks for M4 — `.specs/features/m4-v1-polish/tasks.md` (2026-05-23)
+- [x] Create tasks for M4 — `.specs/features/completed/m4-v1-polish/tasks.md` (2026-05-23)
 - [x] Approve M4 tasks → Execute P1 (2026-05-28)
 - [x] Implement M4 P1 — backup API T1–T13 on `m4-p1-backup-api` (2026-05-28)
 - [x] Implement M4 P2 — settings UI T14–T18 on `m4-p2-settings` (2026-05-28)

@@ -15,9 +15,29 @@ export function createConnection(databaseUrl: string = dbPath) {
   return drizzle(sqlite);
 }
 
-export const db = createConnection();
+export type Database = ReturnType<typeof createConnection>;
 
-export type Database = typeof db;
+let defaultDb: Database | undefined;
+
+/** Lazy default connection — avoids opening SQLite when tests import server/seed graphs. */
+export function getDefaultDb(): Database {
+  if (!defaultDb) {
+    defaultDb = createConnection();
+  }
+  return defaultDb;
+}
+
+/** Default app DB (lazy via proxy so module import does not lock data.db). */
+export const db: Database = new Proxy({} as Database, {
+  get(_target, prop) {
+    const conn = getDefaultDb() as unknown as Record<string | symbol, unknown>;
+    const value = conn[prop];
+    if (typeof value === 'function') {
+      return (value as (...args: unknown[]) => unknown).bind(conn);
+    }
+    return value;
+  },
+});
 
 type DatabaseWithSession = Database & {
   session: { client: BetterSqlite3.Database };
@@ -35,6 +55,9 @@ export function closeDatabase(database: Database): void {
   const client = getSqliteClient(database);
   if (client.open) {
     client.close();
+  }
+  if (database === defaultDb) {
+    defaultDb = undefined;
   }
 }
 

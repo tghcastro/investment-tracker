@@ -1,7 +1,7 @@
 # M4 Tasks — v1 Polish (Backup/Restore & UX)
 
-**Design**: `.specs/features/m4-v1-polish/design.md`  
-**Spec**: `.specs/features/m4-v1-polish/spec.md`  
+**Design**: `.specs/features/completed/m4-v1-polish/design.md`  
+**Spec**: `.specs/features/completed/m4-v1-polish/spec.md`  
 **Status**: P3 complete (2026-05-28) — M4 ready for v1.0.0 release
 
 ---

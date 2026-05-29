@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   fixtureAccountDefs,
   fixtureBondDefs,
-} from '../src/fixtures/seed.js';
+} from '../src/fixtures/defs.js';
 import { createRepo } from '../src/repo.js';
 import { createServer } from '../src/server.js';
 

@@ -1,0 +1,15 @@
+# Agent harness: keep Cursor index focused on live docs + code.
+# See AGENTS.md and .specs/index.md.
+
+# Shipped milestone specs (archived; open paths explicitly when needed)
+.specs/features/completed/
+
+# Human runbooks and manual tools
+README.md
+bruno/
+
+# Optional integrations (not product architecture)
+.cursor/JIRA-MCP.md
+
+# Large design YAML — load on demand via AGENTS.md (uncomment to exclude from index)
+# DESIGN.md
