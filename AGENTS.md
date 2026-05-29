@@ -83,8 +83,22 @@ Configured in [`.cursorignore`](.cursorignore).
 
 Project **INVTR** — setup: [`.cursor/JIRA-MCP.md`](.cursor/JIRA-MCP.md).
 
+## Always update (same PR as the code)
+
+Full matrix: [`docs/harness.md`](docs/harness.md#always-update-same-pr-as-the-code).
+
+| If you changed… | Update |
+| --- | --- |
+| Scope, milestone, or AD-worthy decision | `.specs/project/STATE.md` (+ `PROJECT.md` / `ROADMAP.md` if scope shifted) |
+| Packages, routes, modules, or DB schema | Matching `.specs/codebase/*.md` + **Last verified** in `.specs/index.md` |
+| Tests or CI gates | `.specs/codebase/TESTING.md` |
+| UI routes, forms, or token usage | `docs/FRONTEND.md`; new tokens → `DESIGN.md` |
+| External service, env var, or deploy | `STACK.md` / `INTEGRATIONS.md`; human runbook → `README.md` |
+| New risk or known limitation | `.specs/codebase/CONCERNS.md` |
+| Shipped feature | Move `features/active/` → `completed/`; close todos in `STATE.md` |
+
+**Every doc-touch PR:** `npm run check:docs`. **Rarely:** `AGENTS.md` (index only — link out, do not grow).
+
 ## Doc harness (maintenance)
 
-- Before doc/architecture PRs: `npm run check:docs` (also in CI)
-- Gardening checklist + agent prompt: [`docs/harness.md`](docs/harness.md)
-- On milestone ship: move specs to `features/completed/`, refresh `.specs/codebase/*`, update [`.specs/index.md`](.specs/index.md)
+- CI runs `check:docs` — see [`docs/harness.md`](docs/harness.md)

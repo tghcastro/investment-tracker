@@ -23,6 +23,42 @@ CI (`.github/workflows/ci.yml`) runs all three on push/PR to `main`.
 
 Failures print check ids and exit 1. Fix the doc or the code, then update **Last verified** in [`.specs/index.md`](../.specs/index.md).
 
+## Always update (same PR as the code)
+
+Agents must keep the **map** in sync with `packages/`. Do not finish a PR without the rows that apply below.
+
+| If you changed… | Always update | Do not update unless asked |
+| --- | --- | --- |
+| **Decision** (scope, AD, blocker, milestone status) | [`.specs/project/STATE.md`](../.specs/project/STATE.md) | Archived `features/completed/*` |
+| **v1 scope / vision** | [`PROJECT.md`](../.specs/project/PROJECT.md) | `AGENTS.md` (index only) |
+| **Roadmap / future work** | [`ROADMAP.md`](../.specs/project/ROADMAP.md) | |
+| **New package, folder, or route file** | [`STRUCTURE.md`](../.specs/codebase/STRUCTURE.md) | |
+| **Layer boundaries, data flow, API areas** | [`ARCHITECTURE.md`](../.specs/codebase/ARCHITECTURE.md) | |
+| **Dependencies, Node, Docker, ports, env vars** | [`STACK.md`](../.specs/codebase/STACK.md) | |
+| **Naming, lint, import style, API conventions** | [`CONVENTIONS.md`](../.specs/codebase/CONVENTIONS.md) | |
+| **Test commands, coverage, new test layer** | [`TESTING.md`](../.specs/codebase/TESTING.md) | |
+| **Third-party API, persistence, backup** | [`INTEGRATIONS.md`](../.specs/codebase/INTEGRATIONS.md) | |
+| **Tech debt, security, known bugs** | [`CONCERNS.md`](../.specs/codebase/CONCERNS.md) | |
+| **React routes, components, CSS patterns** | [`FRONTEND.md`](./FRONTEND.md) | |
+| **Design tokens (colors, type scale)** | [`DESIGN.md`](../DESIGN.md) + `packages/web/src/styles/tokens.css` | |
+| **How to run / deploy (human)** | [`README.md`](../README.md) | |
+| **Any of the above docs** | [`.specs/index.md`](../.specs/index.md) — **Last verified** date, status **Active** | |
+| **Active feature spec** (M5+) | `.specs/features/active/<feature>/` (`spec`, `design`, `tasks`) | |
+| **Feature shipped** | `git mv` → `features/completed/`; todos + AD in `STATE.md` | |
+
+### Minimum before opening a PR
+
+1. `npm run lint`
+2. `npm run test` (if code changed)
+3. `npm run check:docs` (if any row in the table applied)
+4. Confirm no new links to `.specs/features/m*` without `completed/`
+
+### Usually skip
+
+- **`.specs/features/completed/`** — frozen; copy decisions to `STATE.md` instead
+- **`AGENTS.md`** — only when the entry map changes (new doc path, new package); keep ≤ 120 lines
+- **`bruno/`**, **`.cursor/JIRA-MCP.md`** — human/MCP setup only
+
 ## Doc gardening (recurring)
 
 Run after each shipped milestone or any large refactor:
