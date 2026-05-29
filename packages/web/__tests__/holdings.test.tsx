@@ -5,12 +5,25 @@ import { describe, expect, it, vi } from 'vitest';
 
 import Holdings from '../src/pages/Holdings';
 import type { ApiAccount, ApiBondHolding } from '../src/types/api';
+import { sampleAccountWithCurrencies } from './testUtils/currencyMocks';
 
 const mockUseApi = vi.fn();
 const mockMutate = vi.fn();
 
 vi.mock('../src/hooks/useApi', () => ({
   useApi: (url: string) => mockUseApi(url),
+}));
+
+vi.mock('../src/contexts/DisplayCurrencyContext', () => ({
+  useDisplayCurrency: () => ({
+    displayCurrency: 'USD',
+    displaySymbol: '$',
+    availableCurrencies: [],
+    loading: false,
+    setDisplayCurrency: vi.fn(),
+  }),
+  appendDisplayCurrencyParam: (url: string) => url,
+  DisplayCurrencyProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock('../src/hooks/useApiMutation', () => ({
@@ -26,6 +39,8 @@ const sampleHoldings: ApiBondHolding[] = [
   {
     id: '1',
     accountId: '10',
+    currencyCode: 'USD',
+    holdingType: { id: '1', slug: 'bond', name: 'Bond' },
     issuer: 'US Treasury',
     faceValue: 100_000,
     couponRate: 0.0425,
@@ -37,6 +52,8 @@ const sampleHoldings: ApiBondHolding[] = [
   {
     id: '2',
     accountId: '10',
+    currencyCode: 'USD',
+    holdingType: { id: '1', slug: 'bond', name: 'Bond' },
     issuer: 'Apple Inc',
     faceValue: 50_000,
     couponRate: 0.035,
@@ -49,15 +66,13 @@ const sampleHoldings: ApiBondHolding[] = [
 
 const sampleAccounts: ApiAccount[] = [
   {
-    id: '10',
-    name: 'Vanguard',
+    ...sampleAccountWithCurrencies,
     description: 'Taxable brokerage account',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
   },
   {
     id: '11',
     name: 'Old Broker',
+    currencyCodes: ['USD'],
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
     archivedAt: '2025-01-01T00:00:00.000Z',
@@ -88,7 +103,7 @@ describe('Holdings', () => {
 
     expect(screen.getByRole('heading', { name: 'Holdings' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'US Treasury' })).toBeInTheDocument();
-    expect(screen.getAllByText('Vanguard')).toHaveLength(2);
+    expect(screen.getAllByText(/Vanguard · USD/)).toHaveLength(2);
     expect(screen.getByText('4.25%')).toBeInTheDocument();
     expect(screen.getByText('$1,000.00')).toBeInTheDocument();
   });

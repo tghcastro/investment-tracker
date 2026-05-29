@@ -1,0 +1,12 @@
+.cb-currency-selector {
+  min-width: 180px;
+}
+
+.cb-currency-selector .cb-form-field {
+  margin-bottom: 0;
+}
+
+.cb-currency-selector .cb-form-field__label {
+  font-size: var(--cb-font-size-sm);
+  color: var(--cb-text-muted);
+}

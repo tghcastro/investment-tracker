@@ -1,20 +1,34 @@
-import { and, desc, eq, gt, gte, isNull, lte } from 'drizzle-orm';
+import { and, desc, eq, gt, gte, inArray, isNull, lte } from 'drizzle-orm';
 import type {
   Account,
   BondHolding,
   CouponFrequency,
   CouponPayment,
+  Currency,
+  CurrencyQuote,
   HoldingType,
   HoldingTypeRef,
   HoldingTypeSlug,
+  QuoteRateMap,
 } from 'bonds-domain';
 import {
+  BASE_CURRENCY_CODE,
+  buildQuoteRateMap,
+  convertNativeCents,
   expectedCouponAmountCents,
   generateEstimatedCouponDates,
 } from 'bonds-domain';
 
 import type { Database } from './db.js';
-import { accounts, bondHoldings, couponPayments, holdingTypes } from './schema.js';
+import {
+  accountCurrencies,
+  accounts,
+  bondHoldings,
+  couponPayments,
+  currencies,
+  currencyQuotes,
+  holdingTypes,
+} from './schema.js';
 
 type Db = Database;
 
@@ -31,11 +45,13 @@ export class RepoError extends Error {
 export type InsertAccountData = {
   name: string;
   description?: string;
+  currencyCodes?: string[];
 };
 
 export type InsertBondHoldingData = {
   accountId: string;
   holdingTypeId?: string;
+  currencyCode?: string;
   issuer: string;
   isin?: string;
   cusip?: string;
@@ -50,10 +66,12 @@ export type InsertBondHoldingData = {
 export type UpdateAccountData = {
   name?: string;
   description?: string;
+  currencyCodes?: string[];
 };
 
 export type UpdateBondHoldingData = {
   accountId?: string;
+  currencyCode?: string;
   issuer?: string;
   isin?: string;
   cusip?: string;
@@ -74,6 +92,22 @@ export type InsertCouponPaymentData = {
 export type UpdateCouponPaymentData = {
   paymentDate?: Date;
   amount?: number;
+};
+
+export type InsertCurrencyQuoteData = {
+  quoteDate: string;
+  targetCurrencyCode: string;
+  rate: number;
+};
+
+export type UpdateCurrencyQuoteData = {
+  quoteDate?: string;
+  rate?: number;
+};
+
+export type PortfolioSummaryOptions = {
+  displayCurrency?: string;
+  asOfDate?: string;
 };
 
 export type IncomeSummaryByHolding = {
@@ -112,12 +146,21 @@ export type PortfolioSummary = {
   totalCostBasis: number;
   holdingsWithCostBasis: number;
   holdingsMissingCostBasis: number;
+  displayCurrency?: string;
+  displayTotalFaceValue?: number;
+  displayTotalCostBasis?: number;
   maturityLadder: Array<{
     holdingId: string;
     issuer: string;
     maturityDate: string;
     faceValue: number;
+    displayFaceValue?: number;
   }>;
+};
+
+export type BondHoldingWithDisplay = BondHolding & {
+  displayFaceValue?: number;
+  displayPurchasePrice?: number;
 };
 
 function parseId(id: string, label = 'id'): number {
@@ -145,14 +188,38 @@ function endOfUtcDay(date: Date): Date {
   );
 }
 
-function mapAccount(row: typeof accounts.$inferSelect): Account {
+function mapAccount(
+  row: typeof accounts.$inferSelect,
+  currencyCodes: string[]
+): Account {
   return {
     id: String(row.id),
     name: row.name,
     description: row.description ?? undefined,
+    currencyCodes,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     archivedAt: row.archivedAt ?? undefined,
+  };
+}
+
+function mapCurrency(row: typeof currencies.$inferSelect): Currency {
+  return {
+    code: row.code,
+    number: row.number,
+    name: row.name,
+    symbol: row.symbol,
+    region: row.region,
+  };
+}
+
+function mapCurrencyQuote(row: typeof currencyQuotes.$inferSelect): CurrencyQuote {
+  return {
+    id: String(row.id),
+    quoteDate: row.quoteDate,
+    targetCurrencyCode: row.targetCurrencyCode,
+    rate: row.rate,
+    createdAt: row.createdAt,
   };
 }
 
@@ -179,6 +246,7 @@ function mapBondHolding(
     id: String(row.id),
     holdingType: mapHoldingTypeRef(holdingTypeRow),
     accountId: String(row.accountId),
+    currencyCode: row.currencyCode,
     issuer: row.issuer,
     isin: row.isin ?? undefined,
     cusip: row.cusip ?? undefined,
@@ -207,6 +275,12 @@ function wrapDbError(error: unknown): never {
   if (message.includes('FOREIGN KEY constraint failed')) {
     throw new RepoError('FOREIGN_KEY', 'Referenced record does not exist');
   }
+  if (message.includes('UNIQUE constraint failed') && message.includes('currency_quotes')) {
+    throw new RepoError(
+      'DUPLICATE_QUOTE',
+      'A quote already exists for this date and currency'
+    );
+  }
   throw error;
 }
 
@@ -232,6 +306,117 @@ async function assertAccountNotArchived(
 }
 
 export function createRepo(database: Db) {
+  function loadAccountCurrencyCodes(accountId: number): string[] {
+    return database
+      .select({ currencyCode: accountCurrencies.currencyCode })
+      .from(accountCurrencies)
+      .where(eq(accountCurrencies.accountId, accountId))
+      .orderBy(accountCurrencies.currencyCode)
+      .all()
+      .map((row) => row.currencyCode);
+  }
+
+  async function assertCurrencyCodesExist(codes: string[]): Promise<void> {
+    if (codes.length === 0) {
+      throw new RepoError('INVALID_CURRENCY', 'At least one currency required');
+    }
+
+    const uniqueCodes = [...new Set(codes)];
+    const rows = database
+      .select({ code: currencies.code })
+      .from(currencies)
+      .where(inArray(currencies.code, uniqueCodes))
+      .all();
+
+    if (rows.length !== uniqueCodes.length) {
+      throw new RepoError('INVALID_CURRENCY', 'One or more currency codes are invalid');
+    }
+  }
+
+  async function assertCurrencyAllowedForAccount(
+    accountId: string,
+    currencyCode: string
+  ): Promise<void> {
+    const numericAccountId = parseId(accountId, 'account id');
+    const allowed = loadAccountCurrencyCodes(numericAccountId);
+    if (!allowed.includes(currencyCode)) {
+      throw new RepoError(
+        'CURRENCY_NOT_ALLOWED',
+        'Currency is not allowed for this account'
+      );
+    }
+  }
+
+  function replaceAccountCurrencyCodes(accountId: number, currencyCodes: string[]): void {
+    database
+      .delete(accountCurrencies)
+      .where(eq(accountCurrencies.accountId, accountId))
+      .run();
+
+    for (const currencyCode of currencyCodes) {
+      database
+        .insert(accountCurrencies)
+        .values({ accountId, currencyCode })
+        .run();
+    }
+  }
+
+  async function assertCanRemoveAccountCurrencies(
+    accountId: string,
+    nextCodes: string[]
+  ): Promise<void> {
+    const numericAccountId = parseId(accountId, 'account id');
+    const holdings = database
+      .select({ currencyCode: bondHoldings.currencyCode })
+      .from(bondHoldings)
+      .where(eq(bondHoldings.accountId, numericAccountId))
+      .all();
+
+    const nextSet = new Set(nextCodes);
+    for (const holding of holdings) {
+      if (!nextSet.has(holding.currencyCode)) {
+        throw new RepoError(
+          'CURRENCY_IN_USE',
+          'Cannot remove a currency that existing holdings use'
+        );
+      }
+    }
+  }
+
+  async function getQuoteRateMap(asOfDate: string): Promise<QuoteRateMap> {
+    const rows = database
+      .select({
+        targetCurrencyCode: currencyQuotes.targetCurrencyCode,
+        quoteDate: currencyQuotes.quoteDate,
+        rate: currencyQuotes.rate,
+      })
+      .from(currencyQuotes)
+      .orderBy(currencyQuotes.targetCurrencyCode, desc(currencyQuotes.quoteDate))
+      .all();
+
+    const grouped = new Map<string, Array<{ quoteDate: string; rate: number }>>();
+    for (const row of rows) {
+      const list = grouped.get(row.targetCurrencyCode) ?? [];
+      list.push({ quoteDate: row.quoteDate, rate: row.rate });
+      grouped.set(row.targetCurrencyCode, list);
+    }
+
+    return buildQuoteRateMap(grouped, asOfDate);
+  }
+
+  function applyDisplayConversion(
+    amountCents: number,
+    nativeCode: string,
+    displayCurrency: string,
+    quotes: QuoteRateMap
+  ): number | undefined {
+    if (displayCurrency === nativeCode) {
+      return amountCents;
+    }
+    const converted = convertNativeCents(amountCents, nativeCode, displayCurrency, quotes);
+    return converted ?? undefined;
+  }
+
   function selectBondHoldingsWithType() {
     return database
       .select({
@@ -271,6 +456,9 @@ export function createRepo(database: Db) {
   }
 
   async function insertAccount(data: InsertAccountData): Promise<Account> {
+    const currencyCodes = data.currencyCodes ?? [BASE_CURRENCY_CODE];
+    await assertCurrencyCodesExist(currencyCodes);
+
     try {
       const [row] = database
         .insert(accounts)
@@ -280,7 +468,8 @@ export function createRepo(database: Db) {
         })
         .returning()
         .all();
-      return mapAccount(row);
+      replaceAccountCurrencyCodes(row.id, currencyCodes);
+      return mapAccount(row, currencyCodes);
     } catch (error) {
       wrapDbError(error);
     }
@@ -293,7 +482,7 @@ export function createRepo(database: Db) {
       .from(accounts)
       .where(eq(accounts.id, numericId))
       .all();
-    return row ? mapAccount(row) : null;
+    return row ? mapAccount(row, loadAccountCurrencyCodes(numericId)) : null;
   }
 
   async function listAccounts(options?: {
@@ -308,7 +497,7 @@ export function createRepo(database: Db) {
           .where(isNull(accounts.archivedAt))
           .orderBy(accounts.id)
           .all();
-    return rows.map(mapAccount);
+    return rows.map((row) => mapAccount(row, loadAccountCurrencyCodes(row.id)));
   }
 
   async function updateAccount(
@@ -319,6 +508,12 @@ export function createRepo(database: Db) {
     const existing = await getAccount(id);
     if (!existing) {
       return null;
+    }
+
+    if (data.currencyCodes !== undefined) {
+      await assertCurrencyCodesExist(data.currencyCodes);
+      await assertCanRemoveAccountCurrencies(id, data.currencyCodes);
+      replaceAccountCurrencyCodes(numericId, data.currencyCodes);
     }
 
     const updates: Partial<typeof accounts.$inferInsert> = {
@@ -337,7 +532,7 @@ export function createRepo(database: Db) {
       .where(eq(accounts.id, numericId))
       .returning()
       .all();
-    return mapAccount(row);
+    return mapAccount(row, loadAccountCurrencyCodes(numericId));
   }
 
   async function archiveAccount(id: string): Promise<Account | null> {
@@ -368,6 +563,8 @@ export function createRepo(database: Db) {
   async function insertBondHolding(data: InsertBondHoldingData): Promise<BondHolding> {
     await assertAccountNotArchived(database, data.accountId);
     const accountId = parseId(data.accountId, 'account id');
+    const currencyCode = data.currencyCode ?? BASE_CURRENCY_CODE;
+    await assertCurrencyAllowedForAccount(data.accountId, currencyCode);
 
     let holdingTypeId: number;
     if (data.holdingTypeId !== undefined) {
@@ -390,6 +587,7 @@ export function createRepo(database: Db) {
         .values({
           holdingTypeId,
           accountId,
+          currencyCode,
           issuer: data.issuer,
           isin: data.isin,
           cusip: data.cusip,
@@ -434,11 +632,21 @@ export function createRepo(database: Db) {
       await assertAccountNotArchived(database, data.accountId);
     }
 
+    const targetAccountId = data.accountId ?? existing.accountId;
+    if (data.currencyCode !== undefined) {
+      await assertCurrencyAllowedForAccount(targetAccountId, data.currencyCode);
+    } else if (data.accountId !== undefined && data.accountId !== existing.accountId) {
+      await assertCurrencyAllowedForAccount(targetAccountId, existing.currencyCode);
+    }
+
     const updates: Partial<typeof bondHoldings.$inferInsert> = {
       updatedAt: new Date(),
     };
     if (data.accountId !== undefined) {
       updates.accountId = parseId(data.accountId, 'account id');
+    }
+    if (data.currencyCode !== undefined) {
+      updates.currencyCode = data.currencyCode;
     }
     if (data.issuer !== undefined) {
       updates.issuer = data.issuer;
@@ -517,11 +725,14 @@ export function createRepo(database: Db) {
     return rows.map((row) => mapBondHolding(row.bond, row.holdingType));
   }
 
-  async function listBondHoldingsFiltered(filters: {
-    accountId?: string;
-    maturityAfter?: Date;
-    holdingTypeId?: string;
-  }): Promise<BondHolding[]> {
+  async function listBondHoldingsFiltered(
+    filters: {
+      accountId?: string;
+      maturityAfter?: Date;
+      holdingTypeId?: string;
+    },
+    options?: { displayCurrency?: string; asOfDate?: string }
+  ): Promise<BondHoldingWithDisplay[]> {
     const { accountId, maturityAfter, holdingTypeId } = filters;
 
     if (accountId !== undefined) {
@@ -562,10 +773,44 @@ export function createRepo(database: Db) {
       .where(whereClause)
       .orderBy(bondHoldings.maturityDate, bondHoldings.id)
       .all();
-    return rows.map((row) => mapBondHolding(row.bond, row.holdingType));
+    const holdings = rows.map((row) => mapBondHolding(row.bond, row.holdingType));
+
+    const displayCurrency = options?.displayCurrency;
+    if (!displayCurrency || displayCurrency === BASE_CURRENCY_CODE) {
+      return holdings;
+    }
+
+    const asOfDate = options?.asOfDate ?? toIsoDateString(new Date());
+    const quotes = await getQuoteRateMap(asOfDate);
+
+    return holdings.map((holding) => {
+      const displayFaceValue = applyDisplayConversion(
+        holding.faceValue,
+        holding.currencyCode,
+        displayCurrency,
+        quotes
+      );
+      const displayPurchasePrice =
+        holding.purchasePrice !== undefined
+          ? applyDisplayConversion(
+              holding.purchasePrice,
+              holding.currencyCode,
+              displayCurrency,
+              quotes
+            )
+          : undefined;
+
+      return {
+        ...holding,
+        ...(displayFaceValue !== undefined ? { displayFaceValue } : {}),
+        ...(displayPurchasePrice !== undefined ? { displayPurchasePrice } : {}),
+      };
+    });
   }
 
-  async function getPortfolioSummary(): Promise<PortfolioSummary> {
+  async function getPortfolioSummary(
+    options?: PortfolioSummaryOptions
+  ): Promise<PortfolioSummary> {
     const holdings = await listBondHoldings();
 
     if (holdings.length === 0) {
@@ -599,7 +844,7 @@ export function createRepo(database: Db) {
       (a, b) => a.maturityDate.getTime() - b.maturityDate.getTime()
     );
 
-    return {
+    const summary: PortfolioSummary = {
       totalFaceValue,
       positionCount: holdings.length,
       nextMaturityDate: toIsoDateString(sortedByMaturity[0].maturityDate),
@@ -613,6 +858,193 @@ export function createRepo(database: Db) {
         faceValue: holding.faceValue,
       })),
     };
+
+    const displayCurrency = options?.displayCurrency;
+    if (!displayCurrency || displayCurrency === BASE_CURRENCY_CODE) {
+      return summary;
+    }
+
+    const asOfDate = options?.asOfDate ?? toIsoDateString(new Date());
+    const quotes = await getQuoteRateMap(asOfDate);
+
+    let displayTotalFaceValue = 0;
+    let displayTotalCostBasis = 0;
+    let canConvertAll = true;
+
+    for (const holding of holdings) {
+      const convertedFace = applyDisplayConversion(
+        holding.faceValue,
+        holding.currencyCode,
+        displayCurrency,
+        quotes
+      );
+      if (convertedFace === undefined) {
+        canConvertAll = false;
+        break;
+      }
+      displayTotalFaceValue += convertedFace;
+
+      if (holding.purchasePrice !== undefined) {
+        const convertedCost = applyDisplayConversion(
+          holding.purchasePrice,
+          holding.currencyCode,
+          displayCurrency,
+          quotes
+        );
+        if (convertedCost === undefined) {
+          canConvertAll = false;
+          break;
+        }
+        displayTotalCostBasis += convertedCost;
+      }
+    }
+
+    if (!canConvertAll) {
+      return summary;
+    }
+
+    summary.displayCurrency = displayCurrency;
+    summary.displayTotalFaceValue = displayTotalFaceValue;
+    summary.displayTotalCostBasis = displayTotalCostBasis;
+    summary.maturityLadder = summary.maturityLadder.map((item) => {
+      const holding = sortedByMaturity.find((entry) => entry.id === item.holdingId);
+      if (!holding) {
+        return item;
+      }
+      const displayFaceValue = applyDisplayConversion(
+        holding.faceValue,
+        holding.currencyCode,
+        displayCurrency,
+        quotes
+      );
+      return displayFaceValue !== undefined ? { ...item, displayFaceValue } : item;
+    });
+
+    return summary;
+  }
+
+  async function listCurrencies(): Promise<Currency[]> {
+    const rows = database.select().from(currencies).orderBy(currencies.code).all();
+    return rows.map(mapCurrency);
+  }
+
+  async function listAvailableDisplayCurrencies(): Promise<Currency[]> {
+    const quotedCodes = database
+      .selectDistinct({ code: currencyQuotes.targetCurrencyCode })
+      .from(currencyQuotes)
+      .all()
+      .map((row) => row.code);
+
+    const codes = new Set([BASE_CURRENCY_CODE, ...quotedCodes]);
+    const rows = database
+      .select()
+      .from(currencies)
+      .where(inArray(currencies.code, [...codes]))
+      .orderBy(currencies.code)
+      .all();
+    return rows.map(mapCurrency);
+  }
+
+  async function listCurrencyQuotes(filters?: {
+    targetCurrency?: string;
+    fromDate?: string;
+    toDate?: string;
+  }): Promise<CurrencyQuote[]> {
+    const conditions = [];
+    if (filters?.targetCurrency) {
+      conditions.push(eq(currencyQuotes.targetCurrencyCode, filters.targetCurrency));
+    }
+    if (filters?.fromDate) {
+      conditions.push(gte(currencyQuotes.quoteDate, filters.fromDate));
+    }
+    if (filters?.toDate) {
+      conditions.push(lte(currencyQuotes.quoteDate, filters.toDate));
+    }
+
+    const whereClause =
+      conditions.length === 0
+        ? undefined
+        : conditions.length === 1
+          ? conditions[0]
+          : and(...conditions);
+
+    const rows = database
+      .select()
+      .from(currencyQuotes)
+      .where(whereClause)
+      .orderBy(desc(currencyQuotes.quoteDate), currencyQuotes.targetCurrencyCode)
+      .all();
+    return rows.map(mapCurrencyQuote);
+  }
+
+  async function getCurrencyQuote(id: string): Promise<CurrencyQuote | null> {
+    const numericId = parseId(id, 'quote id');
+    const [row] = database
+      .select()
+      .from(currencyQuotes)
+      .where(eq(currencyQuotes.id, numericId))
+      .all();
+    return row ? mapCurrencyQuote(row) : null;
+  }
+
+  async function insertCurrencyQuote(data: InsertCurrencyQuoteData): Promise<CurrencyQuote> {
+    await assertCurrencyCodesExist([data.targetCurrencyCode]);
+    try {
+      const [row] = database
+        .insert(currencyQuotes)
+        .values({
+          quoteDate: data.quoteDate,
+          targetCurrencyCode: data.targetCurrencyCode,
+          rate: data.rate,
+        })
+        .returning()
+        .all();
+      return mapCurrencyQuote(row);
+    } catch (error) {
+      wrapDbError(error);
+    }
+  }
+
+  async function updateCurrencyQuote(
+    id: string,
+    data: UpdateCurrencyQuoteData
+  ): Promise<CurrencyQuote | null> {
+    const numericId = parseId(id, 'quote id');
+    const existing = await getCurrencyQuote(id);
+    if (!existing) {
+      return null;
+    }
+
+    const updates: Partial<typeof currencyQuotes.$inferInsert> = {};
+    if (data.quoteDate !== undefined) {
+      updates.quoteDate = data.quoteDate;
+    }
+    if (data.rate !== undefined) {
+      updates.rate = data.rate;
+    }
+
+    try {
+      const [row] = database
+        .update(currencyQuotes)
+        .set(updates)
+        .where(eq(currencyQuotes.id, numericId))
+        .returning()
+        .all();
+      return mapCurrencyQuote(row);
+    } catch (error) {
+      wrapDbError(error);
+    }
+  }
+
+  async function deleteCurrencyQuote(id: string): Promise<boolean> {
+    const existing = await getCurrencyQuote(id);
+    if (!existing) {
+      return false;
+    }
+
+    const numericId = parseId(id, 'quote id');
+    database.delete(currencyQuotes).where(eq(currencyQuotes.id, numericId)).run();
+    return true;
   }
 
   async function insertCouponPayment(data: InsertCouponPaymentData): Promise<CouponPayment> {
@@ -834,6 +1266,13 @@ export function createRepo(database: Db) {
     deleteCouponPayment,
     getIncomeSummary,
     getUpcomingCoupons,
+    listCurrencies,
+    listAvailableDisplayCurrencies,
+    listCurrencyQuotes,
+    getCurrencyQuote,
+    insertCurrencyQuote,
+    updateCurrencyQuote,
+    deleteCurrencyQuote,
   };
 }
 

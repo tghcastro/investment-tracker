@@ -7,7 +7,11 @@ export function registerPostAccount(app: FastifyInstance, getRepo: () => Repo): 
   app.post('/api/accounts', async (request, reply) => {
     const repo = getRepo();
     const parsed = createAccountSchema.parse(request.body);
-    const account = await repo.insertAccount(parsed);
+    const { currencyCodes, ...rest } = parsed;
+    const account = await repo.insertAccount({
+      ...rest,
+      currencyCodes,
+    });
     return reply.status(201).send(account);
   });
 }

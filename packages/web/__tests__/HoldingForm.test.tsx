@@ -4,15 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { HoldingForm } from '../src/components/HoldingForm';
 import type { ApiAccount } from '../src/types/api';
+import { sampleAccountWithCurrencies } from './testUtils/currencyMocks';
 
-const sampleAccounts: ApiAccount[] = [
-  {
-    id: '10',
-    name: 'Vanguard',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  },
-];
+const sampleAccounts: ApiAccount[] = [sampleAccountWithCurrencies];
 
 describe('HoldingForm', () => {
   it('renders fields and blocks submit with validation message', async () => {
@@ -60,6 +54,7 @@ describe('HoldingForm', () => {
         accounts={sampleAccounts}
         initialValues={{
           accountId: '10',
+          currencyCode: 'USD',
           issuer: 'US Treasury',
           faceValue: '1000',
           couponRate: '4.25',
@@ -81,6 +76,7 @@ describe('HoldingForm', () => {
         accounts={sampleAccounts}
         initialValues={{
           accountId: '10',
+          currencyCode: 'USD',
           issuer: 'US Treasury',
           faceValue: '1000',
           couponRate: '4.25',

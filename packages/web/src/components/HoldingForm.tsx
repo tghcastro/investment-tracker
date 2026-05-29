@@ -9,6 +9,7 @@ import './HoldingForm.css';
 
 const HOLDING_FORM_FIELD_FOCUS_ORDER = [
   { id: 'holding-account', errorKey: 'accountId' },
+  { id: 'holding-currency', errorKey: 'currencyCode' },
   { id: 'holding-issuer', errorKey: 'issuer' },
   { id: 'holding-face-value', errorKey: 'faceValue' },
   { id: 'holding-coupon-rate', errorKey: 'couponRate' },
@@ -28,6 +29,7 @@ const COUPON_FREQUENCY_OPTIONS: { value: CouponFrequency; label: string }[] = [
 
 export interface HoldingFormValues {
   accountId: string;
+  currencyCode: string;
   issuer: string;
   isin: string;
   cusip: string;
@@ -41,6 +43,7 @@ export interface HoldingFormValues {
 
 export interface HoldingFormSubmitPayload {
   accountId: string;
+  currencyCode: string;
   issuer: string;
   isin?: string;
   cusip?: string;
@@ -66,6 +69,7 @@ export interface HoldingFormProps {
 
 export const EMPTY_HOLDING_FORM_VALUES: HoldingFormValues = {
   accountId: '',
+  currencyCode: 'USD',
   issuer: '',
   isin: '',
   cusip: '',
@@ -97,6 +101,9 @@ function validate(values: HoldingFormValues): Record<string, string> {
 
   if (!values.accountId) {
     errors.accountId = 'Account required';
+  }
+  if (!values.currencyCode) {
+    errors.currencyCode = 'Currency required';
   }
   if (!values.issuer.trim()) {
     errors.issuer = 'Issuer required';
@@ -137,6 +144,7 @@ function buildPayload(values: HoldingFormValues): HoldingFormSubmitPayload {
   const faceValueCents = parseDollarsToCents(values.faceValue)!;
   const payload: HoldingFormSubmitPayload = {
     accountId: values.accountId,
+    currencyCode: values.currencyCode,
     issuer: values.issuer.trim(),
     faceValue: faceValueCents,
     couponRate: Number.parseFloat(values.couponRate),
@@ -217,6 +225,32 @@ export function HoldingForm({
     [accounts]
   );
 
+  const selectedAccount = useMemo(
+    () => accounts.find((account) => account.id === values.accountId),
+    [accounts, values.accountId]
+  );
+
+  const currencyOptions = useMemo(() => {
+    const allowed = selectedAccount?.currencyCodes ?? ['USD'];
+    return [
+      { value: '', label: 'Select currency' },
+      ...allowed.map((code) => ({ value: code, label: code })),
+    ];
+  }, [selectedAccount]);
+
+  useEffect(() => {
+    if (!selectedAccount) {
+      return;
+    }
+    const allowed = selectedAccount.currencyCodes ?? ['USD'];
+    if (!allowed.includes(values.currencyCode)) {
+      setValues((current) => ({
+        ...current,
+        currencyCode: allowed[0] ?? 'USD',
+      }));
+    }
+  }, [selectedAccount, values.currencyCode]);
+
   const handleChange = <K extends keyof HoldingFormValues>(key: K, value: HoldingFormValues[K]) => {
     setValues((current) => ({ ...current, [key]: value }));
   };
@@ -245,6 +279,17 @@ export function HoldingForm({
         />
       </FormField>
 
+      <FormField label="Currency" htmlFor="holding-currency" error={fieldErrors.currencyCode}>
+        <Select
+          id="holding-currency"
+          value={values.currencyCode}
+          options={currencyOptions}
+          error={Boolean(fieldErrors.currencyCode)}
+          onChange={(event) => handleChange('currencyCode', event.target.value)}
+          disabled={loading || !values.accountId}
+        />
+      </FormField>
+
       <FormField label="Issuer" htmlFor="holding-issuer" error={fieldErrors.issuer}>
         <TextInput
           id="holding-issuer"
@@ -256,7 +301,11 @@ export function HoldingForm({
       </FormField>
 
       <div className="cb-holding-form__grid">
-        <FormField label="Face value (USD)" htmlFor="holding-face-value" error={fieldErrors.faceValue}>
+        <FormField
+          label={`Face value (${values.currencyCode || 'USD'})`}
+          htmlFor="holding-face-value"
+          error={fieldErrors.faceValue}
+        >
           <TextInput
             id="holding-face-value"
             type="number"
@@ -345,7 +394,7 @@ export function HoldingForm({
       </div>
 
       <FormField
-        label="Purchase price (USD, optional)"
+        label={`Purchase price (${values.currencyCode || 'USD'}, optional)`}
         htmlFor="holding-purchase-price"
         error={fieldErrors.purchasePrice}
       >
@@ -385,6 +434,7 @@ export function HoldingForm({
 
 export function holdingToFormValues(holding: {
   accountId: string;
+  currencyCode: string;
   issuer: string;
   isin?: string;
   cusip?: string;
@@ -399,6 +449,7 @@ export function holdingToFormValues(holding: {
 
   return {
     accountId: holding.accountId,
+    currencyCode: holding.currencyCode,
     issuer: holding.issuer,
     isin: holding.isin ?? '',
     cusip: holding.cusip ?? '',

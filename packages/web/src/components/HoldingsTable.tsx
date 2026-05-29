@@ -12,6 +12,7 @@ export interface AccountInfo {
 export interface HoldingsTableProps {
   holdings: ApiBondHolding[];
   accountInfo: Map<string, AccountInfo>;
+  displayCurrency: string;
   onDelete: (id: string) => void;
 }
 
@@ -22,11 +23,20 @@ function formatAccountLabel(info: AccountInfo | undefined): string {
   return info.archived ? `${info.name} (archived)` : info.name;
 }
 
-export function HoldingsTable({ holdings, accountInfo, onDelete }: HoldingsTableProps) {
+export function HoldingsTable({
+  holdings,
+  accountInfo,
+  displayCurrency,
+  onDelete,
+}: HoldingsTableProps) {
   return (
     <div className="cb-holdings-table" role="list">
       {holdings.map((holding) => {
         const accountLabel = formatAccountLabel(accountInfo.get(holding.accountId));
+        const showConverted =
+          holding.displayFaceValue !== undefined && holding.currencyCode !== displayCurrency;
+        const faceValue = holding.displayFaceValue ?? holding.faceValue;
+        const faceValueCurrency = showConverted ? displayCurrency : holding.currencyCode;
 
         return (
           <article key={holding.id} className="cb-holdings-table__row" role="listitem">
@@ -41,7 +51,9 @@ export function HoldingsTable({ holdings, accountInfo, onDelete }: HoldingsTable
                     <span className="cb-holdings-table__type-badge">{holding.holdingType.name}</span>
                   ) : null}
                 </div>
-                <p className="cb-holdings-table__account">{accountLabel}</p>
+                <p className="cb-holdings-table__account">
+                  {accountLabel} · {holding.currencyCode}
+                </p>
               </div>
             </div>
             <div className="cb-holdings-table__metrics">
@@ -52,7 +64,7 @@ export function HoldingsTable({ holdings, accountInfo, onDelete }: HoldingsTable
                 {formatDate(holding.maturityDate)}
               </span>
               <span className="cb-holdings-table__face-value cb-number-display">
-                {formatCurrency(holding.faceValue)}
+                {formatCurrency(faceValue, faceValueCurrency)}
               </span>
             </div>
             <div className="cb-holdings-table__actions">

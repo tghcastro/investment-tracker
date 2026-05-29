@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+import { BASE_CURRENCY_CODE } from './currency.js';
+
+export const currencyCodeSchema = z
+  .string()
+  .length(3, 'Currency code must be 3 letters')
+  .regex(/^[A-Z]{3}$/, 'Currency code must be ISO 4217 uppercase');
+
+export const currencyCodesSchema = z
+  .array(currencyCodeSchema)
+  .min(1, 'At least one currency required')
+  .default([BASE_CURRENCY_CODE]);
+
 export const couponFrequencySchema = z.enum(['semi-annual', 'quarterly', 'monthly', 'annual']);
 
 /** Matches repo parseId: positive integer string without leading zeros (e.g. "1", "42"). */
@@ -16,10 +28,36 @@ function positiveIntegerId(label: string) {
 export const createAccountSchema = z.object({
   name: z.string().min(1, 'Account name required').max(255),
   description: z.string().max(1000).optional(),
+  currencyCodes: currencyCodesSchema.optional(),
 });
+
+export const createCurrencyQuoteSchema = z.object({
+  quoteDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Quote date must be YYYY-MM-DD'),
+  targetCurrencyCode: currencyCodeSchema.refine(
+    (code) => code !== BASE_CURRENCY_CODE,
+    { message: 'Cannot quote USD against itself' }
+  ),
+  rate: z.number().positive('Rate must be positive'),
+});
+
+export const updateCurrencyQuoteSchema = z
+  .object({
+    quoteDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Quote date must be YYYY-MM-DD')
+      .optional(),
+    rate: z.number().positive('Rate must be positive').optional(),
+  })
+  .refine((data) => data.quoteDate !== undefined || data.rate !== undefined, {
+    message: 'At least one field is required',
+    path: ['_root'],
+  });
 
 const bondHoldingFieldsSchema = z.object({
   accountId: positiveIntegerId('Account ID'),
+  currencyCode: currencyCodeSchema.default(BASE_CURRENCY_CODE),
   issuer: z.string().min(1, 'Issuer required').max(255),
   isin: z.string().max(20).optional(),
   cusip: z.string().max(20).optional(),
@@ -51,6 +89,7 @@ export const createCouponPaymentSchema = z.object({
 export const updateAccountSchema = z.object({
   name: z.string().min(1, 'Account name required').max(255).optional(),
   description: z.string().max(1000).optional(),
+  currencyCodes: currencyCodesSchema.optional(),
 });
 
 export const updateCouponPaymentSchema = z
@@ -77,6 +116,8 @@ export const updateBondHoldingSchema = bondHoldingFieldsSchema.partial().refine(
 );
 
 export type CreateAccountInput = z.infer<typeof createAccountSchema>;
+export type CreateCurrencyQuoteInput = z.infer<typeof createCurrencyQuoteSchema>;
+export type UpdateCurrencyQuoteInput = z.infer<typeof updateCurrencyQuoteSchema>;
 export type CreateBondHoldingInput = z.infer<typeof createBondHoldingSchema>;
 export type CreateCouponPaymentInput = z.infer<typeof createCouponPaymentSchema>;
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;

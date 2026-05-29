@@ -4,8 +4,17 @@ import {
   integer,
   real,
   foreignKey,
+  uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+
+export const currencies = sqliteTable('currencies', {
+  code: text('code').primaryKey(),
+  number: text('number').notNull(),
+  name: text('name').notNull(),
+  symbol: text('symbol').notNull(),
+  region: text('region').notNull(),
+});
 
 export const holdingTypes = sqliteTable('holding_types', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -27,12 +36,58 @@ export const accounts = sqliteTable('accounts', {
   archivedAt: integer('archived_at', { mode: 'timestamp_ms' }),
 });
 
+export const accountCurrencies = sqliteTable(
+  'account_currencies',
+  {
+    accountId: integer('account_id').notNull(),
+    currencyCode: text('currency_code').notNull(),
+  },
+  (table) => ({
+    accountRef: foreignKey({
+      columns: [table.accountId],
+      foreignColumns: [accounts.id],
+    }),
+    currencyRef: foreignKey({
+      columns: [table.currencyCode],
+      foreignColumns: [currencies.code],
+    }),
+    accountCurrencyUnique: uniqueIndex('account_currencies_account_currency_unique').on(
+      table.accountId,
+      table.currencyCode
+    ),
+  })
+);
+
+export const currencyQuotes = sqliteTable(
+  'currency_quotes',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    quoteDate: text('quote_date').notNull(),
+    targetCurrencyCode: text('target_currency_code').notNull(),
+    rate: real('rate').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+  },
+  (table) => ({
+    targetCurrencyRef: foreignKey({
+      columns: [table.targetCurrencyCode],
+      foreignColumns: [currencies.code],
+    }),
+    dateTargetUnique: uniqueIndex('currency_quotes_date_target_unique').on(
+      table.quoteDate,
+      table.targetCurrencyCode
+    ),
+  })
+);
+
 export const bondHoldings = sqliteTable(
   'bond_holdings',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
     holdingTypeId: integer('holding_type_id').notNull(),
     accountId: integer('account_id').notNull(),
+    currencyCode: text('currency_code').notNull().default('USD'),
     issuer: text('issuer').notNull(),
     isin: text('isin'),
     cusip: text('cusip'),
@@ -54,6 +109,10 @@ export const bondHoldings = sqliteTable(
     accountIdRef: foreignKey({
       columns: [table.accountId],
       foreignColumns: [accounts.id],
+    }),
+    currencyCodeRef: foreignKey({
+      columns: [table.currencyCode],
+      foreignColumns: [currencies.code],
     }),
   })
 );

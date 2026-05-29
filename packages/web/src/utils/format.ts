@@ -1,9 +1,18 @@
 /** faceValue from API is in cents */
-export function formatCurrency(cents: number): string {
+export function formatCurrency(cents: number, currencyCode = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: currencyCode,
   }).format(cents / 100);
+}
+
+/** Format with explicit symbol when currency code unavailable in Intl. */
+export function formatCurrencyWithSymbol(cents: number, symbol: string): string {
+  const amount = (cents / 100).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${symbol}${amount}`;
 }
 
 /** List responses use decimal (0.0425); POST/GET-by-id use percent (4.25) */

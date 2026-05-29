@@ -1,3 +1,9 @@
+.cb-holdings-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--cb-space-base);
+}
+
 .cb-holdings-filters {
   display: flex;
   flex-wrap: wrap;
