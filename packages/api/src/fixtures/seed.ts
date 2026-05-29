@@ -1,7 +1,7 @@
 import { pathToFileURL } from 'url';
-import { count } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import { getDefaultDb } from '../db.js';
-import { accounts, bondHoldings } from '../schema.js';
+import { accounts, bondHoldings, holdingTypes } from '../schema.js';
 
 export {
   fixtureAccountDefs,
@@ -137,6 +137,15 @@ export function seed(): void {
     seededAccounts.map((account) => [account.key, account.id])
   );
 
+  const [bondType] = db
+    .select({ id: holdingTypes.id })
+    .from(holdingTypes)
+    .where(eq(holdingTypes.slug, 'bond'))
+    .all();
+  if (!bondType) {
+    throw new Error('Bond holding type is not configured');
+  }
+
   const seededHoldings: SeededBondHolding[] = [];
 
   for (const def of fixtureBondDefs) {
@@ -148,6 +157,7 @@ export function seed(): void {
     const [row] = db
       .insert(bondHoldings)
       .values({
+        holdingTypeId: bondType.id,
         accountId,
         issuer: def.issuer,
         isin: def.isin,
