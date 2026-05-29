@@ -8,6 +8,20 @@ type SerializeDates<T> = {
       : T[K];
 };
 
+/** JSON shape returned by GET /api/holding-types */
+export interface ApiHoldingType {
+  id: string;
+  slug: string;
+  name: string;
+  sortOrder: number;
+}
+
+export interface ApiHoldingTypeRef {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 /** JSON shape returned by GET /api/accounts */
 export type ApiAccount = SerializeDates<Account>;
 
