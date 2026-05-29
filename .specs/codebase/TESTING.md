@@ -37,6 +37,7 @@
 | Command | What | When |
 |---------|------|------|
 | `npm run lint` | ESLint all packages, no errors | Every commit |
+| `npm run check:docs` | Agent doc freshness (no pre-scaffold drift) | Doc/architecture PRs; CI on `main` |
 | `npm run test` | All tests, pass + coverage | Before merging to main |
 | `npm run test -w [pkg]` | Package tests only | Task completion |
 | `npm run build` | TS compile, no errors | CI check |

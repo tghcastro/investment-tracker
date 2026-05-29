@@ -1,7 +1,10 @@
 DOCKER_COMPOSE ?= docker compose
 PROD_COMPOSE_FILE ?= docker-compose.prod.yml
 
-.PHONY: help build start stop recreate logs ps start-prod stop-prod logs-prod ps-prod release
+.PHONY: help build start stop recreate logs ps start-prod stop-prod logs-prod ps-prod release check-docs
+
+check-docs:
+	npm run check:docs
 
 help:
 	@echo "Investment Tracker (Docker)"

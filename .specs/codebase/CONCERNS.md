@@ -7,10 +7,10 @@
 
 | Issue | Status |
 | --- | --- |
-| `.specs/codebase/*` claimed "pre-scaffold" while `packages/` was live | **Addressed 2026-05-29** — STACK, STRUCTURE, ARCHITECTURE, CONVENTIONS refreshed |
+| `.specs/codebase/*` described empty repo while `packages/` was live | **Addressed 2026-05-29** — STACK, STRUCTURE, ARCHITECTURE, CONVENTIONS refreshed |
 | Archived M1–M4 specs still large if indexed | **Mitigated** — `.cursorignore` + `AGENTS.md` map |
 
-**Remaining:** No CI job yet to fail on stale doc phrases (Phase 3).
+**Remaining:** None — `npm run check:docs` + GitHub Actions CI enforce freshness.
 
 ## Product / scope
 

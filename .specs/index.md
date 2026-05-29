@@ -14,7 +14,8 @@ Catalog for agents and humans. **Default agent entry:** [`AGENTS.md`](../AGENTS.
 | `.specs/codebase/CONVENTIONS.md` | Agent | Active | 2026-05-29 |
 | `.specs/codebase/CONCERNS.md` | Agent | Active | 2026-05-29 |
 | `.specs/codebase/TESTING.md` | Agent | Active | 2026-05-28 |
-| `.specs/codebase/INTEGRATIONS.md` | Agent | Active | 2026-05-23 |
+| `.specs/codebase/INTEGRATIONS.md` | Agent | Active | 2026-05-29 |
+| `docs/harness.md` | Agent + human | Active | 2026-05-29 |
 | `docs/FRONTEND.md` | Agent (UI) | Active | 2026-05-29 |
 | `docs/references/node22-wsl.md` | Agent | Active | 2026-05-29 |
 | `DESIGN.md` | Agent (UI tasks) | Active | 2026-05-20 |

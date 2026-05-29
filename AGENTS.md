@@ -82,3 +82,9 @@ Configured in [`.cursorignore`](.cursorignore).
 ## Jira
 
 Project **INVTR** — setup: [`.cursor/JIRA-MCP.md`](.cursor/JIRA-MCP.md).
+
+## Doc harness (maintenance)
+
+- Before doc/architecture PRs: `npm run check:docs` (also in CI)
+- Gardening checklist + agent prompt: [`docs/harness.md`](docs/harness.md)
+- On milestone ship: move specs to `features/completed/`, refresh `.specs/codebase/*`, update [`.specs/index.md`](.specs/index.md)
