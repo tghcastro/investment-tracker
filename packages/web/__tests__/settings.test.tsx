@@ -27,8 +27,12 @@ function mockSystemInfo(info: ApiSystemInfo = sampleInfo, loading = false) {
   });
 }
 
-function blobResponse(body: BlobPart, headers?: Record<string, string>): Response {
-  return new Response(body, {
+async function blobResponse(
+  body: BlobPart,
+  headers?: Record<string, string>
+): Promise<Response> {
+  const data = body instanceof Blob ? await body.arrayBuffer() : body;
+  return new Response(data, {
     status: 200,
     headers: headers ?? {},
   });
@@ -70,7 +74,9 @@ describe('Settings', () => {
 
     const blob = new Blob(['sqlite-backup'], { type: 'application/octet-stream' });
     vi.mocked(fetch).mockResolvedValueOnce(
-      blobResponse(blob, { 'Content-Disposition': 'attachment; filename="my-backup.db"' })
+      await blobResponse(blob, {
+        'Content-Disposition': 'attachment; filename="my-backup.db"',
+      })
     );
 
     const createObjectURL = vi.fn(() => 'blob:mock-url');

@@ -27,7 +27,7 @@
     "seed": "npm run build && node dist/fixtures/seed.js",
     "lint": "node ../../node_modules/eslint/bin/eslint.js src",
     "pretest": "npm run build -w bonds-domain",
-    "test": "vitest",
+    "test": "vitest run",
     "test:watch": "vitest --watch"
   },
   "dependencies": {
