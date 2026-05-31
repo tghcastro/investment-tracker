@@ -37,6 +37,7 @@ const sampleHoldings: ApiBondHolding[] = [
     couponFrequency: 'semi-annual',
     maturityDate: '2030-08-15',
     purchaseDate: '2024-01-10',
+    expectedCouponAmountCents: null,
     updatedAt: '2024-01-10T00:00:00.000Z',
   },
   {
@@ -48,6 +49,7 @@ const sampleHoldings: ApiBondHolding[] = [
     couponFrequency: 'annual',
     maturityDate: '2027-05-01',
     purchaseDate: '2023-11-20',
+    expectedCouponAmountCents: null,
     updatedAt: '2023-11-20T00:00:00.000Z',
   },
   {
@@ -59,6 +61,7 @@ const sampleHoldings: ApiBondHolding[] = [
     couponFrequency: 'quarterly',
     maturityDate: '2035-03-01',
     purchaseDate: '2025-02-01',
+    expectedCouponAmountCents: null,
     updatedAt: '2025-02-01T00:00:00.000Z',
   },
 ];

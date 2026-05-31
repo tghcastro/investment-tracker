@@ -257,6 +257,7 @@ describe('API routes', () => {
       couponRate: 4.25,
       couponFrequency: 'quarterly',
       purchasePrice: 100,
+      expectedCouponAmountCents: 425,
     });
   });
 

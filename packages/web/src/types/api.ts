@@ -47,6 +47,8 @@ export type ApiAccount = SerializeDates<Account>;
 export type ApiBondHolding = SerializeDates<BondHolding> & {
   displayFaceValue?: number;
   displayPurchasePrice?: number;
+  /** Per-period coupon estimate (cents); from API — do not compute in web. */
+  expectedCouponAmountCents: number | null;
 };
 
 export interface ApiPortfolioSummaryLadderItem {

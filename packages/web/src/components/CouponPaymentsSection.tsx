@@ -1,5 +1,4 @@
-import { expectedCouponAmountCents } from 'bonds-domain';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   CouponPaymentForm,
   paymentToFormValues,
@@ -21,10 +20,6 @@ export interface CouponPaymentsSectionProps {
 
 type SectionMode = 'list' | 'add' | 'edit';
 
-function couponRateToDecimal(rate: number): number {
-  return rate <= 1 ? rate : rate / 100;
-}
-
 function CouponPaymentsSectionSkeleton() {
   return (
     <div
@@ -40,24 +35,6 @@ function CouponPaymentsSectionSkeleton() {
         </div>
       ))}
     </div>
-  );
-}
-
-function getExpectedPaymentCents(holding: ApiBondHolding): number | null {
-  if (!holding.faceValue || holding.faceValue <= 0) {
-    return null;
-  }
-  if (holding.couponRate === undefined || holding.couponRate < 0) {
-    return null;
-  }
-  if (!holding.couponFrequency) {
-    return null;
-  }
-
-  return expectedCouponAmountCents(
-    holding.faceValue,
-    couponRateToDecimal(holding.couponRate),
-    holding.couponFrequency
   );
 }
 
@@ -89,7 +66,7 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
     deleteTarget ? `/api/coupon-payments/${deleteTarget.id}` : '/api/coupon-payments/0'
   );
 
-  const expectedCents = useMemo(() => getExpectedPaymentCents(holding), [holding]);
+  const expectedCents = holding.expectedCouponAmountCents;
 
   const loadPayments = useCallback(async () => {
     setListLoading(true);

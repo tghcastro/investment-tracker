@@ -14,6 +14,7 @@ const sampleHolding: ApiBondHolding = {
   couponFrequency: 'semi-annual',
   maturityDate: '2030-01-01',
   purchaseDate: '2024-01-01',
+  expectedCouponAmountCents: 21_250,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
 };

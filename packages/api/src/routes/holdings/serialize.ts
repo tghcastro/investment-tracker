@@ -1,4 +1,5 @@
 import type { BondHolding } from 'bonds-domain';
+import { expectedCouponAmountCents } from 'bonds-domain';
 
 import type { BondHoldingWithDisplay } from '../../repo.js';
 
@@ -14,12 +15,34 @@ export function couponRateDecimalToPercent(decimal: number): number {
 export type ApiBondHoldingResponse = BondHolding & {
   displayFaceValue?: number;
   displayPurchasePrice?: number;
+  /** Per-period coupon estimate (integer cents); null when terms insufficient. */
+  expectedCouponAmountCents: number | null;
 };
+
+/** Server-side estimate from face value, stored coupon rate (decimal), and frequency. */
+export function computeExpectedCouponAmountCents(holding: BondHolding): number | null {
+  if (!holding.faceValue || holding.faceValue <= 0) {
+    return null;
+  }
+  if (holding.couponRate === undefined || holding.couponRate < 0) {
+    return null;
+  }
+  if (!holding.couponFrequency) {
+    return null;
+  }
+
+  return expectedCouponAmountCents(
+    holding.faceValue,
+    holding.couponRate,
+    holding.couponFrequency
+  );
+}
 
 export function toApiBondHolding(holding: BondHoldingWithDisplay): ApiBondHoldingResponse {
   return {
     ...holding,
     couponRate: couponRateDecimalToPercent(holding.couponRate),
+    expectedCouponAmountCents: computeExpectedCouponAmountCents(holding),
   };
 }
 
