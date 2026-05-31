@@ -8,6 +8,7 @@ import type { ApiBondHolding, ApiCouponPayment } from '../src/types/api';
 const sampleHolding: ApiBondHolding = {
   id: '1',
   accountId: '10',
+  currencyCode: 'USD',
   issuer: 'US Treasury',
   faceValue: 1_000_000,
   couponRate: 4.25,
@@ -15,6 +16,8 @@ const sampleHolding: ApiBondHolding = {
   maturityDate: '2030-01-01',
   purchaseDate: '2024-01-01',
   expectedCouponAmountCents: 21_250,
+  convertedFaceValue: 1_000_000,
+  convertedCurrency: 'USD',
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
 };

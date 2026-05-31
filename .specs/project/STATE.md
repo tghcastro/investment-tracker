@@ -1,9 +1,7 @@
 # State
 
 **Last Updated:** 2026-05-31
-**Current Work:** M6 complete — **M6.1** specified, not implemented. **Coupon estimate** moved to API (done, uncommitted). Next: M6.1 P1 (T1–T8). See [M6.1 HANDOFF](../features/active/m6.1-multi-currency-follow-ups/HANDOFF.md).
-
-**Session stop:** Handoff written 2026-05-31 — resume from HANDOFF + `tasks.md` P1.
+**Current Work:** **M6.1** shipped (2026-05-31). Next: **M7** Brazilian fixed income — [spec](../features/active/m7-brazilian-fixed-income/spec.md).
 
 ### AD-010: API-first business rules — web UI only (2026-05-31)
 
@@ -117,10 +115,10 @@ _None yet._
 - [x] Implement M5 — holdings framework on `m5-holdings-framework` (2026-05-29)
 - [x] Execute M6 — multi-currency on `m6-multi-currency` (2026-05-29)
 - [x] Approve M6 spec → shipped (2026-05-29)
-- [x] Specify M6.1 — `.specs/features/active/m6.1-multi-currency-follow-ups/` (2026-05-31)
-- [ ] Approve M6.1 spec → Execute P1 [tasks](../features/active/m6.1-multi-currency-follow-ups/tasks.md)
-- [ ] Implement M6.1 — multi-currency follow-ups
-- [ ] Approve M7 spec (draft ready) — execute after M6.1
+- [x] Specify M6.1 — `.specs/features/completed/m6.1-multi-currency-follow-ups/` (2026-05-31)
+- [x] Approve M6.1 spec → Execute P1 [tasks](../features/completed/m6.1-multi-currency-follow-ups/tasks.md)
+- [x] Implement M6.1 — multi-currency follow-ups (2026-05-31)
+- [ ] Approve M7 spec (draft ready) — execute next
 - [ ] v2.0.0 release after M7 P3 (AD-009)
 - [x] Specify M5 — `.specs/features/completed/m5-holdings-framework/` (2026-05-29)
 - [x] Specify M6 — `.specs/features/completed/m6-multi-currency/` (2026-05-29)

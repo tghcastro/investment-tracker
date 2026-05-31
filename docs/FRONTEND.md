@@ -33,6 +33,8 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 
 **Coupon estimate:** `expectedCouponAmountCents` on holding JSON from API — `CouponPaymentsSection` renders it; do not recompute.
 
+**FX preview (M6.1):** `HoldingForm` debounces `GET /api/fx/convert` for read-only USD equivalent; submit disabled when `conversionError`. **Holdings table:** primary line = `convertedFaceValue` + `convertedCurrency`; secondary = native `faceValue` + `currencyCode`.
+
 ## UX principles (do not break)
 
 1. **Single accent** — `#0052ff` (`--cb-primary`) for primary CTAs and active nav only.

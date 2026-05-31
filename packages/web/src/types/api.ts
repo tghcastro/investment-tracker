@@ -45,8 +45,10 @@ export type ApiAccount = SerializeDates<Account>;
 
 /** JSON shape returned by GET /api/holdings */
 export type ApiBondHolding = SerializeDates<BondHolding> & {
-  displayFaceValue?: number;
-  displayPurchasePrice?: number;
+  convertedFaceValue: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
+  convertedPurchasePrice?: number | null;
   /** Per-period coupon estimate (cents); from API — do not compute in web. */
   expectedCouponAmountCents: number | null;
 };
@@ -56,7 +58,8 @@ export interface ApiPortfolioSummaryLadderItem {
   issuer: string;
   maturityDate: string;
   faceValue: number;
-  displayFaceValue?: number;
+  convertedFaceValue: number | null;
+  convertedCurrency: string;
 }
 
 /** JSON shape returned by GET /api/portfolio/summary */
@@ -67,10 +70,18 @@ export interface ApiPortfolioSummary {
   totalCostBasis: number;
   holdingsWithCostBasis: number;
   holdingsMissingCostBasis: number;
-  displayCurrency?: string;
-  displayTotalFaceValue?: number;
-  displayTotalCostBasis?: number;
+  convertedCurrency: string;
+  convertedTotalFaceValue: number | null;
+  convertedTotalCostBasis: number | null;
+  conversionError?: string;
   maturityLadder: ApiPortfolioSummaryLadderItem[];
+}
+
+/** JSON shape returned by GET /api/fx/convert */
+export interface ApiFxConvertResult {
+  convertedFaceValue: number | null;
+  convertedCurrency: string;
+  conversionError: string | null;
 }
 
 export type ApiCouponPayment = {

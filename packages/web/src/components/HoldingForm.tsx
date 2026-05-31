@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import type { ApiFxConvertResult } from '../types/api';
 import type { CouponFrequency } from '../types/api';
 import type { ApiAccount } from '../types/api';
 import { focusFirstFieldError } from '../utils/focusFirstFieldError';
 import { parseDollarsToCents } from '../utils/money';
+import { formatCurrency } from '../utils/format';
 import { FormField, Select, TextInput } from './forms';
 import { Button } from './ui/Button';
 import './HoldingForm.css';
@@ -185,6 +187,63 @@ export function HoldingForm({
   }));
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [fxPreview, setFxPreview] = useState<{
+    loading: boolean;
+    result: ApiFxConvertResult | null;
+  }>({ loading: false, result: null });
+
+  useEffect(() => {
+    const faceValueCents = parseDollarsToCents(values.faceValue);
+    if (
+      !values.purchaseDate ||
+      !values.currencyCode ||
+      faceValueCents === null ||
+      faceValueCents <= 0
+    ) {
+      setFxPreview({ loading: false, result: null });
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      void (async () => {
+        setFxPreview({ loading: true, result: null });
+        const params = new URLSearchParams({
+          amountCents: String(faceValueCents),
+          currencyCode: values.currencyCode,
+          purchaseDate: values.purchaseDate,
+          convertedCurrency: 'USD',
+        });
+        try {
+          const response = await fetch(`/api/fx/convert?${params.toString()}`, {
+            signal: controller.signal,
+          });
+          if (!response.ok) {
+            setFxPreview({ loading: false, result: null });
+            return;
+          }
+          const result = (await response.json()) as ApiFxConvertResult;
+          setFxPreview({ loading: false, result });
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            return;
+          }
+          setFxPreview({ loading: false, result: null });
+        }
+      })();
+    }, 300);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [values.faceValue, values.currencyCode, values.purchaseDate]);
+
+  const fxPreviewBlocksSubmit =
+    values.currencyCode !== 'USD' &&
+    parseDollarsToCents(values.faceValue) !== null &&
+    Boolean(values.purchaseDate) &&
+    (fxPreview.loading || fxPreview.result?.conversionError !== null);
 
   useEffect(() => {
     if (initialValues) {
@@ -335,6 +394,24 @@ export function HoldingForm({
         </FormField>
       </div>
 
+      <FormField label="USD equivalent (read-only)" htmlFor="holding-usd-preview">
+        <TextInput
+          id="holding-usd-preview"
+          readOnly
+          value={
+            fxPreview.loading
+              ? 'Loading…'
+              : fxPreview.result?.convertedFaceValue !== null &&
+                  fxPreview.result?.convertedFaceValue !== undefined
+                ? formatCurrency(fxPreview.result.convertedFaceValue, 'USD')
+                : values.currencyCode === 'USD' && parseDollarsToCents(values.faceValue) !== null
+                  ? formatCurrency(parseDollarsToCents(values.faceValue)!, 'USD')
+                  : ''
+          }
+          disabled={loading}
+        />
+      </FormField>
+
       <FormField label="Coupon frequency" htmlFor="holding-coupon-frequency">
         <Select
           id="holding-coupon-frequency"
@@ -423,7 +500,7 @@ export function HoldingForm({
           <Button type="button" variant="secondary-light" onClick={onCancel} disabled={loading}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" disabled={loading}>
+          <Button type="submit" variant="primary" disabled={loading || fxPreviewBlocksSubmit}>
             {submitLabel}
           </Button>
         </div>
@@ -445,7 +522,7 @@ export function holdingToFormValues(holding: {
   purchaseDate: string;
   purchasePrice?: number;
 }): HoldingFormValues {
-  const couponPercent = holding.couponRate <= 1 ? holding.couponRate * 100 : holding.couponRate;
+  const couponPercent = holding.couponRate;
 
   return {
     accountId: holding.accountId,

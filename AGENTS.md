@@ -11,7 +11,7 @@ Short index for coding agents. Read only what your task needs — do not load th
 | Any change | [`.specs/project/STATE.md`](.specs/project/STATE.md) — current work, AD decisions, blockers |
 | Scope / what not to build | [`.specs/project/PROJECT.md`](.specs/project/PROJECT.md) |
 | Milestones / future work | [`.specs/project/ROADMAP.md`](.specs/project/ROADMAP.md) |
-| New feature (M6.1+) | **Next:** [M6.1](../.specs/features/active/m6.1-multi-currency-follow-ups/spec.md) (execute). M7 deferred — [m7](../.specs/features/active/m7-brazilian-fixed-income/spec.md). M5–M6 in [`features/completed/`](../.specs/features/completed/); see [`.specs/index.md`](.specs/index.md) |
+| New feature (M7+) | **Next:** [M7](../.specs/features/active/m7-brazilian-fixed-income/spec.md) (execute). M6.1 shipped — [completed](../.specs/features/completed/m6.1-multi-currency-follow-ups/spec.md). M5–M6 in [`features/completed/`](../.specs/features/completed/); see [`.specs/index.md`](.specs/index.md) |
 
 ## Codebase (source of truth for implementation)
 

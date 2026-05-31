@@ -20,6 +20,8 @@ function sampleHolding(overrides: Partial<BondHoldingWithDisplay> = {}): BondHol
     maturityDate: new Date('2030-01-01'),
     purchaseDate: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
+    convertedFaceValue: 1_000_000,
+    convertedCurrency: 'USD',
     ...overrides,
   };
 }

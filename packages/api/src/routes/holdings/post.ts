@@ -37,6 +37,10 @@ export function registerPostHolding(app: FastifyInstance, getRepo: () => Repo): 
       currencyCode,
       couponRate: couponRatePercentToDecimal(couponRate),
     });
-    return reply.status(201).send(toApiBondHolding(holding));
+    const withConverted = await repo.getBondHoldingWithConverted(holding.id);
+    if (!withConverted) {
+      throw new Error('Created bond holding could not be loaded');
+    }
+    return reply.status(201).send(toApiBondHolding(withConverted));
   });
 }

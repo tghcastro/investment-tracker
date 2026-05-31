@@ -13,8 +13,10 @@ export function couponRateDecimalToPercent(decimal: number): number {
 }
 
 export type ApiBondHoldingResponse = BondHolding & {
-  displayFaceValue?: number;
-  displayPurchasePrice?: number;
+  convertedFaceValue: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
+  convertedPurchasePrice?: number | null;
   /** Per-period coupon estimate (integer cents); null when terms insufficient. */
   expectedCouponAmountCents: number | null;
 };

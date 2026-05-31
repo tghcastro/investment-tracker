@@ -32,6 +32,7 @@ import { registerPostCouponPayment } from './routes/coupon-payments/post.js';
 import { registerPortfolioIncomeSummary } from './routes/portfolio/income-summary.js';
 import { registerPortfolioSummary } from './routes/portfolio/summary.js';
 import { registerPortfolioUpcomingCoupons } from './routes/portfolio/upcoming-coupons.js';
+import { registerFxConvert } from './routes/fx/convert.js';
 import { registerSystemBackup } from './routes/system/backup.js';
 import { registerSystemInfo } from './routes/system/info.js';
 import { registerSystemRestore } from './routes/system/restore.js';
@@ -113,6 +114,7 @@ export async function createServer(
   registerPostCurrencyQuote(app, getRepo);
   registerPatchCurrencyQuote(app, getRepo);
   registerDeleteCurrencyQuote(app, getRepo);
+  registerFxConvert(app, getRepo);
   registerListHoldingTypes(app, getRepo);
   registerPostHolding(app, getRepo);
   registerListHoldings(app, getRepo);

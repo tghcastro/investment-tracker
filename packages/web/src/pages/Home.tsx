@@ -66,10 +66,9 @@ export default function Home() {
           <div className="cb-home__metric-card">
             <p className="cb-home__metric-label">Total face value</p>
             <p className="cb-home__metric-value cb-number-display">
-              {formatCurrency(
-                summary.displayTotalFaceValue ?? summary.totalFaceValue,
-                summary.displayCurrency ?? displayCurrency
-              )}
+              {summary.convertedTotalFaceValue !== null
+                ? formatCurrency(summary.convertedTotalFaceValue, summary.convertedCurrency)
+                : '—'}
             </p>
           </div>
           <div className="cb-home__metric-card">
@@ -91,10 +90,9 @@ export default function Home() {
           <div className="cb-home__metric-card">
             <p className="cb-home__metric-label">Total cost basis</p>
             <p className="cb-home__metric-value cb-number-display">
-              {formatCurrency(
-                summary.displayTotalCostBasis ?? summary.totalCostBasis,
-                summary.displayCurrency ?? displayCurrency
-              )}
+              {summary.convertedTotalCostBasis !== null
+                ? formatCurrency(summary.convertedTotalCostBasis, summary.convertedCurrency)
+                : '—'}
             </p>
           </div>
           {summary.holdingsMissingCostBasis > 0 ? (
@@ -118,10 +116,9 @@ export default function Home() {
                   {formatDate(item.maturityDate)}
                 </span>
                 <span className="cb-home__ladder-value cb-number-display">
-                  {formatCurrency(
-                    item.displayFaceValue ?? item.faceValue,
-                    summary.displayCurrency ?? displayCurrency
-                  )}
+                  {item.convertedFaceValue !== null
+                    ? formatCurrency(item.convertedFaceValue, item.convertedCurrency)
+                    : '—'}
                 </span>
               </li>
             ))}

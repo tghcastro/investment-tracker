@@ -70,7 +70,7 @@ Track until closed; do not add new web-side calculations.
 | --- | --- | --- |
 | ~~`CouponPaymentsSection.tsx`~~ | ~~`bonds-domain` estimate~~ | **Done** — `expectedCouponAmountCents` on all holding API responses via `toApiBondHolding` |
 | `HoldingForm.tsx` | `couponRate <= 1` heuristic for edit form | API always returns percent in JSON; web displays `holding.couponRate` as-is |
-| `HoldingsTable.tsx` (M6) | `displayFaceValue ?? faceValue` | M6.1 `convertedFaceValue` from API only |
+| `HoldingsTable.tsx` (M6) | ~~`displayFaceValue ?? faceValue`~~ | Fixed M6.1 — `convertedFaceValue` from API only |
 | `DisplayCurrencyContext` | OK if query-param only | No local conversion |
 
 ## Testing
@@ -82,5 +82,5 @@ Track until closed; do not add new web-side calculations.
 ## References
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — layer diagram  
-- [M6.1 spec](../features/active/m6.1-multi-currency-follow-ups/spec.md) — FX instance of this pattern  
+- [M6.1 spec](../features/completed/m6.1-multi-currency-follow-ups/spec.md) — FX instance of this pattern  
 - [FRONTEND.md](../../docs/FRONTEND.md) — UI agent rules  

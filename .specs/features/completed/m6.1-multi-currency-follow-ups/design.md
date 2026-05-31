@@ -1,7 +1,7 @@
 # M6.1 — Multi-Currency Follow-Ups Design
 
 **Spec:** [spec.md](./spec.md)  
-**Status:** Draft (2026-05-31)
+**Status:** Shipped (2026-05-31)
 
 ## Overview
 

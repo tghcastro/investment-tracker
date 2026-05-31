@@ -37,13 +37,11 @@ function parsePositiveIntegerId(
 export function registerListHoldings(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/holdings', async (request, reply) => {
     const repo = getRepo();
-    const { maturityAfter, accountId, holdingTypeId, displayCurrency, asOfDate } =
-      request.query as {
+    const { maturityAfter, accountId, holdingTypeId, displayCurrency } = request.query as {
       maturityAfter?: string;
       accountId?: string;
       holdingTypeId?: string;
       displayCurrency?: string;
-      asOfDate?: string;
     };
 
     if (displayCurrency !== undefined && !/^[A-Z]{3}$/.test(displayCurrency)) {
@@ -51,14 +49,6 @@ export function registerListHoldings(app: FastifyInstance, getRepo: () => Repo):
         code: 'VALIDATION_ERROR',
         message: 'displayCurrency must be a 3-letter ISO code',
         fields: { displayCurrency: ['Must be a 3-letter ISO code'] },
-      });
-    }
-
-    if (asOfDate !== undefined && !ISO_DATE_RE.test(asOfDate)) {
-      return reply.status(400).send({
-        code: 'VALIDATION_ERROR',
-        message: 'asOfDate must be YYYY-MM-DD',
-        fields: { asOfDate: ['Must be YYYY-MM-DD'] },
       });
     }
 
@@ -103,7 +93,7 @@ export function registerListHoldings(app: FastifyInstance, getRepo: () => Repo):
         maturityAfter: parsedMaturityAfter,
         holdingTypeId: parsedHoldingTypeId,
       },
-      { displayCurrency, asOfDate }
+      { displayCurrency }
     );
     return reply.status(200).send(toApiBondHoldings(holdings));
   });

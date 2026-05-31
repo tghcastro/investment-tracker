@@ -89,8 +89,20 @@
   text-align: right;
 }
 
-.cb-holdings-table__face-value {
+.cb-holdings-table__face-values {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--cb-space-2xs);
   min-width: 7rem;
+}
+
+.cb-holdings-table__face-value {
+  text-align: right;
+}
+
+.cb-holdings-table__face-value-native {
+  color: var(--cb-text-muted);
   text-align: right;
 }
 

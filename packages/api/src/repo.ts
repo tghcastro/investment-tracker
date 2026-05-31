@@ -9,14 +9,17 @@ import type {
   HoldingType,
   HoldingTypeRef,
   HoldingTypeSlug,
-  QuoteRateMap,
 } from 'bonds-domain';
 import {
   BASE_CURRENCY_CODE,
-  buildQuoteRateMap,
+  buildQuoteRateMapForHolding,
   convertNativeCents,
   expectedCouponAmountCents,
   generateEstimatedCouponDates,
+  normalizeUsdToTargetRate,
+  type QuoteHistory,
+  type RateDirection,
+  validateHoldingExchangeRate,
 } from 'bonds-domain';
 
 import type { Database } from './db.js';
@@ -35,7 +38,8 @@ type Db = Database;
 export class RepoError extends Error {
   constructor(
     public readonly code: string,
-    message: string
+    message: string,
+    public readonly fields?: Record<string, string[]>
   ) {
     super(message);
     this.name = 'RepoError';
@@ -98,16 +102,30 @@ export type InsertCurrencyQuoteData = {
   quoteDate: string;
   targetCurrencyCode: string;
   rate: number;
+  rateDirection?: RateDirection;
 };
 
 export type UpdateCurrencyQuoteData = {
   quoteDate?: string;
   rate?: number;
+  rateDirection?: RateDirection;
 };
 
 export type PortfolioSummaryOptions = {
   displayCurrency?: string;
-  asOfDate?: string;
+};
+
+export type FxConvertParams = {
+  amountCents: number;
+  currencyCode: string;
+  purchaseDate: string;
+  convertedCurrency?: string;
+};
+
+export type FxConvertResult = {
+  convertedFaceValue: number | null;
+  convertedCurrency: string;
+  conversionError: string | null;
 };
 
 export type IncomeSummaryByHolding = {
@@ -146,21 +164,25 @@ export type PortfolioSummary = {
   totalCostBasis: number;
   holdingsWithCostBasis: number;
   holdingsMissingCostBasis: number;
-  displayCurrency?: string;
-  displayTotalFaceValue?: number;
-  displayTotalCostBasis?: number;
+  convertedCurrency: string;
+  convertedTotalFaceValue: number | null;
+  convertedTotalCostBasis: number | null;
+  conversionError?: string;
   maturityLadder: Array<{
     holdingId: string;
     issuer: string;
     maturityDate: string;
     faceValue: number;
-    displayFaceValue?: number;
+    convertedFaceValue: number | null;
+    convertedCurrency: string;
   }>;
 };
 
 export type BondHoldingWithDisplay = BondHolding & {
-  displayFaceValue?: number;
-  displayPurchasePrice?: number;
+  convertedFaceValue: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
+  convertedPurchasePrice?: number | null;
 };
 
 function parseId(id: string, label = 'id'): number {
@@ -383,7 +405,13 @@ export function createRepo(database: Db) {
     }
   }
 
-  async function getQuoteRateMap(asOfDate: string): Promise<QuoteRateMap> {
+  function resolveDisplayCurrency(displayCurrency?: string): string {
+    return displayCurrency ?? BASE_CURRENCY_CODE;
+  }
+
+  async function loadGroupedQuoteHistory(): Promise<
+    Map<string, Array<{ quoteDate: string; rate: number }>>
+  > {
     const rows = database
       .select({
         targetCurrencyCode: currencyQuotes.targetCurrencyCode,
@@ -400,21 +428,76 @@ export function createRepo(database: Db) {
       list.push({ quoteDate: row.quoteDate, rate: row.rate });
       grouped.set(row.targetCurrencyCode, list);
     }
-
-    return buildQuoteRateMap(grouped, asOfDate);
+    return grouped;
   }
 
-  function applyDisplayConversion(
-    amountCents: number,
-    nativeCode: string,
-    displayCurrency: string,
-    quotes: QuoteRateMap
-  ): number | undefined {
-    if (displayCurrency === nativeCode) {
-      return amountCents;
+  async function assertApplicableQuoteForHolding(
+    currencyCode: string,
+    purchaseDate: Date
+  ): Promise<void> {
+    const quoteHistory = await loadGroupedQuoteHistory();
+    const validation = validateHoldingExchangeRate(
+      currencyCode,
+      toIsoDateString(purchaseDate),
+      quoteHistory
+    );
+    if (!validation.ok) {
+      throw new RepoError(
+        'EXCHANGE_RATE_REQUIRED',
+        'Exchange rate required for non-USD holding on or before purchase date',
+        {
+          currencyCode: ['No applicable quote for purchase date'],
+          purchaseDate: ['No applicable quote for purchase date'],
+        }
+      );
     }
-    const converted = convertNativeCents(amountCents, nativeCode, displayCurrency, quotes);
-    return converted ?? undefined;
+  }
+
+  function attachConvertedFields(
+    holding: BondHolding,
+    convertedCurrency: string,
+    quoteHistory: QuoteHistory
+  ): BondHoldingWithDisplay {
+    const purchaseDateIso = toIsoDateString(holding.purchaseDate);
+    const quoteMap = buildQuoteRateMapForHolding(quoteHistory, purchaseDateIso);
+
+    const convertedFaceValue = convertNativeCents(
+      holding.faceValue,
+      holding.currencyCode,
+      convertedCurrency,
+      quoteMap
+    );
+
+    const convertedPurchasePrice =
+      holding.purchasePrice !== undefined
+        ? convertNativeCents(
+            holding.purchasePrice,
+            holding.currencyCode,
+            convertedCurrency,
+            quoteMap
+          )
+        : undefined;
+
+    const conversionError =
+      convertedFaceValue === null ? ('EXCHANGE_RATE_REQUIRED' as const) : undefined;
+
+    return {
+      ...holding,
+      convertedFaceValue,
+      convertedCurrency,
+      ...(conversionError ? { conversionError } : {}),
+      ...(convertedPurchasePrice !== undefined ? { convertedPurchasePrice } : {}),
+    };
+  }
+
+  function attachConvertedFieldsToHoldings(
+    holdings: BondHolding[],
+    convertedCurrency: string,
+    quoteHistory: QuoteHistory
+  ): BondHoldingWithDisplay[] {
+    return holdings.map((holding) =>
+      attachConvertedFields(holding, convertedCurrency, quoteHistory)
+    );
   }
 
   function selectBondHoldingsWithType() {
@@ -565,6 +648,7 @@ export function createRepo(database: Db) {
     const accountId = parseId(data.accountId, 'account id');
     const currencyCode = data.currencyCode ?? BASE_CURRENCY_CODE;
     await assertCurrencyAllowedForAccount(data.accountId, currencyCode);
+    await assertApplicableQuoteForHolding(currencyCode, data.purchaseDate);
 
     let holdingTypeId: number;
     if (data.holdingTypeId !== undefined) {
@@ -638,6 +722,10 @@ export function createRepo(database: Db) {
     } else if (data.accountId !== undefined && data.accountId !== existing.accountId) {
       await assertCurrencyAllowedForAccount(targetAccountId, existing.currencyCode);
     }
+
+    const nextCurrencyCode = data.currencyCode ?? existing.currencyCode;
+    const nextPurchaseDate = data.purchaseDate ?? existing.purchaseDate;
+    await assertApplicableQuoteForHolding(nextCurrencyCode, nextPurchaseDate);
 
     const updates: Partial<typeof bondHoldings.$inferInsert> = {
       updatedAt: new Date(),
@@ -731,7 +819,7 @@ export function createRepo(database: Db) {
       maturityAfter?: Date;
       holdingTypeId?: string;
     },
-    options?: { displayCurrency?: string; asOfDate?: string }
+    options?: { displayCurrency?: string }
   ): Promise<BondHoldingWithDisplay[]> {
     const { accountId, maturityAfter, holdingTypeId } = filters;
 
@@ -775,37 +863,39 @@ export function createRepo(database: Db) {
       .all();
     const holdings = rows.map((row) => mapBondHolding(row.bond, row.holdingType));
 
-    const displayCurrency = options?.displayCurrency;
-    if (!displayCurrency || displayCurrency === BASE_CURRENCY_CODE) {
-      return holdings;
+    const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
+    const quoteHistory = await loadGroupedQuoteHistory();
+    return attachConvertedFieldsToHoldings(holdings, convertedCurrency, quoteHistory);
+  }
+
+  async function getBondHoldingWithConverted(
+    id: string,
+    options?: { displayCurrency?: string }
+  ): Promise<BondHoldingWithDisplay | null> {
+    const holding = await getBondHolding(id);
+    if (!holding) {
+      return null;
     }
+    const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
+    const quoteHistory = await loadGroupedQuoteHistory();
+    return attachConvertedFields(holding, convertedCurrency, quoteHistory);
+  }
 
-    const asOfDate = options?.asOfDate ?? toIsoDateString(new Date());
-    const quotes = await getQuoteRateMap(asOfDate);
-
-    return holdings.map((holding) => {
-      const displayFaceValue = applyDisplayConversion(
-        holding.faceValue,
-        holding.currencyCode,
-        displayCurrency,
-        quotes
-      );
-      const displayPurchasePrice =
-        holding.purchasePrice !== undefined
-          ? applyDisplayConversion(
-              holding.purchasePrice,
-              holding.currencyCode,
-              displayCurrency,
-              quotes
-            )
-          : undefined;
-
-      return {
-        ...holding,
-        ...(displayFaceValue !== undefined ? { displayFaceValue } : {}),
-        ...(displayPurchasePrice !== undefined ? { displayPurchasePrice } : {}),
-      };
-    });
+  async function previewFxConversion(params: FxConvertParams): Promise<FxConvertResult> {
+    const convertedCurrency = resolveDisplayCurrency(params.convertedCurrency);
+    const quoteHistory = await loadGroupedQuoteHistory();
+    const quoteMap = buildQuoteRateMapForHolding(quoteHistory, params.purchaseDate);
+    const convertedFaceValue = convertNativeCents(
+      params.amountCents,
+      params.currencyCode,
+      convertedCurrency,
+      quoteMap
+    );
+    return {
+      convertedFaceValue,
+      convertedCurrency,
+      conversionError: convertedFaceValue === null ? 'EXCHANGE_RATE_REQUIRED' : null,
+    };
   }
 
   async function getPortfolioSummary(
@@ -814,6 +904,7 @@ export function createRepo(database: Db) {
     const holdings = await listBondHoldings();
 
     if (holdings.length === 0) {
+      const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
       return {
         totalFaceValue: 0,
         positionCount: 0,
@@ -821,6 +912,9 @@ export function createRepo(database: Db) {
         totalCostBasis: 0,
         holdingsWithCostBasis: 0,
         holdingsMissingCostBasis: 0,
+        convertedCurrency,
+        convertedTotalFaceValue: 0,
+        convertedTotalCostBasis: 0,
         maturityLadder: [],
       };
     }
@@ -844,6 +938,37 @@ export function createRepo(database: Db) {
       (a, b) => a.maturityDate.getTime() - b.maturityDate.getTime()
     );
 
+    const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
+    const quoteHistory = await loadGroupedQuoteHistory();
+    const convertedHoldings = attachConvertedFieldsToHoldings(
+      holdings,
+      convertedCurrency,
+      quoteHistory
+    );
+
+    let convertedTotalFaceValue = 0;
+    let convertedTotalCostBasis = 0;
+    let conversionError: string | undefined;
+
+    for (const holding of convertedHoldings) {
+      if (holding.convertedFaceValue === null) {
+        conversionError = 'EXCHANGE_RATE_REQUIRED';
+        convertedTotalFaceValue = 0;
+        convertedTotalCostBasis = 0;
+        break;
+      }
+      convertedTotalFaceValue += holding.convertedFaceValue;
+      if (holding.purchasePrice !== undefined) {
+        if (holding.convertedPurchasePrice === null || holding.convertedPurchasePrice === undefined) {
+          conversionError = 'EXCHANGE_RATE_REQUIRED';
+          convertedTotalFaceValue = 0;
+          convertedTotalCostBasis = 0;
+          break;
+        }
+        convertedTotalCostBasis += holding.convertedPurchasePrice;
+      }
+    }
+
     const summary: PortfolioSummary = {
       totalFaceValue,
       positionCount: holdings.length,
@@ -851,74 +976,22 @@ export function createRepo(database: Db) {
       totalCostBasis,
       holdingsWithCostBasis,
       holdingsMissingCostBasis,
-      maturityLadder: sortedByMaturity.slice(0, 5).map((holding) => ({
-        holdingId: holding.id,
-        issuer: holding.issuer,
-        maturityDate: toIsoDateString(holding.maturityDate),
-        faceValue: holding.faceValue,
-      })),
+      convertedCurrency,
+      convertedTotalFaceValue: conversionError ? null : convertedTotalFaceValue,
+      convertedTotalCostBasis: conversionError ? null : convertedTotalCostBasis,
+      ...(conversionError ? { conversionError } : {}),
+      maturityLadder: sortedByMaturity.slice(0, 5).map((holding) => {
+        const converted = convertedHoldings.find((entry) => entry.id === holding.id);
+        return {
+          holdingId: holding.id,
+          issuer: holding.issuer,
+          maturityDate: toIsoDateString(holding.maturityDate),
+          faceValue: holding.faceValue,
+          convertedFaceValue: converted?.convertedFaceValue ?? null,
+          convertedCurrency,
+        };
+      }),
     };
-
-    const displayCurrency = options?.displayCurrency;
-    if (!displayCurrency || displayCurrency === BASE_CURRENCY_CODE) {
-      return summary;
-    }
-
-    const asOfDate = options?.asOfDate ?? toIsoDateString(new Date());
-    const quotes = await getQuoteRateMap(asOfDate);
-
-    let displayTotalFaceValue = 0;
-    let displayTotalCostBasis = 0;
-    let canConvertAll = true;
-
-    for (const holding of holdings) {
-      const convertedFace = applyDisplayConversion(
-        holding.faceValue,
-        holding.currencyCode,
-        displayCurrency,
-        quotes
-      );
-      if (convertedFace === undefined) {
-        canConvertAll = false;
-        break;
-      }
-      displayTotalFaceValue += convertedFace;
-
-      if (holding.purchasePrice !== undefined) {
-        const convertedCost = applyDisplayConversion(
-          holding.purchasePrice,
-          holding.currencyCode,
-          displayCurrency,
-          quotes
-        );
-        if (convertedCost === undefined) {
-          canConvertAll = false;
-          break;
-        }
-        displayTotalCostBasis += convertedCost;
-      }
-    }
-
-    if (!canConvertAll) {
-      return summary;
-    }
-
-    summary.displayCurrency = displayCurrency;
-    summary.displayTotalFaceValue = displayTotalFaceValue;
-    summary.displayTotalCostBasis = displayTotalCostBasis;
-    summary.maturityLadder = summary.maturityLadder.map((item) => {
-      const holding = sortedByMaturity.find((entry) => entry.id === item.holdingId);
-      if (!holding) {
-        return item;
-      }
-      const displayFaceValue = applyDisplayConversion(
-        holding.faceValue,
-        holding.currencyCode,
-        displayCurrency,
-        quotes
-      );
-      return displayFaceValue !== undefined ? { ...item, displayFaceValue } : item;
-    });
 
     return summary;
   }
@@ -989,13 +1062,17 @@ export function createRepo(database: Db) {
 
   async function insertCurrencyQuote(data: InsertCurrencyQuoteData): Promise<CurrencyQuote> {
     await assertCurrencyCodesExist([data.targetCurrencyCode]);
+    const normalizedRate = normalizeUsdToTargetRate(
+      data.rate,
+      data.rateDirection ?? 'usd-to-target'
+    );
     try {
       const [row] = database
         .insert(currencyQuotes)
         .values({
           quoteDate: data.quoteDate,
           targetCurrencyCode: data.targetCurrencyCode,
-          rate: data.rate,
+          rate: normalizedRate,
         })
         .returning()
         .all();
@@ -1020,7 +1097,10 @@ export function createRepo(database: Db) {
       updates.quoteDate = data.quoteDate;
     }
     if (data.rate !== undefined) {
-      updates.rate = data.rate;
+      updates.rate = normalizeUsdToTargetRate(
+        data.rate,
+        data.rateDirection ?? 'usd-to-target'
+      );
     }
 
     try {
@@ -1252,6 +1332,8 @@ export function createRepo(database: Db) {
     getHoldingTypeBySlug,
     insertBondHolding,
     getBondHolding,
+    getBondHoldingWithConverted,
+    previewFxConversion,
     updateBondHolding,
     deleteBondHolding,
     listBondHoldings,

@@ -2,7 +2,7 @@
 
 **Design:** [design.md](./design.md)  
 **Spec:** [spec.md](./spec.md)  
-**Status:** Not started  
+**Status:** Complete (2026-05-31)  
 **Depends on:** M6 complete
 
 ---

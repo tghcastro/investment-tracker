@@ -1,6 +1,6 @@
 # M6.1 — Multi-Currency Follow-Ups Specification
 
-**Status:** Draft (2026-05-31)  
+**Status:** Shipped (2026-05-31)  
 **Source:** [`new-requirements.md`](../../../../new-requirements.md) — Currency Handling Improvements  
 **Depends on:** M6 (multi-currency shipped)  
 **Blocks:** M7 (Brazilian fixed income) — execute after M6.1  

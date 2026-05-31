@@ -258,6 +258,8 @@ describe('API routes', () => {
       couponFrequency: 'quarterly',
       purchasePrice: 100,
       expectedCouponAmountCents: 425,
+      convertedFaceValue: 40_000,
+      convertedCurrency: 'USD',
     });
   });
 
@@ -780,6 +782,9 @@ describe('API routes', () => {
       totalCostBasis: 0,
       holdingsWithCostBasis: 0,
       holdingsMissingCostBasis: 0,
+      convertedCurrency: 'USD',
+      convertedTotalFaceValue: 0,
+      convertedTotalCostBasis: 0,
       maturityLadder: [],
     });
   });
@@ -1397,11 +1402,11 @@ describe('M6 multi-currency routes', () => {
     expect(response.json().code).toBe('CURRENCY_NOT_ALLOWED');
   });
 
-  it('GET /api/portfolio/summary converts totals with displayCurrency', async () => {
+  it('GET /api/portfolio/summary converts totals with displayCurrency using purchase-date rates', async () => {
     await app.inject({
       method: 'POST',
       url: '/api/currency-quotes',
-      payload: { quoteDate: '2026-05-29', targetCurrencyCode: 'BRL', rate: 5 },
+      payload: { quoteDate: '2020-01-01', targetCurrencyCode: 'BRL', rate: 5 },
     });
 
     const response = await app.inject({
@@ -1411,7 +1416,80 @@ describe('M6 multi-currency routes', () => {
 
     expect(response.statusCode).toBe(200);
     const body = response.json();
-    expect(body.displayCurrency).toBe('BRL');
-    expect(body.displayTotalFaceValue).toBe(body.totalFaceValue * 5);
+    expect(body.convertedCurrency).toBe('BRL');
+    expect(body.convertedTotalFaceValue).toBe(body.totalFaceValue * 5);
+  });
+
+  it('POST /api/currency-quotes inverts target-to-usd rateDirection', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: {
+        quoteDate: '2026-01-01',
+        targetCurrencyCode: 'EUR',
+        rate: 0.85,
+        rateDirection: 'target-to-usd',
+      },
+    });
+    expect(response.statusCode).toBe(201);
+    expect(response.json().rate).toBe(1.176471);
+  });
+
+  it('POST /api/holdings rejects non-USD without applicable quote', async () => {
+    const accountResponse = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: { name: 'FX Account', currencyCodes: ['USD', 'EUR'] },
+    });
+    const accountId = accountResponse.json().id;
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        currencyCode: 'EUR',
+        issuer: 'Euro Bond',
+        faceValue: 100_000,
+        couponRate: 4,
+        couponFrequency: 'semi-annual',
+        maturityDate: '2030-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().code).toBe('EXCHANGE_RATE_REQUIRED');
+  });
+
+  it('GET /api/holdings returns convertedFaceValue defaulting to USD', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/holdings' });
+    expect(response.statusCode).toBe(200);
+    const holdings = response.json();
+    expect(holdings.length).toBeGreaterThan(0);
+    for (const holding of holdings) {
+      expect(holding.convertedCurrency).toBe('USD');
+      expect(holding.convertedFaceValue).toBe(holding.faceValue);
+    }
+  });
+
+  it('GET /api/fx/convert previews USD equivalent', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2026-01-01', targetCurrencyCode: 'EUR', rate: 0.5 },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/fx/convert?amountCents=300000&currencyCode=EUR&purchaseDate=2026-01-01&convertedCurrency=USD',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      convertedFaceValue: 600_000,
+      convertedCurrency: 'USD',
+      conversionError: null,
+    });
   });
 });

@@ -185,7 +185,6 @@ export default function Holdings() {
         <HoldingsTable
           holdings={visibleHoldings}
           accountInfo={accountInfo}
-          displayCurrency={displayCurrency}
           onDelete={handleDeleteRequest}
         />
       ) : null}

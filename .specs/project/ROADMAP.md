@@ -1,8 +1,8 @@
 # Roadmap
 
-**Current Milestone:** M6.1 — Multi-currency follow-ups  
-**Status:** M6 complete; M6.1 specified — execute next; M7 deferred until M6.1 ships  
-**Active specs:** [m6.1-multi-currency-follow-ups](../features/active/m6.1-multi-currency-follow-ups/spec.md)
+**Current Milestone:** M7 — Brazilian fixed income  
+**Status:** M6.1 complete (2026-05-31); M7 specified — execute next  
+**Active specs:** [m7-brazilian-fixed-income](../features/active/m7-brazilian-fixed-income/spec.md)
 
 ---
 
@@ -154,7 +154,7 @@
 
 **Goal:** Deterministic FX: normalized quote storage, purchase-date valuation, holding validation, and Holdings/Quotes UI parity with API.  
 **Target:** Close gaps from `new-requirements.md` (BRL conversion bug, historical rates, form USD preview, dual-line holdings display).  
-**Status:** Specified — [spec](../features/active/m6.1-multi-currency-follow-ups/spec.md) · [design](../features/active/m6.1-multi-currency-follow-ups/design.md) · [tasks](../features/active/m6.1-multi-currency-follow-ups/tasks.md)
+**Status:** Shipped (2026-05-31) — [spec](../features/completed/m6.1-multi-currency-follow-ups/spec.md) · [design](../features/completed/m6.1-multi-currency-follow-ups/design.md) · [tasks](../features/completed/m6.1-multi-currency-follow-ups/tasks.md)
 
 ### Features
 

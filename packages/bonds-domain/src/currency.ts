@@ -127,11 +127,14 @@ export function pickLatestQuoteRate(
   return null;
 }
 
+/** Grouped quote rows keyed by target currency (sorted quoteDate desc per currency). */
+export type QuoteHistory = ReadonlyMap<
+  string,
+  ReadonlyArray<{ quoteDate: string; rate: number }>
+>;
+
 /** Build rate map for as-of date from grouped quote history. */
-export function buildQuoteRateMap(
-  quoteHistory: ReadonlyMap<string, ReadonlyArray<{ quoteDate: string; rate: number }>>,
-  asOfDate: string
-): QuoteRateMap {
+export function buildQuoteRateMap(quoteHistory: QuoteHistory, asOfDate: string): QuoteRateMap {
   const rates = new Map<string, number>();
   for (const [code, history] of quoteHistory) {
     const rate = pickLatestQuoteRate(history, asOfDate);
@@ -140,4 +143,44 @@ export function buildQuoteRateMap(
     }
   }
   return rates;
+}
+
+/** Build per-holding rate map using purchase date as the as-of date. */
+export function buildQuoteRateMapForHolding(
+  quoteHistory: QuoteHistory,
+  purchaseDate: string
+): QuoteRateMap {
+  return buildQuoteRateMap(quoteHistory, purchaseDate);
+}
+
+/** Whether an applicable USD→target quote exists on or before purchaseDate. USD always passes. */
+export function hasApplicableQuote(
+  currencyCode: string,
+  purchaseDate: string,
+  quoteHistory: QuoteHistory
+): boolean {
+  if (currencyCode === BASE_CURRENCY_CODE) {
+    return true;
+  }
+  const history = quoteHistory.get(currencyCode);
+  if (!history) {
+    return false;
+  }
+  return pickLatestQuoteRate(history, purchaseDate) !== null;
+}
+
+export type HoldingExchangeRateValidation =
+  | { ok: true }
+  | { ok: false; code: 'EXCHANGE_RATE_REQUIRED' };
+
+/** Validate that a non-USD holding has a quote on/before purchase date. */
+export function validateHoldingExchangeRate(
+  currencyCode: string,
+  purchaseDate: string,
+  quoteHistory: QuoteHistory
+): HoldingExchangeRateValidation {
+  if (hasApplicableQuote(currencyCode, purchaseDate, quoteHistory)) {
+    return { ok: true };
+  }
+  return { ok: false, code: 'EXCHANGE_RATE_REQUIRED' };
 }
