@@ -14,6 +14,10 @@ export const currencyCodesSchema = z
 
 export const couponFrequencySchema = z.enum(['semi-annual', 'quarterly', 'monthly', 'annual']);
 
+export const rateDirectionSchema = z
+  .enum(['usd-to-target', 'target-to-usd'])
+  .default('usd-to-target');
+
 /** Matches repo parseId: positive integer string without leading zeros (e.g. "1", "42"). */
 function positiveIntegerId(label: string) {
   return z.string().refine(
@@ -40,6 +44,7 @@ export const createCurrencyQuoteSchema = z.object({
     { message: 'Cannot quote USD against itself' }
   ),
   rate: z.number().positive('Rate must be positive'),
+  rateDirection: rateDirectionSchema,
 });
 
 export const updateCurrencyQuoteSchema = z
@@ -49,6 +54,7 @@ export const updateCurrencyQuoteSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Quote date must be YYYY-MM-DD')
       .optional(),
     rate: z.number().positive('Rate must be positive').optional(),
+    rateDirection: rateDirectionSchema.optional(),
   })
   .refine((data) => data.quoteDate !== undefined || data.rate !== undefined, {
     message: 'At least one field is required',

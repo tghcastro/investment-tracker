@@ -6,8 +6,29 @@ import {
   convertFromUsdCents,
   convertNativeCents,
   convertToUsdCents,
+  normalizeUsdToTargetRate,
   pickLatestQuoteRate,
 } from '../src/currency.js';
+
+describe('normalizeUsdToTargetRate', () => {
+  it('passes through USD→target rate unchanged (rounded to 6 dp)', () => {
+    expect(normalizeUsdToTargetRate(1.2, 'usd-to-target')).toBe(1.2);
+    expect(normalizeUsdToTargetRate(0.923456789, 'usd-to-target')).toBe(0.923457);
+  });
+
+  it('inverts EUR→USD input 0.85 to stored USD→EUR rate 1.176471', () => {
+    expect(normalizeUsdToTargetRate(0.85, 'target-to-usd')).toBe(1.176471);
+  });
+
+  it('defaults to usd-to-target when direction omitted', () => {
+    expect(normalizeUsdToTargetRate(5.25)).toBe(5.25);
+  });
+
+  it('rejects non-positive rate', () => {
+    expect(() => normalizeUsdToTargetRate(0, 'usd-to-target')).toThrow('Rate must be positive');
+    expect(() => normalizeUsdToTargetRate(-1, 'target-to-usd')).toThrow('Rate must be positive');
+  });
+});
 
 describe('currency conversion', () => {
   it('convertFromUsdCents returns same amount for USD', () => {

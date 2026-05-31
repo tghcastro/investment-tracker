@@ -20,6 +20,35 @@ export interface CurrencyQuote {
 /** Map of target currency code → USD→target rate (1 USD = rate × target). */
 export type QuoteRateMap = ReadonlyMap<string, number>;
 
+/** How the user entered a quote rate before normalization to USD→target storage. */
+export type RateDirection = 'usd-to-target' | 'target-to-usd';
+
+const RATE_DECIMAL_PLACES = 6;
+
+function roundRate(rate: number): number {
+  const factor = 10 ** RATE_DECIMAL_PLACES;
+  return Math.round(rate * factor) / factor;
+}
+
+/**
+ * Normalize a submitted quote rate to USD→target storage form (1 USD = rate × target).
+ * Rounds to six decimal places before persist.
+ */
+export function normalizeUsdToTargetRate(
+  rate: number,
+  direction: RateDirection = 'usd-to-target'
+): number {
+  if (rate <= 0) {
+    throw new Error('Rate must be positive');
+  }
+
+  if (direction === 'usd-to-target') {
+    return roundRate(rate);
+  }
+
+  return roundRate(1 / rate);
+}
+
 function roundCents(value: number): number {
   return Math.round(value);
 }
