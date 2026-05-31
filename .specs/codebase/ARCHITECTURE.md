@@ -27,7 +27,7 @@
 
 - **Owns:** Domain types, validation rules (Zod), coupon schedule helpers, FX conversion (`currency.ts`: native → USD → display).
 - **Must not:** Import Fastify, React, Drizzle, or filesystem APIs.
-- **Consumers:** API route handlers validate request bodies with the same schemas; web may import types for forms.
+- **Consumers:** API (`repo`, routes) applies all business rules. Web must **not** import domain runtime functions — see [API-FIRST.md](./API-FIRST.md).
 
 ### `packages/api`
 
@@ -35,7 +35,7 @@
 | --- | --- | --- |
 | Transport | `server.ts`, `routes/**` | HTTP mapping, status codes, JSON shapes |
 | Validation | Route modules + `bonds-domain` Zod | Parse/validate at boundary |
-| Application | `repo.ts` | Queries, transactions, business errors as `RepoError` |
+| Application | `repo.ts` | Queries, transactions, **computed response fields**, business errors as `RepoError` |
 | Persistence | `schema.ts`, `db.ts`, `migrations/` | Drizzle models, SQLite connection |
 | Cross-cutting | `middleware/errors.ts`, `appState.ts` | Unified errors; DB swap on restore |
 | System | `routes/system/*`, `system/backup.ts` | Backup download, restore upload |
@@ -51,7 +51,7 @@
 | Hooks | `useApi` / `useApiMutation` — fetch to API |
 | Styles | `tokens.css` + per-component CSS (no Tailwind) |
 
-**No direct DB access.** All data via REST.
+**No direct DB access.** All data via REST. **No business-rule duplication** — render API-derived fields; UI rules only ([API-FIRST.md](./API-FIRST.md)).
 
 ## API surface (v1)
 
@@ -62,9 +62,10 @@
 | Holding types | `GET /api/holding-types` (read-only catalog) |
 | Currencies | `GET /api/currencies`, `GET /api/currencies/available` |
 | Currency quotes | CRUD `/api/currency-quotes` (manual USD-base rates) |
-| Holdings | CRUD; `currencyCode`; optional `holdingTypeId` filter; `?displayCurrency=` on list |
+| Holdings | CRUD; `currencyCode`; `expectedCouponAmountCents` on responses; list/detail include `converted*` (M6.1); `?displayCurrency=` (default USD) |
+| FX preview | `GET /api/fx/convert` (M6.1) — form preview |
 | Coupon payments | CRUD linked to holdings |
-| Portfolio | `summary` (+ `?displayCurrency=`), `income-summary`, `upcoming-coupons` |
+| Portfolio | `summary`, `income-summary`, `upcoming-coupons` — **all forecasts/aggregates server-side** |
 | System | `GET /api/system/info`, backup download, restore multipart upload |
 
 Exact paths live in `packages/api/src/server.ts` and route modules.
@@ -108,7 +109,7 @@ GET portfolio/income-summary + coupon list routes
 
 ## Invariants (enforced by structure, not a custom linter)
 
-1. Domain rules live in `bonds-domain` or `repo.ts`, not duplicated in React.
+1. **API-first:** Business rules (calculations, forecasts, conversions, schedules) run in `bonds-domain` + API; web displays results ([API-FIRST.md](./API-FIRST.md)).
 2. API returns structured errors via error middleware (consistent JSON).
 3. SQLite file path is configurable; tests use isolated temp DBs.
 4. CORS allowlist is explicit (dev localhost + env override).

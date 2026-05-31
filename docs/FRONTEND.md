@@ -19,6 +19,20 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 | Pages | `packages/web/src/pages/` |
 | API hooks | `packages/web/src/hooks/useApi.ts`, `useApiMutation.ts` |
 
+## API-first (do not break)
+
+**Business rules are not implemented in the web package.** Calculations, forecasts, FX conversion, coupon estimates, and portfolio totals come from the API. See [`.specs/codebase/API-FIRST.md`](../.specs/codebase/API-FIRST.md).
+
+| Do in web | Do in API / domain |
+| --- | --- |
+| Render `convertedFaceValue`, `expectedCouponAmountCents`, etc. from JSON | Compute those fields |
+| Pass `?displayCurrency=` and refetch | Apply purchase-date FX |
+| Disable submit when API returns `conversionError` | Validate writes, return error codes |
+| `parseDollarsToCents` for form POST payloads | Face value business meaning |
+| `formatCurrency`, tooltips, skeletons | Schedule generation, upcoming coupons |
+
+**Coupon estimate:** `expectedCouponAmountCents` on holding JSON from API — `CouponPaymentsSection` renders it; do not recompute.
+
 ## UX principles (do not break)
 
 1. **Single accent** — `#0052ff` (`--cb-primary`) for primary CTAs and active nav only.

@@ -11,13 +11,14 @@ Short index for coding agents. Read only what your task needs — do not load th
 | Any change | [`.specs/project/STATE.md`](.specs/project/STATE.md) — current work, AD decisions, blockers |
 | Scope / what not to build | [`.specs/project/PROJECT.md`](.specs/project/PROJECT.md) |
 | Milestones / future work | [`.specs/project/ROADMAP.md`](.specs/project/ROADMAP.md) |
-| New feature (M6.1+) | **Next:** M6.1 spec pending (user). M7 draft deferred — [m7](../.specs/features/active/m7-brazilian-fixed-income/spec.md). M5–M6 in [`features/completed/`](../.specs/features/completed/); see [`.specs/index.md`](.specs/index.md) |
+| New feature (M6.1+) | **Next:** [M6.1](../.specs/features/active/m6.1-multi-currency-follow-ups/spec.md) (execute). M7 deferred — [m7](../.specs/features/active/m7-brazilian-fixed-income/spec.md). M5–M6 in [`features/completed/`](../.specs/features/completed/); see [`.specs/index.md`](.specs/index.md) |
 
 ## Codebase (source of truth for implementation)
 
 | Doc | Use when |
 | --- | --- |
 | [`.specs/codebase/ARCHITECTURE.md`](.specs/codebase/ARCHITECTURE.md) | Module boundaries, data flow |
+| [`.specs/codebase/API-FIRST.md`](.specs/codebase/API-FIRST.md) | **Business rules in API only** — web UI rules; calc/forecast pattern |
 | [`.specs/codebase/STRUCTURE.md`](.specs/codebase/STRUCTURE.md) | Repo layout, package paths |
 | [`.specs/codebase/STACK.md`](.specs/codebase/STACK.md) | Node 22, workspaces, SQLite, Docker |
 | [`.specs/codebase/CONVENTIONS.md`](.specs/codebase/CONVENTIONS.md) | Naming, imports, lint |

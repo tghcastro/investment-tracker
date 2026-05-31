@@ -24,6 +24,7 @@
 
 | Concern | Files | Notes |
 | --- | --- | --- |
+| Business rules in web (AD-010 drift) | `HoldingsTable.tsx` | Coupon estimate moved to API (2026-05-31); M6.1 fixes FX path — [API-FIRST.md](./API-FIRST.md) |
 | No E2E tests | — | Unit + API integration only; browser flows manual |
 | Web on port 80 | `vite.config.ts`, `dev-web.sh` | Requires sudo on Linux/WSL (`dev:web:sudo`); easy to run wrong Node without nvm |
 | `couponRate` % vs DB decimal | API serializers, `repo.ts` | Easy agent mistake when adding fields — follow existing serializers |

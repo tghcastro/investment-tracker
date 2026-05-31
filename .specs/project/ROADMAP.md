@@ -1,8 +1,8 @@
 # Roadmap
 
-**Current Milestone:** M6.1 — Multi-currency follow-ups (spec pending)  
-**Status:** M6 complete; M6.1 next; M7 specified but deferred (v2.0.0 after M7)  
-**Active specs:** _None — awaiting M6.1 spec_
+**Current Milestone:** M6.1 — Multi-currency follow-ups  
+**Status:** M6 complete; M6.1 specified — execute next; M7 deferred until M6.1 ships  
+**Active specs:** [m6.1-multi-currency-follow-ups](../features/active/m6.1-multi-currency-follow-ups/spec.md)
 
 ---
 
@@ -152,9 +152,28 @@
 
 ## M6.1 — Multi-currency follow-ups
 
-**Goal:** Ship important currency gaps discovered during M6 usage before starting M7.  
-**Target:** TBD — user to define scope in `.specs/features/active/m6.1-multi-currency/`.  
-**Status:** Not started — spec pending
+**Goal:** Deterministic FX: normalized quote storage, purchase-date valuation, holding validation, and Holdings/Quotes UI parity with API.  
+**Target:** Close gaps from `new-requirements.md` (BRL conversion bug, historical rates, form USD preview, dual-line holdings display).  
+**Status:** Specified — [spec](../features/active/m6.1-multi-currency-follow-ups/spec.md) · [design](../features/active/m6.1-multi-currency-follow-ups/design.md) · [tasks](../features/active/m6.1-multi-currency-follow-ups/tasks.md)
+
+### Features
+
+**FX correctness (P1–P2)** — PLANNED
+
+- Normalize inverted rates on quote write (`target-to-usd` → stored USD→target)
+- Value each holding at **purchase-date** applicable rate (never future quotes)
+- **API lists always return** `faceValue`/`currencyCode` + `convertedFaceValue`/`convertedCurrency` (`displayCurrency` optional, default USD)
+- Reject non-USD holdings without on/before-purchase quote (`EXCHANGE_RATE_REQUIRED`)
+- Regression fixtures: EUR/BRL/USD matrix from requirements doc
+
+**Holdings & quotes UI (P3)** — PLANNED
+
+- **Web: UI rules only** — no client-side FX (AD-010)
+- Holding form: USD preview via `GET /api/fx/convert` (interest type → M7)
+- Holdings table: render API converted + original lines; metric tooltips
+- Currency quotes: date range + currency filters; symbol beside code
+
+**Out of scope (M6.1):** Auto quotes, compound-interest modeling, BRFI (M7)
 
 ---
 
