@@ -56,6 +56,7 @@ Full catalog and freshness: [`.specs/index.md`](.specs/index.md).
 - **Shell:** WSL Ubuntu — [`docs/references/node22-wsl.md`](docs/references/node22-wsl.md)
 - **Node:** 22 (`.nvmrc`) — never run bare PowerShell `npm`/`git` on Windows host
 - **Repo path in WSL:** `/mnt/d/workspace/investment-tracker`
+- **Agent session:** Bootstrap once — `source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker`; then run `git`, `npm`, tests, etc. directly (see [`.cursor/rules/wsl-shell.mdc`](.cursor/rules/wsl-shell.mdc))
 
 ## Run locally (minimal)
 
