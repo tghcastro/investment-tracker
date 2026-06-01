@@ -2,7 +2,8 @@ import type { FastifyInstance } from 'fastify';
 
 import { NotFoundError } from '../../middleware/errors.js';
 import type { Repo } from '../../repo.js';
-import { toApiCouponPayment } from './serialize.js';
+import { validateDisplayCurrencyQuery } from './display-currency.js';
+import { resolveConvertedCurrency, toApiCouponPayment } from './serialize.js';
 
 function parseBondHoldingId(value: string | undefined):
   | { bondHoldingId: string }
@@ -22,7 +23,16 @@ function parseBondHoldingId(value: string | undefined):
 export function registerListCouponPayments(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/coupon-payments', async (request, reply) => {
     const repo = getRepo();
-    const { bondHoldingId } = request.query as { bondHoldingId?: string };
+    const { bondHoldingId, displayCurrency } = request.query as {
+      bondHoldingId?: string;
+      displayCurrency?: string;
+    };
+
+    const displayCurrencyResult = validateDisplayCurrencyQuery(displayCurrency);
+    if ('status' in displayCurrencyResult) {
+      return reply.status(displayCurrencyResult.status).send(displayCurrencyResult.body);
+    }
+
     const parsed = parseBondHoldingId(bondHoldingId);
     if ('message' in parsed) {
       return reply.status(400).send({
@@ -38,6 +48,17 @@ export function registerListCouponPayments(app: FastifyInstance, getRepo: () => 
     }
 
     const payments = await repo.listCouponPaymentsByHolding(parsed.bondHoldingId);
-    return reply.status(200).send(payments.map(toApiCouponPayment));
+    const quoteHistory = await repo.getQuoteHistory();
+    const convertedCurrency = resolveConvertedCurrency(displayCurrencyResult.displayCurrency);
+
+    return reply.status(200).send(
+      payments.map((payment) =>
+        toApiCouponPayment(payment, {
+          currencyCode: holding.currencyCode,
+          convertedCurrency,
+          quoteHistory,
+        })
+      )
+    );
   });
 }

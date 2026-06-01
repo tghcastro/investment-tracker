@@ -43,10 +43,13 @@ const sampleHoldings: ApiBondHolding[] = [
     holdingType: { id: '1', slug: 'bond', name: 'Bond' },
     issuer: 'US Treasury',
     faceValue: 100_000,
-    couponRate: 0.0425,
+    couponRate: 4.25,
     couponFrequency: 'semi-annual',
     maturityDate: '2030-08-15',
     purchaseDate: '2024-01-10',
+    expectedCouponAmountCents: null,
+    convertedFaceValue: 100_000,
+    convertedCurrency: 'USD',
     updatedAt: '2024-01-10T00:00:00.000Z',
   },
   {
@@ -56,10 +59,13 @@ const sampleHoldings: ApiBondHolding[] = [
     holdingType: { id: '1', slug: 'bond', name: 'Bond' },
     issuer: 'Apple Inc',
     faceValue: 50_000,
-    couponRate: 0.035,
+    couponRate: 3.5,
     couponFrequency: 'annual',
     maturityDate: '2027-05-01',
     purchaseDate: '2023-11-20',
+    expectedCouponAmountCents: null,
+    convertedFaceValue: 50_000,
+    convertedCurrency: 'USD',
     updatedAt: '2023-11-20T00:00:00.000Z',
   },
 ];
@@ -105,7 +111,7 @@ describe('Holdings', () => {
     expect(screen.getByRole('heading', { name: 'US Treasury' })).toBeInTheDocument();
     expect(screen.getAllByText(/Vanguard · USD/)).toHaveLength(2);
     expect(screen.getByText('4.25%')).toBeInTheDocument();
-    expect(screen.getByText('$1,000.00')).toBeInTheDocument();
+    expect(screen.getAllByText('$1,000.00').length).toBeGreaterThanOrEqual(1);
   });
 
   it('builds holdings API URL from accountId search param', () => {

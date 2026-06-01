@@ -46,6 +46,7 @@ Run: `npm run lint` from repo root.
 
 ## Web conventions
 
+- **API-first:** Do not import `bonds-domain` runtime functions in web. Computed values come from API responses or preview routes — see [API-FIRST.md](./API-FIRST.md).
 - **Data fetching:** `useApi<T>(url)` for GET; `useApiMutation` for writes — no Redux/React Query in v1.
 - **API base:** `import.meta.env.VITE_API_URL ?? ''` — production nginx proxies `/api/` to backend.
 - **Forms:** `components/forms/TextInput`, `FormField`, `focusFirstFieldError` on validation failure.

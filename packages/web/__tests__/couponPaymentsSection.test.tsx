@@ -5,15 +5,31 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CouponPaymentsSection } from '../src/components/CouponPaymentsSection';
 import type { ApiBondHolding, ApiCouponPayment } from '../src/types/api';
 
+vi.mock('../src/contexts/DisplayCurrencyContext', () => ({
+  useDisplayCurrency: () => ({
+    displayCurrency: 'USD',
+    displaySymbol: '$',
+    availableCurrencies: [],
+    loading: false,
+    setDisplayCurrency: vi.fn(),
+  }),
+  appendDisplayCurrencyParam: (url: string) => url,
+  DisplayCurrencyProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 const sampleHolding: ApiBondHolding = {
   id: '1',
   accountId: '10',
+  currencyCode: 'USD',
   issuer: 'US Treasury',
   faceValue: 1_000_000,
   couponRate: 4.25,
   couponFrequency: 'semi-annual',
   maturityDate: '2030-01-01',
   purchaseDate: '2024-01-01',
+  expectedCouponAmountCents: 21_250,
+  convertedFaceValue: 1_000_000,
+  convertedCurrency: 'USD',
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
@@ -25,6 +41,9 @@ const samplePayments: ApiCouponPayment[] = [
     paymentDate: '2026-03-15',
     amount: 21250,
     recordedAt: '2026-03-16T00:00:00.000Z',
+    currencyCode: 'USD',
+    convertedAmount: 21250,
+    convertedCurrency: 'USD',
   },
 ];
 
@@ -101,6 +120,9 @@ describe('CouponPaymentsSection', () => {
             paymentDate: '2026-06-15',
             amount: 21250,
             recordedAt: '2026-06-16T00:00:00.000Z',
+            currencyCode: 'USD',
+            convertedAmount: 21250,
+            convertedCurrency: 'USD',
           },
           201
         )
@@ -129,6 +151,9 @@ describe('CouponPaymentsSection', () => {
       paymentDate: '2026-04-15',
       amount: 22000,
       recordedAt: '2026-04-16T00:00:00.000Z',
+      currencyCode: 'USD',
+      convertedAmount: 22000,
+      convertedCurrency: 'USD',
     };
 
     vi.mocked(fetch)

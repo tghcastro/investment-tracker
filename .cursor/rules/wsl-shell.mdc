@@ -1,30 +1,83 @@
 ---
-description: Run all shell commands in WSL (Ubuntu), not PowerShell
+description: Run shell commands in WSL (Ubuntu), not PowerShell
 alwaysApply: true
 ---
 
 # WSL shell for terminal commands
 
-This project is developed on Windows with **WSL Ubuntu**. The integrated terminal uses WSL; agent shell commands must match.
+This project is developed on Windows with **WSL Ubuntu**. Commands must run in WSL with **Node 22** (`.nvmrc`).
 
-## When running commands via the Shell tool
+## Detect environment first
 
-1. **Do not** run commands directly in PowerShell (e.g. bare `git`, `npm`, `node`).
-2. **Always** execute through WSL with **Node 22** (`.nvmrc`):
+The Cursor agent Shell tool **reuses one session** per chat — cwd and env persist; do not re-open WSL every turn.
+
+| Shell looks like | Action |
+| --- | --- |
+| Linux/WSL (`uname -s` = `Linux`, repo under `/mnt/d/...`, or `wsl` not found) | Run commands **directly** in the current shell |
+| Windows PowerShell/cmd (`$env:OS`, `D:\...` paths, `wsl.exe` available) | Wrap with `wsl -d Ubuntu -e bash -lc '...'` |
+
+**Do not** nest `wsl` inside an already-WSL session — it fails, wastes tokens, and bypasses RTK hooks.
+
+## Session bootstrap (first shell command)
+
+When starting an agent session (or when `node -v` is not 22.x), run **once**:
+
+```bash
+source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker
+```
+
+Optional verify: `node -v && pwd` (expect 22.x and repo root).
+
+## Subsequent commands (already in WSL)
+
+After bootstrap, the session keeps nvm + cwd. Run tools **directly** — no `source`, no `nvm use`, no `cd` prefix:
+
+```bash
+git status
+npm test
+npm run lint
+```
+
+Use `/mnt/d/workspace/investment-tracker` paths when referencing files, not `D:\...`.
+
+Re-bootstrap only if the session was reset or `node -v` is wrong.
+
+**RTK:** Keep commands direct (`npm test`, `git status`) so preToolUse hooks can intercept them. Do not hide `npm`/`git` inside a `wsl ... bash -lc` wrapper when already in WSL.
+
+## Windows host only (PowerShell)
+
+When the agent shell is **not** WSL, bootstrap through Ubuntu once:
+
+```bash
+wsl -d Ubuntu -e bash -lc 'source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker'
+```
+
+After that, if the Shell session is still PowerShell, each command still needs the `wsl -d Ubuntu -e bash -lc '...'` wrapper — but **without** repeating nvm/cd when the wrapper reuses a persistent WSL subshell. Prefer opening a WSL session so bootstrap applies once.
+
+For one-off commands from PowerShell (non-persistent `bash -lc`), include bootstrap in the same invocation:
 
 ```bash
 wsl -d Ubuntu -e bash -lc 'source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker && <command>'
 ```
 
-3. Replace `<command>` with the actual command. Use single quotes around the whole `bash -lc` argument; escape inner single quotes as `'\''`.
-4. For paths inside WSL, use `/mnt/d/workspace/investment-tracker` (not `D:\...`).
-5. If the user’s distro name differs from `Ubuntu`, use the distro from `terminal.integrated.profiles.windows` in `.vscode/settings.json`.
+Escape inner single quotes in `<command>` as `'\''`.
 
-## Examples
+If the distro name differs from `Ubuntu`, use the value from `terminal.integrated.profiles.windows` in `.vscode/settings.json`.
 
-- `git status` → `wsl -d Ubuntu -e bash -lc 'cd /mnt/d/workspace/investment-tracker && git status'`
-- `npm test` → `wsl -d Ubuntu -e bash -lc 'source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker && npm test'`
+## Examples (already in WSL)
 
-## Verify
+Bootstrap (once):
 
-After changing terminal settings, prefer a quick `git --version` or `git status` via WSL to confirm the environment.
+```bash
+source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker
+```
+
+Then:
+
+- `git status`
+- `npm test`
+
+## Examples (Windows PowerShell host)
+
+- Bootstrap: `wsl -d Ubuntu -e bash -lc 'source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker'`
+- One-off: `wsl -d Ubuntu -e bash -lc 'source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker && npm test'`

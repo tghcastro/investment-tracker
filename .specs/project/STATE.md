@@ -1,7 +1,14 @@
 # State
 
-**Last Updated:** 2026-05-29
-**Current Work:** M5 complete — execute [M6 multi-currency](../features/active/m6-multi-currency/tasks.md) next. v2.0.0 ships after M7 (M6 → M7).
+**Last Updated:** 2026-05-31
+**Current Work:** **M6.1** shipped (2026-05-31). Next: **M7** Brazilian fixed income — [spec](../features/active/m7-brazilian-fixed-income/spec.md).
+
+### AD-010: API-first business rules — web UI only (2026-05-31)
+
+**Decision:** All **business rules** (calculations, forecasts, FX, coupon estimates, portfolio aggregates, future yield/accrual) live in `bonds-domain` + **API**. Web applies **UI rules** only (show/hide, enable/disable, refetch, format). APIs return original + derived fields on lists/details, or dedicated preview/forecast endpoints when appropriate.
+**Reason:** Single source of truth; avoid SPA/API drift; currency discussion generalized to whole product.
+**Trade-off:** More API fields and endpoints; slightly larger payloads.
+**Impact:** [API-FIRST.md](../codebase/API-FIRST.md); M6.1; migration backlog (`CouponPaymentsSection` coupon estimate, etc.); ARCHITECTURE / FRONTEND / CONVENTIONS / AGENTS.
 
 ---
 
@@ -104,14 +111,17 @@ _None yet._
 
 ## Todos
 
-- [x] Approve M5 spec → Execute P1 [tasks](../features/active/m5-holdings-framework/tasks.md)
+- [x] Approve M5 spec → Execute P1 [tasks](../features/completed/m5-holdings-framework/tasks.md)
 - [x] Implement M5 — holdings framework on `m5-holdings-framework` (2026-05-29)
-- [ ] Execute M6 — multi-currency after M5 ship
-- [ ] Approve M6 spec (draft ready) — execute after M5 ship
-- [ ] Approve M7 spec (draft ready) — execute after M6 ship
+- [x] Execute M6 — multi-currency on `m6-multi-currency` (2026-05-29)
+- [x] Approve M6 spec → shipped (2026-05-29)
+- [x] Specify M6.1 — `.specs/features/completed/m6.1-multi-currency-follow-ups/` (2026-05-31)
+- [x] Approve M6.1 spec → Execute P1 [tasks](../features/completed/m6.1-multi-currency-follow-ups/tasks.md)
+- [x] Implement M6.1 — multi-currency follow-ups (2026-05-31)
+- [ ] Approve M7 spec (draft ready) — execute next
 - [ ] v2.0.0 release after M7 P3 (AD-009)
-- [x] Specify M5 — `.specs/features/active/m5-holdings-framework/` (2026-05-29)
-- [x] Specify M6 — `.specs/features/active/m6-multi-currency/` (2026-05-29)
+- [x] Specify M5 — `.specs/features/completed/m5-holdings-framework/` (2026-05-29)
+- [x] Specify M6 — `.specs/features/completed/m6-multi-currency/` (2026-05-29)
 - [x] Specify M7 — `.specs/features/active/m7-brazilian-fixed-income/` (2026-05-29)
 - [x] Map codebase (`/tlc-spec-driven map codebase`) — pre-scaffold baseline in `.specs/codebase/` (2026-05-20); re-map after M1
 - [x] Specify first feature: M1 project scaffold — `/.specs/features/completed/m1-scaffold/spec.md` (2026-05-20)

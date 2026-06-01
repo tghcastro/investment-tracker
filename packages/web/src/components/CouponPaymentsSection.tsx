@@ -1,5 +1,4 @@
-import { expectedCouponAmountCents } from 'bonds-domain';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   CouponPaymentForm,
   paymentToFormValues,
@@ -9,6 +8,10 @@ import { CouponPaymentsTable } from './CouponPaymentsTable';
 import { ConfirmDialog, FormDialog } from './forms';
 import { Button, EmptyState, ErrorBanner } from './ui';
 import { useApiMutation } from '../hooks';
+import {
+  appendDisplayCurrencyParam,
+  useDisplayCurrency,
+} from '../contexts/DisplayCurrencyContext';
 import type { ApiBondHolding, ApiCouponPayment } from '../types/api';
 import { formatCurrency } from '../utils/format';
 import './CouponPaymentsSection.css';
@@ -20,10 +23,6 @@ export interface CouponPaymentsSectionProps {
 }
 
 type SectionMode = 'list' | 'add' | 'edit';
-
-function couponRateToDecimal(rate: number): number {
-  return rate <= 1 ? rate : rate / 100;
-}
 
 function CouponPaymentsSectionSkeleton() {
   return (
@@ -43,28 +42,13 @@ function CouponPaymentsSectionSkeleton() {
   );
 }
 
-function getExpectedPaymentCents(holding: ApiBondHolding): number | null {
-  if (!holding.faceValue || holding.faceValue <= 0) {
-    return null;
-  }
-  if (holding.couponRate === undefined || holding.couponRate < 0) {
-    return null;
-  }
-  if (!holding.couponFrequency) {
-    return null;
-  }
-
-  return expectedCouponAmountCents(
-    holding.faceValue,
-    couponRateToDecimal(holding.couponRate),
-    holding.couponFrequency
-  );
-}
-
-async function fetchPayments(bondHoldingId: string): Promise<ApiCouponPayment[]> {
-  const response = await fetch(
-    `${API_BASE}/api/coupon-payments?bondHoldingId=${encodeURIComponent(bondHoldingId)}`
-  );
+async function fetchPayments(
+  bondHoldingId: string,
+  displayCurrency: string
+): Promise<ApiCouponPayment[]> {
+  const base = `/api/coupon-payments?bondHoldingId=${encodeURIComponent(bondHoldingId)}`;
+  const url = appendDisplayCurrencyParam(base, displayCurrency);
+  const response = await fetch(`${API_BASE}${url}`);
   if (!response.ok) {
     throw new Error(`Request failed (${response.status})`);
   }
@@ -72,6 +56,7 @@ async function fetchPayments(bondHoldingId: string): Promise<ApiCouponPayment[]>
 }
 
 export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
+  const { displayCurrency } = useDisplayCurrency();
   const [payments, setPayments] = useState<ApiCouponPayment[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
@@ -89,13 +74,13 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
     deleteTarget ? `/api/coupon-payments/${deleteTarget.id}` : '/api/coupon-payments/0'
   );
 
-  const expectedCents = useMemo(() => getExpectedPaymentCents(holding), [holding]);
+  const expectedCents = holding.expectedCouponAmountCents;
 
   const loadPayments = useCallback(async () => {
     setListLoading(true);
     setListError(null);
     try {
-      const rows = await fetchPayments(holding.id);
+      const rows = await fetchPayments(holding.id, displayCurrency);
       setPayments(rows);
     } catch (err) {
       setListError(err instanceof Error ? err.message : 'Failed to load payments');
@@ -103,7 +88,7 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
     } finally {
       setListLoading(false);
     }
-  }, [holding.id]);
+  }, [holding.id, displayCurrency]);
 
   useEffect(() => {
     void loadPayments();
@@ -158,7 +143,8 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
           </h2>
           {expectedCents !== null ? (
             <p className="cb-coupon-payments-section__estimate cb-body-sm">
-              Estimate: {formatCurrency(expectedCents)} per payment based on holding terms
+              Estimate: {formatCurrency(expectedCents, holding.currencyCode)} per payment based on
+              holding terms
             </p>
           ) : null}
         </div>
@@ -206,6 +192,7 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
       >
         {activeError ? <ErrorBanner message={activeError} /> : null}
         <CouponPaymentForm
+          currencyCode={holding.currencyCode}
           submitLabel="Record payment"
           loading={formLoading}
           serverFieldErrors={activeFieldErrors}
@@ -228,6 +215,7 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
         {activeError ? <ErrorBanner message={activeError} /> : null}
         {editingPayment ? (
           <CouponPaymentForm
+            currencyCode={holding.currencyCode}
             initialValues={paymentToFormValues(editingPayment)}
             submitLabel="Save changes"
             loading={formLoading}

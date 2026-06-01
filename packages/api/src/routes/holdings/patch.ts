@@ -26,6 +26,10 @@ export function registerPatchHolding(app: FastifyInstance, getRepo: () => Repo):
     if (!holding) {
       throw new NotFoundError('Bond holding not found');
     }
-    return reply.status(200).send(toApiBondHolding(holding));
+    const withConverted = await repo.getBondHoldingWithConverted(id);
+    if (!withConverted) {
+      throw new NotFoundError('Bond holding not found');
+    }
+    return reply.status(200).send(toApiBondHolding(withConverted));
   });
 }

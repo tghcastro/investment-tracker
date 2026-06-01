@@ -11,13 +11,14 @@ Short index for coding agents. Read only what your task needs — do not load th
 | Any change | [`.specs/project/STATE.md`](.specs/project/STATE.md) — current work, AD decisions, blockers |
 | Scope / what not to build | [`.specs/project/PROJECT.md`](.specs/project/PROJECT.md) |
 | Milestones / future work | [`.specs/project/ROADMAP.md`](.specs/project/ROADMAP.md) |
-| New feature (M5+) | Active: [m5](../.specs/features/active/m5-holdings-framework/spec.md) · [m6](../.specs/features/active/m6-multi-currency/spec.md) · [m7](../.specs/features/active/m7-brazilian-fixed-income/spec.md) — see [`.specs/index.md`](.specs/index.md) |
+| New feature (M7+) | **Next:** [M7](../.specs/features/active/m7-brazilian-fixed-income/spec.md) (execute). M6.1 shipped — [completed](../.specs/features/completed/m6.1-multi-currency-follow-ups/spec.md). M5–M6 in [`features/completed/`](../.specs/features/completed/); see [`.specs/index.md`](.specs/index.md) |
 
 ## Codebase (source of truth for implementation)
 
 | Doc | Use when |
 | --- | --- |
 | [`.specs/codebase/ARCHITECTURE.md`](.specs/codebase/ARCHITECTURE.md) | Module boundaries, data flow |
+| [`.specs/codebase/API-FIRST.md`](.specs/codebase/API-FIRST.md) | **Business rules in API only** — web UI rules; calc/forecast pattern |
 | [`.specs/codebase/STRUCTURE.md`](.specs/codebase/STRUCTURE.md) | Repo layout, package paths |
 | [`.specs/codebase/STACK.md`](.specs/codebase/STACK.md) | Node 22, workspaces, SQLite, Docker |
 | [`.specs/codebase/CONVENTIONS.md`](.specs/codebase/CONVENTIONS.md) | Naming, imports, lint |
@@ -55,6 +56,7 @@ Full catalog and freshness: [`.specs/index.md`](.specs/index.md).
 - **Shell:** WSL Ubuntu — [`docs/references/node22-wsl.md`](docs/references/node22-wsl.md)
 - **Node:** 22 (`.nvmrc`) — never run bare PowerShell `npm`/`git` on Windows host
 - **Repo path in WSL:** `/mnt/d/workspace/investment-tracker`
+- **Agent session:** Bootstrap once — `source ~/.nvm/nvm.sh && nvm use 22 && cd /mnt/d/workspace/investment-tracker`; then run `git`, `npm`, tests, etc. directly (see [`.cursor/rules/wsl-shell.mdc`](.cursor/rules/wsl-shell.mdc))
 
 ## Run locally (minimal)
 

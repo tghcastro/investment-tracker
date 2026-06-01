@@ -1,8 +1,8 @@
 # M6 Handoff — Multi-Currency (2026-05-29)
 
-**Branch:** `m6-multi-currency` (off `main`, uncommitted)  
+**Branch:** `m6-multi-currency` (merged)  
 **Goal:** M6 all phases — schema, API, web UI, tests, docs, PR  
-**Status:** ~95% code done; gate not green; no commits yet
+**Status:** Complete — commit `84daed0` (`feat: M6 multi-currency support`); docs archive in follow-up commit
 
 ---
 
@@ -147,4 +147,4 @@ packages/api/__tests__/routes.test.ts
 
 ## Next milestone
 
-M7 Brazilian fixed income — after M6 PR merged.
+**M6.1** multi-currency follow-ups (user to spec) — then M7 Brazilian fixed income.

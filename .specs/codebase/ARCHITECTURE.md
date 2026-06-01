@@ -25,9 +25,9 @@
 
 ### `bonds-domain`
 
-- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers (`expectedCouponAmountCents`, `generateEstimatedCouponDates`).
+- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers, FX conversion (`currency.ts`: native → USD → display).
 - **Must not:** Import Fastify, React, Drizzle, or filesystem APIs.
-- **Consumers:** API route handlers validate request bodies with the same schemas; web may import types for forms.
+- **Consumers:** API (`repo`, routes) applies all business rules. Web must **not** import domain runtime functions — see [API-FIRST.md](./API-FIRST.md).
 
 ### `packages/api`
 
@@ -35,7 +35,7 @@
 | --- | --- | --- |
 | Transport | `server.ts`, `routes/**` | HTTP mapping, status codes, JSON shapes |
 | Validation | Route modules + `bonds-domain` Zod | Parse/validate at boundary |
-| Application | `repo.ts` | Queries, transactions, business errors as `RepoError` |
+| Application | `repo.ts` | Queries, transactions, **computed response fields**, business errors as `RepoError` |
 | Persistence | `schema.ts`, `db.ts`, `migrations/` | Drizzle models, SQLite connection |
 | Cross-cutting | `middleware/errors.ts`, `appState.ts` | Unified errors; DB swap on restore |
 | System | `routes/system/*`, `system/backup.ts` | Backup download, restore upload |
@@ -51,7 +51,7 @@
 | Hooks | `useApi` / `useApiMutation` — fetch to API |
 | Styles | `tokens.css` + per-component CSS (no Tailwind) |
 
-**No direct DB access.** All data via REST.
+**No direct DB access.** All data via REST. **No business-rule duplication** — render API-derived fields; UI rules only ([API-FIRST.md](./API-FIRST.md)).
 
 ## API surface (v1)
 
@@ -60,9 +60,12 @@
 | Health | `GET /health` |
 | Accounts | CRUD + `PATCH` archive, `GET :id/holdings` |
 | Holding types | `GET /api/holding-types` (read-only catalog) |
-| Holdings | CRUD under accounts; optional `holdingTypeId` filter on list |
+| Currencies | `GET /api/currencies`, `GET /api/currencies/available` |
+| Currency quotes | CRUD `/api/currency-quotes` (manual USD-base rates) |
+| Holdings | CRUD; `currencyCode`; `expectedCouponAmountCents` on responses; list/detail include `converted*` (M6.1); `?displayCurrency=` (default USD) |
+| FX preview | `GET /api/fx/convert` (M6.1) — form preview |
 | Coupon payments | CRUD linked to holdings |
-| Portfolio | `summary`, `income-summary`, `upcoming-coupons` |
+| Portfolio | `summary`, `income-summary`, `upcoming-coupons` — **all forecasts/aggregates server-side** |
 | System | `GET /api/system/info`, backup download, restore multipart upload |
 
 Exact paths live in `packages/api/src/server.ts` and route modules.
@@ -72,8 +75,11 @@ Exact paths live in `packages/api/src/server.ts` and route modules.
 Tables (Drizzle in `schema.ts`):
 
 - `accounts` — name, description, `archived_at`
+- `account_currencies` — junction: allowed currencies per account
+- `currencies` — ISO catalog (seeded); read-only via API
+- `currency_quotes` — manual USD-base rates by date
 - `holding_types` — slug, display name, sort order (seed: Bond, Brazilian Fixed Income)
-- `bond_holdings` — FK → account + holding type; issuer, identifiers, face value, coupon rate (decimal in DB), frequency, dates
+- `bond_holdings` — FK → account + holding type; `currency_code`; issuer, identifiers, face value, coupon rate (decimal in DB), frequency, dates
 - `coupon_payments` — FK → holding; payment date, amount
 
 **API convention:** `couponRate` in JSON is **percent** (0–100); stored as decimal fraction in SQLite (see route serializers).
@@ -103,7 +109,7 @@ GET portfolio/income-summary + coupon list routes
 
 ## Invariants (enforced by structure, not a custom linter)
 
-1. Domain rules live in `bonds-domain` or `repo.ts`, not duplicated in React.
+1. **API-first:** Business rules (calculations, forecasts, conversions, schedules) run in `bonds-domain` + API; web displays results ([API-FIRST.md](./API-FIRST.md)).
 2. API returns structured errors via error middleware (consistent JSON).
 3. SQLite file path is configurable; tests use isolated temp DBs.
 4. CORS allowlist is explicit (dev localhost + env override).

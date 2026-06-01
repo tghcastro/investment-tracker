@@ -10,12 +10,26 @@ type QuoteFormValues = {
   quoteDate: string;
   targetCurrencyCode: string;
   rate: string;
+  rateDirection: 'usd-to-target' | 'target-to-usd';
+};
+
+type QuoteFilterValues = {
+  fromDate: string;
+  toDate: string;
+  targetCurrency: string;
 };
 
 const EMPTY_FORM: QuoteFormValues = {
   quoteDate: '',
   targetCurrencyCode: '',
   rate: '',
+  rateDirection: 'usd-to-target',
+};
+
+const EMPTY_FILTERS: QuoteFilterValues = {
+  fromDate: '',
+  toDate: '',
+  targetCurrency: '',
 };
 
 function validateForm(values: QuoteFormValues): Record<string, string> {
@@ -33,14 +47,37 @@ function validateForm(values: QuoteFormValues): Record<string, string> {
   return errors;
 }
 
+function buildQuotesUrl(refreshKey: number, filters: QuoteFilterValues): string {
+  const params = new URLSearchParams({ r: String(refreshKey) });
+  if (filters.fromDate) {
+    params.set('fromDate', filters.fromDate);
+  }
+  if (filters.toDate) {
+    params.set('toDate', filters.toDate);
+  }
+  if (filters.targetCurrency) {
+    params.set('targetCurrency', filters.targetCurrency);
+  }
+  return `/api/currency-quotes?${params.toString()}`;
+}
+
+function formatCurrencyLabel(code: string, currencies: ApiCurrency[] | undefined): string {
+  const match = currencies?.find((currency) => currency.code === code);
+  if (!match) {
+    return code;
+  }
+  return `${match.code} (${match.symbol})`;
+}
+
 export default function CurrencyQuotes() {
   const [formValues, setFormValues] = useState<QuoteFormValues>(EMPTY_FORM);
+  const [filterValues, setFilterValues] = useState<QuoteFilterValues>(EMPTY_FILTERS);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const quotesUrl = `/api/currency-quotes?r=${refreshKey}`;
+  const quotesUrl = buildQuotesUrl(refreshKey, filterValues);
   const { data: quotes, loading, error } = useApi<ApiCurrencyQuote[]>(quotesUrl);
   const { data: currencies } = useApi<ApiCurrency[]>('/api/currencies');
 
@@ -60,9 +97,17 @@ export default function CurrencyQuotes() {
         .filter((currency) => currency.code !== 'USD')
         .map((currency) => ({
           value: currency.code,
-          label: `${currency.code} — ${currency.name}`,
+          label: `${currency.code} (${currency.symbol}) — ${currency.name}`,
         })),
     [currencies]
+  );
+
+  const filterCurrencyOptions = useMemo(
+    () => [
+      { value: '', label: 'All currencies' },
+      ...quoteCurrencyOptions,
+    ],
+    [quoteCurrencyOptions]
   );
 
   const resetForm = () => {
@@ -83,6 +128,7 @@ export default function CurrencyQuotes() {
       quoteDate: formValues.quoteDate,
       targetCurrencyCode: formValues.targetCurrencyCode,
       rate: Number.parseFloat(formValues.rate),
+      rateDirection: formValues.rateDirection,
     };
 
     const result = editingId
@@ -101,6 +147,7 @@ export default function CurrencyQuotes() {
       quoteDate: quote.quoteDate,
       targetCurrencyCode: quote.targetCurrencyCode,
       rate: String(quote.rate),
+      rateDirection: 'usd-to-target',
     });
     setFormErrors({});
   };
@@ -133,6 +180,41 @@ export default function CurrencyQuotes() {
       {error ? <ErrorBanner message={error} /> : null}
       {activeMutation.error ? <ErrorBanner message={activeMutation.error} /> : null}
       {deleteMutation.error ? <ErrorBanner message={deleteMutation.error} /> : null}
+
+      <section className="cb-currency-quotes-filters" aria-label="Quote filters">
+        <div className="cb-currency-quotes-form__grid">
+          <FormField label="Start date" htmlFor="filter-from-date">
+            <TextInput
+              id="filter-from-date"
+              type="date"
+              value={filterValues.fromDate}
+              onChange={(event) =>
+                setFilterValues((current) => ({ ...current, fromDate: event.target.value }))
+              }
+            />
+          </FormField>
+          <FormField label="End date" htmlFor="filter-to-date">
+            <TextInput
+              id="filter-to-date"
+              type="date"
+              value={filterValues.toDate}
+              onChange={(event) =>
+                setFilterValues((current) => ({ ...current, toDate: event.target.value }))
+              }
+            />
+          </FormField>
+          <FormField label="Currency" htmlFor="filter-currency">
+            <Select
+              id="filter-currency"
+              value={filterValues.targetCurrency}
+              options={filterCurrencyOptions}
+              onChange={(event) =>
+                setFilterValues((current) => ({ ...current, targetCurrency: event.target.value }))
+              }
+            />
+          </FormField>
+        </div>
+      </section>
 
       <form className="cb-currency-quotes-form" onSubmit={(event) => void handleSubmit(event)} noValidate>
         <h2 className="cb-currency-quotes-form__title">
@@ -180,6 +262,22 @@ export default function CurrencyQuotes() {
               }
             />
           </FormField>
+          <FormField label="Rate direction" htmlFor="quote-direction">
+            <Select
+              id="quote-direction"
+              value={formValues.rateDirection}
+              options={[
+                { value: 'usd-to-target', label: 'USD → currency' },
+                { value: 'target-to-usd', label: 'Currency → USD' },
+              ]}
+              onChange={(event) =>
+                setFormValues((current) => ({
+                  ...current,
+                  rateDirection: event.target.value as QuoteFormValues['rateDirection'],
+                }))
+              }
+            />
+          </FormField>
         </div>
         <div className="cb-currency-quotes-form__actions">
           {editingId ? (
@@ -217,7 +315,7 @@ export default function CurrencyQuotes() {
             <div key={quote.id} className="cb-currency-quotes-table__row" role="row">
               <span role="cell">{quote.quoteDate}</span>
               <span className="cb-number-display" role="cell">
-                {quote.targetCurrencyCode}
+                {formatCurrencyLabel(quote.targetCurrencyCode, currencies)}
               </span>
               <span className="cb-number-display" role="cell">
                 {quote.rate}

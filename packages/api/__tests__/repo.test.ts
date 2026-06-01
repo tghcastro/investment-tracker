@@ -667,6 +667,9 @@ describe('Repo integration', () => {
       totalCostBasis: 0,
       holdingsWithCostBasis: 0,
       holdingsMissingCostBasis: 0,
+      convertedCurrency: 'USD',
+      convertedTotalFaceValue: 0,
+      convertedTotalCostBasis: 0,
       maturityLadder: [],
     });
   });

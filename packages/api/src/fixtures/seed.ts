@@ -114,9 +114,10 @@ export function seed(): void {
       loadFixtureExports(existing.accounts, existing.holdings);
       return;
     }
-    throw new Error(
-      'Database already has accounts but does not match the expected fixture data'
+    console.warn(
+      'Skipping fixture seed: database has accounts that do not match fixture data'
     );
+    return;
   }
 
   const seededAccounts: SeededAccount[] = [];

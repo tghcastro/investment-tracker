@@ -9,7 +9,7 @@ describe('CouponPaymentForm', () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
 
-    render(<CouponPaymentForm onSubmit={onSubmit} />);
+    render(<CouponPaymentForm currencyCode="USD" onSubmit={onSubmit} />);
 
     await user.click(screen.getByRole('button', { name: 'Save payment' }));
 
@@ -21,7 +21,7 @@ describe('CouponPaymentForm', () => {
   it('focuses the payment date field on client validation failure', async () => {
     const user = userEvent.setup();
 
-    render(<CouponPaymentForm onSubmit={vi.fn()} />);
+    render(<CouponPaymentForm currencyCode="USD" onSubmit={vi.fn()} />);
 
     await user.click(screen.getByRole('button', { name: 'Save payment' }));
 
@@ -34,7 +34,7 @@ describe('CouponPaymentForm', () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
 
-    render(<CouponPaymentForm onSubmit={onSubmit} />);
+    render(<CouponPaymentForm currencyCode="USD" onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText('Payment date'), '2026-03-15');
     await user.type(screen.getByLabelText('Amount (USD)'), '212.50');
@@ -49,6 +49,7 @@ describe('CouponPaymentForm', () => {
   it('merges server field errors', () => {
     render(
       <CouponPaymentForm
+        currencyCode="USD"
         initialValues={{ paymentDate: '2026-03-15', amount: '212.50' }}
         serverFieldErrors={{ paymentDate: ['Payment date is outside holding term'] }}
         onSubmit={vi.fn()}
@@ -61,6 +62,7 @@ describe('CouponPaymentForm', () => {
   it('focuses the first server error field when client validation is clean', async () => {
     render(
       <CouponPaymentForm
+        currencyCode="USD"
         initialValues={{ paymentDate: '2026-03-15', amount: '212.50' }}
         serverFieldErrors={{ paymentDate: ['Payment date is outside holding term'] }}
         onSubmit={vi.fn()}
@@ -70,5 +72,11 @@ describe('CouponPaymentForm', () => {
     await waitFor(() => {
       expect(document.activeElement).toBe(screen.getByLabelText('Payment date'));
     });
+  });
+
+  it('uses holding currency in amount label', () => {
+    render(<CouponPaymentForm currencyCode="BRL" onSubmit={vi.fn()} />);
+
+    expect(screen.getByLabelText('Amount (BRL)')).toBeInTheDocument();
   });
 });

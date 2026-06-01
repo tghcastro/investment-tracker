@@ -2,7 +2,7 @@
 
 **Design**: `.specs/features/active/m6-multi-currency/design.md`  
 **Spec**: `.specs/features/active/m6-multi-currency/spec.md`  
-**Status**: Not started  
+**Status**: Complete  
 **Depends on**: M5 complete
 
 ---
