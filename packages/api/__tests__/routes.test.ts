@@ -1293,3 +1293,124 @@ describe('CORS', () => {
     expect(response.headers['access-control-allow-origin']).toBeUndefined();
   });
 });
+
+describe('M6 multi-currency routes', () => {
+  let sqlite: Database.Database;
+  let database: ReturnType<typeof drizzle>;
+  let app: FastifyInstance;
+  let seededAccountIds: Map<string, string>;
+
+  beforeEach(async () => {
+    const conn = createTestDatabase();
+    sqlite = conn.sqlite;
+    database = conn.database;
+    const seeded = await seedFixtures(database);
+    seededAccountIds = seeded.accountIds;
+    app = await createServer(database);
+    await app.ready();
+  });
+
+  afterEach(async () => {
+    await app.close();
+    sqlite.close();
+  });
+
+  it('GET /api/currencies returns seeded catalog', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/currencies' });
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.length).toBe(9);
+    expect(body.map((c: { code: string }) => c.code)).toEqual(
+      expect.arrayContaining(['USD', 'BRL', 'EUR'])
+    );
+  });
+
+  it('GET /api/currencies/available includes USD only before quotes', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/currencies/available' });
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.map((c: { code: string }) => c.code)).toEqual(['USD']);
+  });
+
+  it('POST /api/currency-quotes creates quote and enables currency in available list', async () => {
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2026-05-29', targetCurrencyCode: 'BRL', rate: 5.2 },
+    });
+    expect(createResponse.statusCode).toBe(201);
+
+    const availableResponse = await app.inject({
+      method: 'GET',
+      url: '/api/currencies/available',
+    });
+    const codes = availableResponse.json().map((c: { code: string }) => c.code);
+    expect(codes).toEqual(expect.arrayContaining(['USD', 'BRL']));
+  });
+
+  it('POST /api/currency-quotes duplicate date+currency returns 409', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2026-05-29', targetCurrencyCode: 'BRL', rate: 5.2 },
+    });
+
+    const duplicate = await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2026-05-29', targetCurrencyCode: 'BRL', rate: 5.3 },
+    });
+    expect(duplicate.statusCode).toBe(409);
+  });
+
+  it('POST /api/accounts accepts currencyCodes', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: { name: 'Multi FX', currencyCodes: ['USD', 'BRL'] },
+    });
+    expect(response.statusCode).toBe(201);
+    expect(response.json().currencyCodes).toEqual(expect.arrayContaining(['USD', 'BRL']));
+    expect(response.json().currencyCodes).toHaveLength(2);
+  });
+
+  it('POST /api/holdings rejects currency not allowed on account', async () => {
+    const accountId = seededAccountIds.get('vanguard')!;
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        currencyCode: 'BRL',
+        issuer: 'Test Bond',
+        faceValue: 100_000,
+        couponRate: 4,
+        couponFrequency: 'semi-annual',
+        maturityDate: '2030-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().code).toBe('CURRENCY_NOT_ALLOWED');
+  });
+
+  it('GET /api/portfolio/summary converts totals with displayCurrency', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2026-05-29', targetCurrencyCode: 'BRL', rate: 5 },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/summary?displayCurrency=BRL',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.displayCurrency).toBe('BRL');
+    expect(body.displayTotalFaceValue).toBe(body.totalFaceValue * 5);
+  });
+});

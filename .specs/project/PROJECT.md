@@ -7,7 +7,8 @@
 ## Goals
 
 - **v1:** Replace spreadsheet-based bond tracking with a reliable web app for recording holdings, key bond terms, and coupon income.
-- **Long term:** Support multiple asset classes, multi-account aggregation, performance analytics, and net-worth history in one modular platform.
+- **v2 (M5–M7):** Holdings framework, multi-currency (USD base, manual quotes), and Brazilian fixed income — single **v2.0.0** release after M7. Specs: [ROADMAP.md](ROADMAP.md).
+- **Long term:** Additional asset classes, multi-account aggregation, performance analytics, and net-worth history in one modular platform.
 - **Quality bar:** A user can see all bond positions and upcoming/matured cash flows without maintaining parallel spreadsheets.
 
 ## Tech Stack
@@ -43,12 +44,24 @@
 - Market-data feeds and automated bond pricing (all bond data is user-entered in v1)
 - Mobile-native apps (responsive web is sufficient)
 
+**v2 adds (M5–M7, single v2.0.0 release):**
+
+- Holding Type framework (Bond + Brazilian Fixed Income seed types)
+- Multi-currency catalog, manual USD-based quotes, account currency config, display-currency on Home/Holdings
+- Brazilian Fixed Income CRUD (LCI, LCA, Tesouro Direto, CRI, CRA) with CDI/IPCA/SELIC/pre-fixed indexing
+
+**Still out of scope (v2):**
+
+- Stocks, ETFs, funds, crypto (future Holding Types only)
+- Automatic FX feeds, broker sync, BRFI yield accrual engine
+- Multi-user auth, tax reporting, mobile-native apps
+
 ## Constraints
 
 - **Timeline:** No fixed deadline — iterative delivery
 - **Technical:** Node + TypeScript; modular boundaries between bond domain, persistence, and API/UI layers
 - **Resources:** Solo/small-team build; prefer simple deploy and low operational cost for early versions
-- **Data:** Manual entry for v1 core; M4 adds database backup/restore and UX polish. Spreadsheet import deferred to Future Considerations.
+- **Data:** Manual entry for v1 core; M4 adds database backup/restore and UX polish. M5–M7 extend asset types and currency support (manual quotes). Spreadsheet import deferred to Future Considerations.
 
 ## Domain Note: Bonds
 

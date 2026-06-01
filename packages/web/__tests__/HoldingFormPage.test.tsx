@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import HoldingFormPage from '../src/pages/HoldingFormPage';
 import type { ApiAccount } from '../src/types/api';
+import { sampleAccountWithCurrencies } from './testUtils/currencyMocks';
 
 const mockUseApi = vi.fn();
 const mockMutate = vi.fn();
@@ -21,14 +22,7 @@ vi.mock('../src/hooks/useApiMutation', () => ({
   }),
 }));
 
-const sampleAccounts: ApiAccount[] = [
-  {
-    id: '10',
-    name: 'Vanguard',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  },
-];
+const sampleAccounts: ApiAccount[] = [sampleAccountWithCurrencies];
 
 describe('HoldingFormPage', () => {
   it('create mode renders form when accounts exist', () => {

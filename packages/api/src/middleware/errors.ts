@@ -61,10 +61,15 @@ export function mapRepoError(
     case 'ARCHIVED_ACCOUNT':
       return { statusCode: 400, body: { code: error.code, message: error.message } };
     case 'HAS_COUPON_PAYMENTS':
+    case 'DUPLICATE_QUOTE':
+    case 'CURRENCY_IN_USE':
       return {
         statusCode: 409,
         body: { code: 'CONFLICT', message: error.message },
       };
+    case 'INVALID_CURRENCY':
+    case 'CURRENCY_NOT_ALLOWED':
+      return { statusCode: 400, body: { code: error.code, message: error.message } };
     default:
       return { statusCode: 500, body: { code: 'INTERNAL_ERROR', message: 'Internal server error' } };
   }

@@ -22,7 +22,16 @@ vi.mock('../src/hooks/useApiMutation', () => ({
 
 describe('AccountFormPage', () => {
   it('create mode renders account form', () => {
-    mockUseApi.mockReturnValue({ data: undefined, loading: false, error: undefined });
+    mockUseApi.mockImplementation((url: string) => {
+      if (url === '/api/currencies') {
+        return {
+          data: [{ code: 'USD', number: '840', name: 'US Dollar', symbol: '$', region: 'US' }],
+          loading: false,
+          error: undefined,
+        };
+      }
+      return { data: undefined, loading: false, error: undefined };
+    });
 
     render(
       <MemoryRouter>

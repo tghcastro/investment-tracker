@@ -1,8 +1,11 @@
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { TopNav } from './components/ui';
+import { DisplayCurrencyProvider } from './contexts/DisplayCurrencyContext';
 import AccountFormPage from './pages/AccountFormPage';
 import Accounts from './pages/Accounts';
+import Currencies from './pages/Currencies';
+import CurrencyQuotes from './pages/CurrencyQuotes';
 import HoldingFormPage from './pages/HoldingFormPage';
 import Home from './pages/Home';
 import Holdings from './pages/Holdings';
@@ -25,19 +28,23 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/holdings/new" element={<HoldingFormPage mode="create" />} />
-            <Route path="/holdings/:id" element={<HoldingFormPage mode="edit" />} />
-            <Route path="/holdings" element={<Holdings />} />
-            <Route path="/income" element={<Income />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/accounts/new" element={<AccountFormPage mode="create" />} />
-            <Route path="/accounts/:id" element={<AccountFormPage mode="edit" />} />
-            <Route path="/accounts" element={<Accounts />} />
-          </Route>
-        </Routes>
+        <DisplayCurrencyProvider>
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/holdings/new" element={<HoldingFormPage mode="create" />} />
+              <Route path="/holdings/:id" element={<HoldingFormPage mode="edit" />} />
+              <Route path="/holdings" element={<Holdings />} />
+              <Route path="/income" element={<Income />} />
+              <Route path="/currencies/quotes" element={<CurrencyQuotes />} />
+              <Route path="/currencies" element={<Currencies />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/accounts/new" element={<AccountFormPage mode="create" />} />
+              <Route path="/accounts/:id" element={<AccountFormPage mode="edit" />} />
+              <Route path="/accounts" element={<Accounts />} />
+            </Route>
+          </Routes>
+        </DisplayCurrencyProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );

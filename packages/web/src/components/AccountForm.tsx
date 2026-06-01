@@ -7,15 +7,18 @@ import './AccountForm.css';
 export interface AccountFormValues {
   name: string;
   description: string;
+  currencyCodes: string[];
 }
 
 export interface AccountFormSubmitPayload {
   name: string;
   description?: string;
+  currencyCodes: string[];
 }
 
 export interface AccountFormProps {
   initialValues?: Partial<AccountFormValues>;
+  currencyOptions: Array<{ code: string; name: string }>;
   serverFieldErrors?: Record<string, string[]> | null;
   submitLabel?: string;
   loading?: boolean;
@@ -34,6 +37,7 @@ const ACCOUNT_FORM_FIELD_FOCUS_ORDER = [
 export const EMPTY_ACCOUNT_FORM_VALUES: AccountFormValues = {
   name: '',
   description: '',
+  currencyCodes: ['USD'],
 };
 
 function mergeFieldErrors(
@@ -56,11 +60,15 @@ function validate(values: AccountFormValues): Record<string, string> {
   if (!values.name.trim()) {
     errors.name = 'Account name required';
   }
+  if (values.currencyCodes.length === 0) {
+    errors.currencyCodes = 'Select at least one currency';
+  }
   return errors;
 }
 
 export function AccountForm({
   initialValues,
+  currencyOptions,
   serverFieldErrors,
   submitLabel = 'Save account',
   loading = false,
@@ -116,6 +124,7 @@ export function AccountForm({
 
     const payload: AccountFormSubmitPayload = {
       name: values.name.trim(),
+      currencyCodes: values.currencyCodes,
     };
     if (values.description.trim()) {
       payload.description = values.description.trim();
@@ -151,6 +160,38 @@ export function AccountForm({
           }
           disabled={loading}
         />
+      </FormField>
+
+      <FormField
+        label="Allowed currencies"
+        htmlFor="account-currencies"
+        error={fieldErrors.currencyCodes}
+      >
+        <div id="account-currencies" className="cb-account-form__currency-grid">
+          {currencyOptions.map((currency) => {
+            const checked = values.currencyCodes.includes(currency.code);
+            return (
+              <label key={currency.code} className="cb-account-form__currency-option">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={loading || archived}
+                  onChange={(event) => {
+                    setValues((current) => {
+                      const next = event.target.checked
+                        ? [...current.currencyCodes, currency.code]
+                        : current.currencyCodes.filter((code) => code !== currency.code);
+                      return { ...current, currencyCodes: next };
+                    });
+                  }}
+                />
+                <span>
+                  {currency.code} — {currency.name}
+                </span>
+              </label>
+            );
+          })}
+        </div>
       </FormField>
 
       <div
