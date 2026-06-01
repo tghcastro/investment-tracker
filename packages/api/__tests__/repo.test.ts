@@ -773,4 +773,186 @@ describe('Repo integration', () => {
     const brfiRows = await repo.listBondHoldingsFiltered({ holdingTypeId: brfiType!.id });
     expect(brfiRows).toEqual([]);
   });
+
+  it('inserts BRFI holding and retrieves matching data', async () => {
+    const account = await repo.insertAccount({
+      name: 'BRFI Account',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-01-15',
+      targetCurrencyCode: 'BRL',
+      rate: 5,
+    });
+
+    const inserted = await repo.insertBrFiHolding({
+      accountId: account.id,
+      currencyCode: 'BRL',
+      name: 'LCI Test',
+      productType: 'LCI',
+      indexingType: 'CDI_PERCENTAGE',
+      cdiPercentage: 105,
+      purchaseDate: new Date('2025-01-15'),
+      maturityDate: new Date('2027-01-15'),
+      investedAmountCents: 10_000_000,
+    });
+
+    const retrieved = await repo.getBrFiHolding(inserted.id);
+    expect(retrieved).toMatchObject({
+      id: inserted.id,
+      name: 'LCI Test',
+      productType: 'LCI',
+      indexingType: 'CDI_PERCENTAGE',
+      cdiPercentage: 105,
+      investedAmountCents: 10_000_000,
+      currencyCode: 'BRL',
+    });
+    expect(retrieved?.holdingType).toMatchObject({
+      slug: 'brazilian-fixed-income',
+      name: 'Brazilian Fixed Income',
+    });
+  });
+
+  it('updates and deletes BRFI holdings', async () => {
+    const account = await repo.insertAccount({
+      name: 'BRFI CRUD',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-01-15',
+      targetCurrencyCode: 'BRL',
+      rate: 5,
+    });
+
+    const inserted = await repo.insertBrFiHolding({
+      accountId: account.id,
+      currencyCode: 'BRL',
+      name: 'CRA Test',
+      productType: 'CRA',
+      indexingType: 'SELIC',
+      purchaseDate: new Date('2025-01-15'),
+      maturityDate: new Date('2027-01-15'),
+      investedAmountCents: 5_000_000,
+    });
+
+    const updated = await repo.updateBrFiHolding(inserted.id, {
+      name: 'CRA Updated',
+      investedAmountCents: 6_000_000,
+    });
+    expect(updated?.name).toBe('CRA Updated');
+    expect(updated?.investedAmountCents).toBe(6_000_000);
+
+    const deleted = await repo.deleteBrFiHolding(inserted.id);
+    expect(deleted).toBe(true);
+    expect(await repo.getBrFiHolding(inserted.id)).toBeNull();
+  });
+
+  it('listBrFiHoldingsFiltered scopes by accountId', async () => {
+    const accountA = await repo.insertAccount({
+      name: 'BRFI A',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    const accountB = await repo.insertAccount({
+      name: 'BRFI B',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-01-15',
+      targetCurrencyCode: 'BRL',
+      rate: 5,
+    });
+
+    await repo.insertBrFiHolding({
+      accountId: accountA.id,
+      currencyCode: 'BRL',
+      name: 'Account A LCI',
+      productType: 'LCI',
+      indexingType: 'CDI_PERCENTAGE',
+      cdiPercentage: 100,
+      purchaseDate: new Date('2025-01-15'),
+      maturityDate: new Date('2027-01-15'),
+      investedAmountCents: 1_000_000,
+    });
+    await repo.insertBrFiHolding({
+      accountId: accountB.id,
+      currencyCode: 'BRL',
+      name: 'Account B LCA',
+      productType: 'LCA',
+      indexingType: 'PRE_FIXED',
+      preFixedRatePercent: 12.5,
+      purchaseDate: new Date('2025-01-15'),
+      maturityDate: new Date('2027-01-15'),
+      investedAmountCents: 2_000_000,
+    });
+
+    const filtered = await repo.listBrFiHoldingsFiltered({ accountId: accountA.id });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].name).toBe('Account A LCI');
+  });
+
+  it('blocks removing account currency used by BRFI holdings', async () => {
+    const account = await repo.insertAccount({
+      name: 'BRFI Currency Guard',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-01-15',
+      targetCurrencyCode: 'BRL',
+      rate: 5,
+    });
+    await repo.insertBrFiHolding({
+      accountId: account.id,
+      currencyCode: 'BRL',
+      name: 'BRL LCI',
+      productType: 'LCI',
+      indexingType: 'CDI_PERCENTAGE',
+      cdiPercentage: 100,
+      purchaseDate: new Date('2025-01-15'),
+      maturityDate: new Date('2027-01-15'),
+      investedAmountCents: 1_000_000,
+    });
+
+    await expect(
+      repo.updateAccount(account.id, { currencyCodes: ['USD'] })
+    ).rejects.toMatchObject({ code: 'CURRENCY_IN_USE' });
+  });
+
+  it('insertBrFiHolding rejects currency not allowed on account', async () => {
+    const account = await repo.insertAccount({ name: 'USD Only BRFI' });
+
+    await expect(
+      repo.insertBrFiHolding({
+        accountId: account.id,
+        currencyCode: 'BRL',
+        name: 'Invalid Currency',
+        productType: 'LCI',
+        indexingType: 'CDI_PERCENTAGE',
+        cdiPercentage: 100,
+        purchaseDate: new Date('2025-01-15'),
+        maturityDate: new Date('2027-01-15'),
+        investedAmountCents: 1_000_000,
+      })
+    ).rejects.toMatchObject({ code: 'CURRENCY_NOT_ALLOWED' });
+  });
+
+  it('insertBrFiHolding rejects non-USD without applicable quote', async () => {
+    const account = await repo.insertAccount({
+      name: 'BRFI FX Guard',
+      currencyCodes: ['USD', 'BRL'],
+    });
+
+    await expect(
+      repo.insertBrFiHolding({
+        accountId: account.id,
+        currencyCode: 'BRL',
+        name: 'Missing Quote',
+        productType: 'LCI',
+        indexingType: 'CDI_PERCENTAGE',
+        cdiPercentage: 100,
+        purchaseDate: new Date('2025-01-15'),
+        maturityDate: new Date('2027-01-15'),
+        investedAmountCents: 1_000_000,
+      })
+    ).rejects.toMatchObject({ code: 'EXCHANGE_RATE_REQUIRED' });
+  });
 });

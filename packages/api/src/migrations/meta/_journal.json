@@ -36,6 +36,13 @@
       "when": 1748736000000,
       "tag": "005_multi_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1748822400000,
+      "tag": "006_br_fi_holdings",
+      "breakpoints": true
     }
   ]
 }

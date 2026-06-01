@@ -1572,4 +1572,226 @@ describe('M6 multi-currency routes', () => {
       conversionError: null,
     });
   });
+
+  describe('Brazilian Fixed Income holdings', () => {
+    async function createBrFiAccountWithQuote() {
+      const accountResponse = await app.inject({
+        method: 'POST',
+        url: '/api/accounts',
+        payload: { name: 'BRFI Account', currencyCodes: ['USD', 'BRL'] },
+      });
+      const accountId = accountResponse.json().id;
+      await app.inject({
+        method: 'POST',
+        url: '/api/currency-quotes',
+        payload: { quoteDate: '2025-01-15', targetCurrencyCode: 'BRL', rate: 5 },
+      });
+      return accountId as string;
+    }
+
+    const validBrFiPayload = (accountId: string) => ({
+      accountId,
+      currencyCode: 'BRL',
+      name: 'LCI Banco X',
+      productType: 'LCI',
+      indexingType: 'CDI_PERCENTAGE',
+      cdiPercentage: 105,
+      purchaseDate: '2025-01-15',
+      maturityDate: '2027-01-15',
+      investedAmountCents: 10_000_000,
+    });
+
+    it('POST /api/br-fi-holdings with valid data returns 201', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: validBrFiPayload(accountId),
+      });
+
+      expect(response.statusCode).toBe(201);
+      const body = response.json();
+      expect(body).toMatchObject({
+        name: 'LCI Banco X',
+        productType: 'LCI',
+        indexingType: 'CDI_PERCENTAGE',
+        cdiPercentage: 105,
+        purchaseDate: '2025-01-15',
+        maturityDate: '2027-01-15',
+        investedAmountCents: 10_000_000,
+        currencyCode: 'BRL',
+        accountId,
+      });
+      expect(body.holdingType).toMatchObject({
+        slug: 'brazilian-fixed-income',
+        name: 'Brazilian Fixed Income',
+      });
+    });
+
+    it('GET /api/br-fi-holdings lists created holdings', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+      await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: validBrFiPayload(accountId),
+      });
+
+      const response = await app.inject({ method: 'GET', url: '/api/br-fi-holdings' });
+      expect(response.statusCode).toBe(200);
+      const holdings = response.json();
+      expect(holdings.length).toBeGreaterThanOrEqual(1);
+      expect(holdings[0].holdingType.slug).toBe('brazilian-fixed-income');
+    });
+
+    it('GET /api/br-fi-holdings/:id returns holding by id', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+      const postResponse = await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: validBrFiPayload(accountId),
+      });
+      const posted = postResponse.json();
+
+      const getResponse = await app.inject({
+        method: 'GET',
+        url: `/api/br-fi-holdings/${posted.id}`,
+      });
+
+      expect(getResponse.statusCode).toBe(200);
+      expect(getResponse.json()).toMatchObject({
+        id: posted.id,
+        name: 'LCI Banco X',
+      });
+    });
+
+    it('PATCH /api/br-fi-holdings/:id updates holding fields', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+      const postResponse = await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: validBrFiPayload(accountId),
+      });
+      const holdingId = postResponse.json().id;
+
+      const patchResponse = await app.inject({
+        method: 'PATCH',
+        url: `/api/br-fi-holdings/${holdingId}`,
+        payload: { name: 'Renamed LCI', investedAmountCents: 11_000_000 },
+      });
+
+      expect(patchResponse.statusCode).toBe(200);
+      expect(patchResponse.json()).toMatchObject({
+        name: 'Renamed LCI',
+        investedAmountCents: 11_000_000,
+      });
+    });
+
+    it('DELETE /api/br-fi-holdings/:id returns 204', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+      const postResponse = await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: validBrFiPayload(accountId),
+      });
+      const holdingId = postResponse.json().id;
+
+      const deleteResponse = await app.inject({
+        method: 'DELETE',
+        url: `/api/br-fi-holdings/${holdingId}`,
+      });
+      expect(deleteResponse.statusCode).toBe(204);
+
+      const getResponse = await app.inject({
+        method: 'GET',
+        url: `/api/br-fi-holdings/${holdingId}`,
+      });
+      expect(getResponse.statusCode).toBe(404);
+    });
+
+    it('POST /api/br-fi-holdings rejects maturityDate <= purchaseDate', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: {
+          ...validBrFiPayload(accountId),
+          purchaseDate: '2027-01-15',
+          maturityDate: '2025-01-15',
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json().code).toBe('VALIDATION_ERROR');
+    });
+
+    it('POST /api/br-fi-holdings rejects missing indexing params', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: {
+          ...validBrFiPayload(accountId),
+          cdiPercentage: undefined,
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json().code).toBe('VALIDATION_ERROR');
+    });
+
+    it('POST /api/br-fi-holdings rejects currency not allowed on account', async () => {
+      const accountId = seededAccountIds.get('vanguard')!;
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: validBrFiPayload(accountId),
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json().code).toBe('CURRENCY_NOT_ALLOWED');
+    });
+
+    it('POST /api/br-fi-holdings rejects non-USD without applicable quote', async () => {
+      const accountResponse = await app.inject({
+        method: 'POST',
+        url: '/api/accounts',
+        payload: { name: 'BRFI FX Account', currencyCodes: ['USD', 'BRL'] },
+      });
+      const accountId = accountResponse.json().id;
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: validBrFiPayload(accountId),
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json().code).toBe('EXCHANGE_RATE_REQUIRED');
+    });
+
+    it('GET /api/br-fi-holdings?accountId filters holdings', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+      await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: validBrFiPayload(accountId),
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/br-fi-holdings?accountId=${accountId}`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const holdings = response.json();
+      expect(holdings.length).toBeGreaterThanOrEqual(1);
+      expect(holdings.every((row: { accountId: string }) => row.accountId === accountId)).toBe(
+        true
+      );
+    });
+  });
 });

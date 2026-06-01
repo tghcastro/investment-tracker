@@ -2,6 +2,7 @@ import { and, desc, eq, gt, gte, inArray, isNull, lte } from 'drizzle-orm';
 import type {
   Account,
   BondHolding,
+  BrFiHolding,
   CouponFrequency,
   CouponPayment,
   Currency,
@@ -9,6 +10,8 @@ import type {
   HoldingType,
   HoldingTypeRef,
   HoldingTypeSlug,
+  IndexingType,
+  ProductType,
 } from 'bonds-domain';
 import {
   BASE_CURRENCY_CODE,
@@ -27,6 +30,7 @@ import {
   accountCurrencies,
   accounts,
   bondHoldings,
+  brFiHoldings,
   couponPayments,
   currencies,
   currencyQuotes,
@@ -96,6 +100,34 @@ export type InsertCouponPaymentData = {
 export type UpdateCouponPaymentData = {
   paymentDate?: Date;
   amount?: number;
+};
+
+export type InsertBrFiHoldingData = {
+  accountId: string;
+  currencyCode?: string;
+  name: string;
+  productType: ProductType;
+  indexingType: IndexingType;
+  cdiPercentage?: number;
+  ipcaSpreadPercent?: number;
+  preFixedRatePercent?: number;
+  purchaseDate: Date;
+  maturityDate: Date;
+  investedAmountCents: number;
+};
+
+export type UpdateBrFiHoldingData = {
+  accountId?: string;
+  currencyCode?: string;
+  name?: string;
+  productType?: ProductType;
+  indexingType?: IndexingType;
+  cdiPercentage?: number;
+  ipcaSpreadPercent?: number;
+  preFixedRatePercent?: number;
+  purchaseDate?: Date;
+  maturityDate?: Date;
+  investedAmountCents?: number;
 };
 
 export type InsertCurrencyQuoteData = {
@@ -282,6 +314,28 @@ function mapBondHolding(
   };
 }
 
+function mapBrFiHolding(
+  row: typeof brFiHoldings.$inferSelect,
+  holdingTypeRow: typeof holdingTypes.$inferSelect
+): BrFiHolding {
+  return {
+    id: String(row.id),
+    holdingType: mapHoldingTypeRef(holdingTypeRow),
+    accountId: String(row.accountId),
+    currencyCode: row.currencyCode,
+    name: row.name,
+    productType: row.productType as ProductType,
+    indexingType: row.indexingType as IndexingType,
+    cdiPercentage: row.cdiPercentage ?? undefined,
+    ipcaSpreadPercent: row.ipcaSpreadPercent ?? undefined,
+    preFixedRatePercent: row.preFixedRatePercent ?? undefined,
+    purchaseDate: row.purchaseDate,
+    maturityDate: row.maturityDate,
+    investedAmountCents: row.investedAmountCents,
+    updatedAt: row.updatedAt,
+  };
+}
+
 function mapCouponPayment(row: typeof couponPayments.$inferSelect): CouponPayment {
   return {
     id: String(row.id),
@@ -388,14 +442,19 @@ export function createRepo(database: Db) {
     nextCodes: string[]
   ): Promise<void> {
     const numericAccountId = parseId(accountId, 'account id');
-    const holdings = database
+    const bondRows = database
       .select({ currencyCode: bondHoldings.currencyCode })
       .from(bondHoldings)
       .where(eq(bondHoldings.accountId, numericAccountId))
       .all();
+    const brFiRows = database
+      .select({ currencyCode: brFiHoldings.currencyCode })
+      .from(brFiHoldings)
+      .where(eq(brFiHoldings.accountId, numericAccountId))
+      .all();
 
     const nextSet = new Set(nextCodes);
-    for (const holding of holdings) {
+    for (const holding of [...bondRows, ...brFiRows]) {
       if (!nextSet.has(holding.currencyCode)) {
         throw new RepoError(
           'CURRENCY_IN_USE',
@@ -508,6 +567,75 @@ export function createRepo(database: Db) {
       })
       .from(bondHoldings)
       .innerJoin(holdingTypes, eq(bondHoldings.holdingTypeId, holdingTypes.id));
+  }
+
+  function selectBrFiHoldingsWithType() {
+    return database
+      .select({
+        brFi: brFiHoldings,
+        holdingType: holdingTypes,
+      })
+      .from(brFiHoldings)
+      .innerJoin(holdingTypes, eq(brFiHoldings.holdingTypeId, holdingTypes.id));
+  }
+
+  function indexingParamsForInsert(data: InsertBrFiHoldingData): {
+    cdiPercentage: number | null;
+    ipcaSpreadPercent: number | null;
+    preFixedRatePercent: number | null;
+  } {
+    switch (data.indexingType) {
+      case 'CDI_PERCENTAGE':
+        return {
+          cdiPercentage: data.cdiPercentage ?? null,
+          ipcaSpreadPercent: null,
+          preFixedRatePercent: null,
+        };
+      case 'IPCA_SPREAD':
+        return {
+          cdiPercentage: null,
+          ipcaSpreadPercent: data.ipcaSpreadPercent ?? null,
+          preFixedRatePercent: null,
+        };
+      case 'SELIC':
+        return {
+          cdiPercentage: null,
+          ipcaSpreadPercent: null,
+          preFixedRatePercent: null,
+        };
+      case 'PRE_FIXED':
+        return {
+          cdiPercentage: null,
+          ipcaSpreadPercent: null,
+          preFixedRatePercent: data.preFixedRatePercent ?? null,
+        };
+    }
+  }
+
+  function indexingParamsForUpdate(
+    existing: BrFiHolding,
+    data: UpdateBrFiHoldingData
+  ): {
+    cdiPercentage: number | null;
+    ipcaSpreadPercent: number | null;
+    preFixedRatePercent: number | null;
+  } {
+    const nextIndexingType = data.indexingType ?? existing.indexingType;
+    const merged = {
+      cdiPercentage: data.cdiPercentage ?? existing.cdiPercentage,
+      ipcaSpreadPercent: data.ipcaSpreadPercent ?? existing.ipcaSpreadPercent,
+      preFixedRatePercent: data.preFixedRatePercent ?? existing.preFixedRatePercent,
+    };
+    return indexingParamsForInsert({
+      accountId: existing.accountId,
+      name: existing.name,
+      productType: existing.productType,
+      indexingType: nextIndexingType,
+      purchaseDate: existing.purchaseDate,
+      maturityDate: existing.maturityDate,
+      investedAmountCents: existing.investedAmountCents,
+      ...merged,
+    });
   }
 
   async function getHoldingTypeBySlug(slug: HoldingTypeSlug): Promise<HoldingType | null> {
@@ -789,6 +917,163 @@ export function createRepo(database: Db) {
     const numericId = parseId(id, 'holding id');
     database.delete(bondHoldings).where(eq(bondHoldings.id, numericId)).run();
     return true;
+  }
+
+  async function insertBrFiHolding(data: InsertBrFiHoldingData): Promise<BrFiHolding> {
+    await assertAccountNotArchived(database, data.accountId);
+    const accountId = parseId(data.accountId, 'account id');
+    const currencyCode = data.currencyCode ?? BASE_CURRENCY_CODE;
+    await assertCurrencyAllowedForAccount(data.accountId, currencyCode);
+    await assertApplicableQuoteForHolding(currencyCode, data.purchaseDate);
+
+    const brFiType = await getHoldingTypeBySlug('brazilian-fixed-income');
+    if (!brFiType) {
+      throw new RepoError(
+        'HOLDING_TYPE_NOT_FOUND',
+        'Brazilian Fixed Income holding type is not configured'
+      );
+    }
+    const holdingTypeId = parseId(brFiType.id, 'holding type id');
+    const indexingParams = indexingParamsForInsert(data);
+
+    try {
+      const [row] = database
+        .insert(brFiHoldings)
+        .values({
+          holdingTypeId,
+          accountId,
+          currencyCode,
+          name: data.name,
+          productType: data.productType,
+          indexingType: data.indexingType,
+          ...indexingParams,
+          purchaseDate: data.purchaseDate,
+          maturityDate: data.maturityDate,
+          investedAmountCents: data.investedAmountCents,
+        })
+        .returning()
+        .all();
+      const holding = await getBrFiHolding(String(row.id));
+      if (!holding) {
+        throw new RepoError('HOLDING_NOT_FOUND', 'Created BRFI holding could not be loaded');
+      }
+      return holding;
+    } catch (error) {
+      wrapDbError(error);
+    }
+  }
+
+  async function getBrFiHolding(id: string): Promise<BrFiHolding | null> {
+    const numericId = parseId(id, 'holding id');
+    const [row] = selectBrFiHoldingsWithType()
+      .where(eq(brFiHoldings.id, numericId))
+      .all();
+    return row ? mapBrFiHolding(row.brFi, row.holdingType) : null;
+  }
+
+  async function updateBrFiHolding(
+    id: string,
+    data: UpdateBrFiHoldingData
+  ): Promise<BrFiHolding | null> {
+    const numericId = parseId(id, 'holding id');
+    const existing = await getBrFiHolding(id);
+    if (!existing) {
+      return null;
+    }
+
+    if (data.accountId !== undefined) {
+      await assertAccountNotArchived(database, data.accountId);
+    }
+
+    const targetAccountId = data.accountId ?? existing.accountId;
+    if (data.currencyCode !== undefined) {
+      await assertCurrencyAllowedForAccount(targetAccountId, data.currencyCode);
+    } else if (data.accountId !== undefined && data.accountId !== existing.accountId) {
+      await assertCurrencyAllowedForAccount(targetAccountId, existing.currencyCode);
+    }
+
+    const nextCurrencyCode = data.currencyCode ?? existing.currencyCode;
+    const nextPurchaseDate = data.purchaseDate ?? existing.purchaseDate;
+    await assertApplicableQuoteForHolding(nextCurrencyCode, nextPurchaseDate);
+
+    const indexingParams = indexingParamsForUpdate(existing, data);
+    const updates: Partial<typeof brFiHoldings.$inferInsert> = {
+      updatedAt: new Date(),
+      ...indexingParams,
+    };
+    if (data.accountId !== undefined) {
+      updates.accountId = parseId(data.accountId, 'account id');
+    }
+    if (data.currencyCode !== undefined) {
+      updates.currencyCode = data.currencyCode;
+    }
+    if (data.name !== undefined) {
+      updates.name = data.name;
+    }
+    if (data.productType !== undefined) {
+      updates.productType = data.productType;
+    }
+    if (data.indexingType !== undefined) {
+      updates.indexingType = data.indexingType;
+    }
+    if (data.purchaseDate !== undefined) {
+      updates.purchaseDate = data.purchaseDate;
+    }
+    if (data.maturityDate !== undefined) {
+      updates.maturityDate = data.maturityDate;
+    }
+    if (data.investedAmountCents !== undefined) {
+      updates.investedAmountCents = data.investedAmountCents;
+    }
+
+    database
+      .update(brFiHoldings)
+      .set(updates)
+      .where(eq(brFiHoldings.id, numericId))
+      .run();
+    return getBrFiHolding(id);
+  }
+
+  async function deleteBrFiHolding(id: string): Promise<boolean> {
+    const existing = await getBrFiHolding(id);
+    if (!existing) {
+      return false;
+    }
+
+    const numericId = parseId(id, 'holding id');
+    database.delete(brFiHoldings).where(eq(brFiHoldings.id, numericId)).run();
+    return true;
+  }
+
+  async function listBrFiHoldingsFiltered(filters: {
+    accountId?: string;
+  }): Promise<BrFiHolding[]> {
+    const { accountId } = filters;
+
+    if (accountId !== undefined) {
+      const account = await getAccount(accountId);
+      if (!account) {
+        return [];
+      }
+    }
+
+    const conditions = [];
+    if (accountId !== undefined) {
+      conditions.push(eq(brFiHoldings.accountId, parseId(accountId, 'account id')));
+    }
+
+    const whereClause =
+      conditions.length === 0
+        ? undefined
+        : conditions.length === 1
+          ? conditions[0]
+          : and(...conditions);
+
+    const rows = selectBrFiHoldingsWithType()
+      .where(whereClause)
+      .orderBy(brFiHoldings.maturityDate, brFiHoldings.id)
+      .all();
+    return rows.map((row) => mapBrFiHolding(row.brFi, row.holdingType));
   }
 
   async function listBondHoldings(): Promise<BondHolding[]> {
@@ -1344,6 +1629,11 @@ export function createRepo(database: Db) {
     listBondHoldingsByAccount,
     listBondHoldingsByMaturity,
     listBondHoldingsFiltered,
+    insertBrFiHolding,
+    getBrFiHolding,
+    updateBrFiHolding,
+    deleteBrFiHolding,
+    listBrFiHoldingsFiltered,
     getPortfolioSummary,
     insertCouponPayment,
     listCouponPaymentsByHolding,
