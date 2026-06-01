@@ -1,0 +1,35 @@
+.cb-brfi-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cb-space-lg);
+  max-width: 640px;
+}
+
+.cb-brfi-form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--cb-space-base);
+}
+
+@media (max-width: 640px) {
+  .cb-brfi-form__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cb-brfi-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cb-space-xs);
+  align-items: center;
+}
+
+.cb-brfi-form__actions--split {
+  justify-content: space-between;
+}
+
+.cb-brfi-form__actions-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cb-space-xs);
+}

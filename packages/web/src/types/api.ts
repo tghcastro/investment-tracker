@@ -1,4 +1,4 @@
-import type { Account, BondHolding, CouponFrequency } from 'bonds-domain';
+import type { Account, BondHolding, BrFiHolding, CouponFrequency } from 'bonds-domain';
 
 type SerializeDates<T> = {
   [K in keyof T]: T[K] extends Date
@@ -42,6 +42,9 @@ export interface ApiHoldingTypeRef {
 
 /** JSON shape returned by GET /api/accounts */
 export type ApiAccount = SerializeDates<Account>;
+
+/** JSON shape returned by GET /api/br-fi-holdings */
+export type ApiBrFiHolding = SerializeDates<BrFiHolding>;
 
 /** JSON shape returned by GET /api/holdings */
 export type ApiBondHolding = SerializeDates<BondHolding> & {
@@ -137,4 +140,4 @@ export interface ApiRestoreResult {
   restoredAt: string;
 }
 
-export type { CouponFrequency };
+export type { CouponFrequency, IndexingType, ProductType } from 'bonds-domain';

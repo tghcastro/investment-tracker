@@ -1,0 +1,7 @@
+.cb-brfi-holdings-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--cb-space-base);
+  margin-bottom: var(--cb-space-lg);
+}

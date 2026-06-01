@@ -99,6 +99,21 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Bond portfolio' })).toBeInTheDocument();
   });
 
+  it('resolves /holdings/brazilian-fixed-income route', () => {
+    window.history.pushState({}, '', '/holdings/brazilian-fixed-income');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Brazilian Fixed Income' })).toBeInTheDocument();
+  });
+
+  it('resolves /holdings/brazilian-fixed-income/new route', () => {
+    window.history.pushState({}, '', '/holdings/brazilian-fixed-income/new');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Add holding' })).toBeInTheDocument();
+    expect(screen.getByText('Brazilian fixed income details')).toBeInTheDocument();
+  });
+
   it('resolves /holdings/new route', () => {
     window.history.pushState({}, '', '/holdings/new');
     render(<App />);

@@ -4,6 +4,8 @@ import { TopNav } from './components/ui';
 import { DisplayCurrencyProvider } from './contexts/DisplayCurrencyContext';
 import AccountFormPage from './pages/AccountFormPage';
 import Accounts from './pages/Accounts';
+import BrFiFormPage from './pages/BrFiFormPage';
+import BrFiHoldings from './pages/BrFiHoldings';
 import Currencies from './pages/Currencies';
 import CurrencyQuotes from './pages/CurrencyQuotes';
 import HoldingFormPage from './pages/HoldingFormPage';
@@ -32,6 +34,15 @@ export default function App() {
           <Routes>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Home />} />
+              <Route
+                path="/holdings/brazilian-fixed-income/new"
+                element={<BrFiFormPage mode="create" />}
+              />
+              <Route
+                path="/holdings/brazilian-fixed-income/:id"
+                element={<BrFiFormPage mode="edit" />}
+              />
+              <Route path="/holdings/brazilian-fixed-income" element={<BrFiHoldings />} />
               <Route path="/holdings/new" element={<HoldingFormPage mode="create" />} />
               <Route path="/holdings/:id" element={<HoldingFormPage mode="edit" />} />
               <Route path="/holdings" element={<Holdings />} />
