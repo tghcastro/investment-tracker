@@ -10,6 +10,21 @@ export interface CouponPaymentsTableProps {
   onDelete: (payment: ApiCouponPayment) => void;
 }
 
+function formatConvertedAmount(payment: ApiCouponPayment): string {
+  if (payment.convertedAmount === null) {
+    return '—';
+  }
+  return formatCurrency(payment.convertedAmount, payment.convertedCurrency);
+}
+
+function showNativeAmountLine(payment: ApiCouponPayment): boolean {
+  return (
+    payment.currencyCode !== payment.convertedCurrency ||
+    payment.convertedAmount === null ||
+    payment.amount !== payment.convertedAmount
+  );
+}
+
 export function CouponPaymentsTable({
   payments,
   loading = false,
@@ -30,8 +45,15 @@ export function CouponPaymentsTable({
           <span role="cell" data-label="Date" className="cb-coupon-payments-table__date">
             {formatDate(payment.paymentDate)}
           </span>
-          <span role="cell" data-label="Amount" className="cb-coupon-payments-table__amount cb-number-display">
-            {formatCurrency(payment.amount)}
+          <span role="cell" data-label="Amount" className="cb-coupon-payments-table__amount">
+            <span className="cb-coupon-payments-table__amount-primary cb-number-display">
+              {formatConvertedAmount(payment)}
+            </span>
+            {showNativeAmountLine(payment) ? (
+              <span className="cb-coupon-payments-table__amount-native cb-body-sm">
+                {formatCurrency(payment.amount, payment.currencyCode)}
+              </span>
+            ) : null}
           </span>
           <div role="cell" data-label="Actions" className="cb-coupon-payments-table__actions">
             <Button

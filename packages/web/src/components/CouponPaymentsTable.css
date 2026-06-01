@@ -27,6 +27,22 @@
   border-bottom: 1px solid var(--cb-hairline);
 }
 
+.cb-coupon-payments-table__amount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--cb-space-2xs);
+}
+
+.cb-coupon-payments-table__amount-primary {
+  text-align: right;
+}
+
+.cb-coupon-payments-table__amount-native {
+  color: var(--cb-text-muted);
+  text-align: right;
+}
+
 .cb-coupon-payments-table__actions {
   display: flex;
   gap: var(--cb-space-xs);

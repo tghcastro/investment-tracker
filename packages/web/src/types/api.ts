@@ -90,6 +90,10 @@ export type ApiCouponPayment = {
   paymentDate: string;
   amount: number;
   recordedAt: string;
+  currencyCode: string;
+  convertedAmount: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
 };
 
 export type ApiIncomeSummaryByHolding = {

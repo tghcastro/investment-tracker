@@ -16,6 +16,7 @@ export interface CouponPaymentFormSubmitPayload {
 }
 
 export interface CouponPaymentFormProps {
+  currencyCode: string;
   initialValues?: Partial<CouponPaymentFormValues>;
   serverFieldErrors?: Record<string, string[]> | null;
   submitLabel?: string;
@@ -82,6 +83,7 @@ export function paymentToFormValues(payment: {
 }
 
 export function CouponPaymentForm({
+  currencyCode,
   initialValues,
   serverFieldErrors,
   submitLabel = 'Save payment',
@@ -158,7 +160,11 @@ export function CouponPaymentForm({
           />
         </FormField>
 
-        <FormField label="Amount (USD)" htmlFor="payment-amount" error={fieldErrors.amount}>
+        <FormField
+          label={`Amount (${currencyCode})`}
+          htmlFor="payment-amount"
+          error={fieldErrors.amount}
+        >
           <TextInput
             id="payment-amount"
             type="number"

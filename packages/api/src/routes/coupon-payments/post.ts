@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { NotFoundError } from '../../middleware/errors.js';
 import type { Repo } from '../../repo.js';
-import { toApiCouponPayment } from './serialize.js';
+import { resolveConvertedCurrency, toApiCouponPayment } from './serialize.js';
 import { assertPaymentDateWithinHoldingOrThrow } from './validate.js';
 
 export function registerPostCouponPayment(app: FastifyInstance, getRepo: () => Repo): void {
@@ -24,6 +24,14 @@ export function registerPostCouponPayment(app: FastifyInstance, getRepo: () => R
       amount: parsed.amount,
     });
 
-    return reply.status(201).send(toApiCouponPayment(payment));
+    const quoteHistory = await repo.getQuoteHistory();
+
+    return reply.status(201).send(
+      toApiCouponPayment(payment, {
+        currencyCode: holding.currencyCode,
+        convertedCurrency: resolveConvertedCurrency(),
+        quoteHistory,
+      })
+    );
   });
 }

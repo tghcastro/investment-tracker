@@ -829,6 +829,9 @@ describe('API routes', () => {
       paymentDate: '2025-06-15',
       amount: 2125,
       recordedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      currencyCode: 'USD',
+      convertedAmount: 2125,
+      convertedCurrency: 'USD',
     });
   });
 
@@ -935,6 +938,80 @@ describe('API routes', () => {
     expect(body).toHaveLength(2);
     expect(body[0].paymentDate).toBe('2025-12-15');
     expect(body[1].paymentDate).toBe('2025-06-15');
+    expect(body[0]).toMatchObject({
+      currencyCode: 'USD',
+      convertedAmount: 1250,
+      convertedCurrency: 'USD',
+    });
+  });
+
+  it('GET /api/coupon-payments converts amounts with displayCurrency using payment-date rates', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2025-06-15', targetCurrencyCode: 'EUR', rate: 0.5 },
+    });
+
+    const accountResponse = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: { name: 'Coupon FX Account', currencyCodes: ['USD', 'EUR'] },
+    });
+    const accountId = accountResponse.json().id;
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2024-01-01', targetCurrencyCode: 'EUR', rate: 0.5 },
+    });
+
+    const holdingResponse = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        currencyCode: 'EUR',
+        issuer: 'Euro Coupon Bond',
+        faceValue: 100_000,
+        couponRate: 4,
+        couponFrequency: 'semi-annual',
+        maturityDate: '2030-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+    const holdingId = holdingResponse.json().id;
+
+    const repo = createRepo(database);
+    await repo.insertCouponPayment({
+      bondHoldingId: holdingId,
+      paymentDate: new Date('2025-06-15'),
+      amount: 10_000,
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/coupon-payments?bondHoldingId=${holdingId}&displayCurrency=USD`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()[0]).toMatchObject({
+      amount: 10_000,
+      currencyCode: 'EUR',
+      convertedAmount: 20_000,
+      convertedCurrency: 'USD',
+    });
+  });
+
+  it('GET /api/coupon-payments rejects invalid displayCurrency', async () => {
+    const holding = await createTestHolding();
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/api/coupon-payments?bondHoldingId=${holding.id}&displayCurrency=US`,
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().code).toBe('VALIDATION_ERROR');
   });
 
   it('GET /api/coupon-payments requires bondHoldingId', async () => {
@@ -980,6 +1057,9 @@ describe('API routes', () => {
       bondHoldingId: holding.id,
       paymentDate: '2025-06-15',
       amount: 1500,
+      currencyCode: 'USD',
+      convertedAmount: 1500,
+      convertedCurrency: 'USD',
     });
   });
 

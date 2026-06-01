@@ -8,6 +8,10 @@ import {
 import { CouponPaymentsSection } from '../components/CouponPaymentsSection';
 import { ConfirmDialog } from '../components/forms';
 import { EmptyState, ErrorBanner, PageHeader } from '../components/ui';
+import {
+  appendDisplayCurrencyParam,
+  useDisplayCurrency,
+} from '../contexts/DisplayCurrencyContext';
 import { useApi, useApiMutation } from '../hooks';
 import type { ApiAccount, ApiBondHolding } from '../types/api';
 import './HoldingFormPage.css';
@@ -19,10 +23,16 @@ export interface HoldingFormPageProps {
 export default function HoldingFormPage({ mode }: HoldingFormPageProps) {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { displayCurrency } = useDisplayCurrency();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const accountsUrl = '/api/accounts';
-  const holdingUrl = mode === 'edit' && id ? `/api/holdings/${id}` : '';
+  const holdingUrl = useMemo(() => {
+    if (mode !== 'edit' || !id) {
+      return '';
+    }
+    return appendDisplayCurrencyParam(`/api/holdings/${id}`, displayCurrency);
+  }, [mode, id, displayCurrency]);
 
   const { data: accounts, loading: accountsLoading, error: accountsError } = useApi<ApiAccount[]>(
     accountsUrl

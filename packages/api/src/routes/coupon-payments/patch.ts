@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { NotFoundError } from '../../middleware/errors.js';
 import type { Repo } from '../../repo.js';
-import { toApiCouponPayment } from './serialize.js';
+import { resolveConvertedCurrency, toApiCouponPayment } from './serialize.js';
 import { assertPaymentDateWithinHoldingOrThrow } from './validate.js';
 
 export function registerPatchCouponPayment(app: FastifyInstance, getRepo: () => Repo): void {
@@ -30,6 +30,14 @@ export function registerPatchCouponPayment(app: FastifyInstance, getRepo: () => 
       throw new NotFoundError('Coupon payment not found');
     }
 
-    return reply.status(200).send(toApiCouponPayment(updated));
+    const quoteHistory = await repo.getQuoteHistory();
+
+    return reply.status(200).send(
+      toApiCouponPayment(updated, {
+        currencyCode: holding.currencyCode,
+        convertedCurrency: resolveConvertedCurrency(),
+        quoteHistory,
+      })
+    );
   });
 }

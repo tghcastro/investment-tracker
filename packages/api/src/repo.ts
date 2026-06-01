@@ -1320,6 +1320,10 @@ export function createRepo(database: Db) {
     return upcoming.slice(0, limit);
   }
 
+  async function getQuoteHistory(): Promise<QuoteHistory> {
+    return loadGroupedQuoteHistory();
+  }
+
   return {
     insertAccount,
     getAccount,
@@ -1348,6 +1352,7 @@ export function createRepo(database: Db) {
     deleteCouponPayment,
     getIncomeSummary,
     getUpcomingCoupons,
+    getQuoteHistory,
     listCurrencies,
     listAvailableDisplayCurrencies,
     listCurrencyQuotes,

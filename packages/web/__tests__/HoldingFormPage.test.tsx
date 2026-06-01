@@ -9,6 +9,18 @@ import { sampleAccountWithCurrencies } from './testUtils/currencyMocks';
 const mockUseApi = vi.fn();
 const mockMutate = vi.fn();
 
+vi.mock('../src/contexts/DisplayCurrencyContext', () => ({
+  useDisplayCurrency: () => ({
+    displayCurrency: 'USD',
+    displaySymbol: '$',
+    availableCurrencies: [],
+    loading: false,
+    setDisplayCurrency: vi.fn(),
+  }),
+  appendDisplayCurrencyParam: (url: string) => url,
+  DisplayCurrencyProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 vi.mock('../src/hooks/useApi', () => ({
   useApi: (url: string) => mockUseApi(url),
 }));
