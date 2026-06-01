@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, EmptyState, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi } from '../hooks';
-import type { ApiAccount, ApiBondHolding } from '../types/api';
+import type { ApiAccount, ApiBondHolding, ApiBrFiHolding } from '../types/api';
 import './Accounts.css';
 
 function AccountsSkeleton() {
@@ -18,14 +18,21 @@ function AccountsSkeleton() {
 export default function Accounts() {
   const { data: accounts, loading, error } = useApi<ApiAccount[]>('/api/accounts');
   const { data: holdings, error: holdingsError } = useApi<ApiBondHolding[]>('/api/holdings');
+  const { data: brFiHoldings, error: brFiHoldingsError } =
+    useApi<ApiBrFiHolding[]>('/api/br-fi-holdings');
+
+  const holdingsFetchError = holdingsError ?? brFiHoldingsError;
 
   const holdingCounts = useMemo(() => {
     const counts = new Map<string, number>();
     holdings?.forEach((holding) => {
       counts.set(holding.accountId, (counts.get(holding.accountId) ?? 0) + 1);
     });
+    brFiHoldings?.forEach((holding) => {
+      counts.set(holding.accountId, (counts.get(holding.accountId) ?? 0) + 1);
+    });
     return counts;
-  }, [holdings]);
+  }, [holdings, brFiHoldings]);
 
   return (
     <div className="cb-accounts-page">
@@ -40,7 +47,7 @@ export default function Accounts() {
       />
 
       {error ? <ErrorBanner message={error} /> : null}
-      {!error && holdingsError ? <ErrorBanner message={holdingsError} /> : null}
+      {!error && holdingsFetchError ? <ErrorBanner message={holdingsFetchError} /> : null}
 
       {loading ? <AccountsSkeleton /> : null}
 
@@ -60,7 +67,7 @@ export default function Accounts() {
         <div className="cb-accounts-grid">
           {accounts.map((account) => {
             const count = holdingCounts.get(account.id) ?? 0;
-            const holdingLabel = holdingsError
+            const holdingLabel = holdingsFetchError
               ? '—'
               : `${count} ${count === 1 ? 'holding' : 'holdings'}`;
 

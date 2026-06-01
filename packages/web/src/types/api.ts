@@ -1,4 +1,4 @@
-import type { Account, BondHolding, BrFiHolding, CouponFrequency } from 'bonds-domain';
+import type { Account, BondHolding, BrFiHolding } from 'bonds-domain';
 
 type SerializeDates<T> = {
   [K in keyof T]: T[K] extends Date
@@ -66,6 +66,15 @@ export interface ApiPortfolioSummaryLadderItem {
 }
 
 /** JSON shape returned by GET /api/portfolio/summary */
+export interface ApiPortfolioSummaryByHoldingType {
+  slug: string;
+  name: string;
+  positionCount: number;
+  totalNativeCents: number;
+  convertedTotalCents: number | null;
+}
+
+/** JSON shape returned by GET /api/portfolio/summary */
 export interface ApiPortfolioSummary {
   totalFaceValue: number;
   positionCount: number;
@@ -73,10 +82,13 @@ export interface ApiPortfolioSummary {
   totalCostBasis: number;
   holdingsWithCostBasis: number;
   holdingsMissingCostBasis: number;
+  totalInvestedCents: number;
   convertedCurrency: string;
   convertedTotalFaceValue: number | null;
   convertedTotalCostBasis: number | null;
+  convertedTotalInvestedCents: number | null;
   conversionError?: string;
+  byHoldingType: ApiPortfolioSummaryByHoldingType[];
   maturityLadder: ApiPortfolioSummaryLadderItem[];
 }
 

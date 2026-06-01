@@ -189,6 +189,14 @@ export type UpcomingCoupon = {
   estimatedAmount: number;
 };
 
+export type PortfolioSummaryByHoldingType = {
+  slug: string;
+  name: string;
+  positionCount: number;
+  totalNativeCents: number;
+  convertedTotalCents: number | null;
+};
+
 export type PortfolioSummary = {
   totalFaceValue: number;
   positionCount: number;
@@ -196,10 +204,13 @@ export type PortfolioSummary = {
   totalCostBasis: number;
   holdingsWithCostBasis: number;
   holdingsMissingCostBasis: number;
+  totalInvestedCents: number;
   convertedCurrency: string;
   convertedTotalFaceValue: number | null;
   convertedTotalCostBasis: number | null;
+  convertedTotalInvestedCents: number | null;
   conversionError?: string;
+  byHoldingType: PortfolioSummaryByHoldingType[];
   maturityLadder: Array<{
     holdingId: string;
     issuer: string;
@@ -556,6 +567,21 @@ export function createRepo(database: Db) {
   ): BondHoldingWithDisplay[] {
     return holdings.map((holding) =>
       attachConvertedFields(holding, convertedCurrency, quoteHistory)
+    );
+  }
+
+  function convertBrFiInvestedCents(
+    holding: BrFiHolding,
+    convertedCurrency: string,
+    quoteHistory: QuoteHistory
+  ): number | null {
+    const purchaseDateIso = toIsoDateString(holding.purchaseDate);
+    const quoteMap = buildQuoteRateMapForHolding(quoteHistory, purchaseDateIso);
+    return convertNativeCents(
+      holding.investedAmountCents,
+      holding.currencyCode,
+      convertedCurrency,
+      quoteMap
     );
   }
 
@@ -1187,9 +1213,10 @@ export function createRepo(database: Db) {
     options?: PortfolioSummaryOptions
   ): Promise<PortfolioSummary> {
     const holdings = await listBondHoldings();
+    const brFiHoldingsList = await listBrFiHoldingsFiltered({});
+    const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
 
-    if (holdings.length === 0) {
-      const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
+    if (holdings.length === 0 && brFiHoldingsList.length === 0) {
       return {
         totalFaceValue: 0,
         positionCount: 0,
@@ -1197,9 +1224,12 @@ export function createRepo(database: Db) {
         totalCostBasis: 0,
         holdingsWithCostBasis: 0,
         holdingsMissingCostBasis: 0,
+        totalInvestedCents: 0,
         convertedCurrency,
         convertedTotalFaceValue: 0,
         convertedTotalCostBasis: 0,
+        convertedTotalInvestedCents: 0,
+        byHoldingType: [],
         maturityLadder: [],
       };
     }
@@ -1208,6 +1238,7 @@ export function createRepo(database: Db) {
     let totalCostBasis = 0;
     let holdingsWithCostBasis = 0;
     let holdingsMissingCostBasis = 0;
+    let brFiTotalInvested = 0;
 
     for (const holding of holdings) {
       totalFaceValue += holding.faceValue;
@@ -1219,11 +1250,20 @@ export function createRepo(database: Db) {
       }
     }
 
-    const sortedByMaturity = [...holdings].sort(
-      (a, b) => a.maturityDate.getTime() - b.maturityDate.getTime()
-    );
+    for (const holding of brFiHoldingsList) {
+      brFiTotalInvested += holding.investedAmountCents;
+    }
 
-    const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
+    const totalInvestedCents = totalFaceValue + brFiTotalInvested;
+
+    type MaturityLadderEntry = {
+      holdingId: string;
+      issuer: string;
+      maturityDate: Date;
+      faceValue: number;
+      convertedFaceValue: number | null;
+    };
+
     const quoteHistory = await loadGroupedQuoteHistory();
     const convertedHoldings = attachConvertedFieldsToHoldings(
       holdings,
@@ -1233,49 +1273,114 @@ export function createRepo(database: Db) {
 
     let convertedTotalFaceValue = 0;
     let convertedTotalCostBasis = 0;
+    let convertedTotalInvestedCents = 0;
+    let convertedBondTotal = 0;
+    let convertedBrFiTotal = 0;
     let conversionError: string | undefined;
 
     for (const holding of convertedHoldings) {
       if (holding.convertedFaceValue === null) {
         conversionError = 'EXCHANGE_RATE_REQUIRED';
-        convertedTotalFaceValue = 0;
-        convertedTotalCostBasis = 0;
         break;
       }
       convertedTotalFaceValue += holding.convertedFaceValue;
+      convertedBondTotal += holding.convertedFaceValue;
+      convertedTotalInvestedCents += holding.convertedFaceValue;
       if (holding.purchasePrice !== undefined) {
         if (holding.convertedPurchasePrice === null || holding.convertedPurchasePrice === undefined) {
           conversionError = 'EXCHANGE_RATE_REQUIRED';
-          convertedTotalFaceValue = 0;
-          convertedTotalCostBasis = 0;
           break;
         }
         convertedTotalCostBasis += holding.convertedPurchasePrice;
       }
     }
 
+    const brFiConvertedById = new Map<string, number | null>();
+    if (!conversionError) {
+      for (const holding of brFiHoldingsList) {
+        const convertedInvested = convertBrFiInvestedCents(
+          holding,
+          convertedCurrency,
+          quoteHistory
+        );
+        brFiConvertedById.set(holding.id, convertedInvested);
+        if (convertedInvested === null) {
+          conversionError = 'EXCHANGE_RATE_REQUIRED';
+          break;
+        }
+        convertedBrFiTotal += convertedInvested;
+        convertedTotalInvestedCents += convertedInvested;
+      }
+    }
+
+    const bondLadderEntries: MaturityLadderEntry[] = holdings.map((holding) => {
+      const converted = convertedHoldings.find((entry) => entry.id === holding.id);
+      return {
+        holdingId: holding.id,
+        issuer: holding.issuer,
+        maturityDate: holding.maturityDate,
+        faceValue: holding.faceValue,
+        convertedFaceValue: converted?.convertedFaceValue ?? null,
+      };
+    });
+
+    const brFiLadderEntries: MaturityLadderEntry[] = brFiHoldingsList.map((holding) => ({
+      holdingId: holding.id,
+      issuer: holding.name,
+      maturityDate: holding.maturityDate,
+      faceValue: holding.investedAmountCents,
+      convertedFaceValue: brFiConvertedById.get(holding.id) ?? null,
+    }));
+
+    const sortedByMaturity = [...bondLadderEntries, ...brFiLadderEntries].sort(
+      (a, b) => a.maturityDate.getTime() - b.maturityDate.getTime()
+    );
+
+    const byHoldingType: PortfolioSummaryByHoldingType[] = [];
+    if (holdings.length > 0) {
+      byHoldingType.push({
+        slug: holdings[0].holdingType.slug,
+        name: holdings[0].holdingType.name,
+        positionCount: holdings.length,
+        totalNativeCents: totalFaceValue,
+        convertedTotalCents: conversionError ? null : convertedBondTotal,
+      });
+    }
+    if (brFiHoldingsList.length > 0) {
+      byHoldingType.push({
+        slug: brFiHoldingsList[0].holdingType.slug,
+        name: brFiHoldingsList[0].holdingType.name,
+        positionCount: brFiHoldingsList.length,
+        totalNativeCents: brFiTotalInvested,
+        convertedTotalCents: conversionError ? null : convertedBrFiTotal,
+      });
+    }
+
     const summary: PortfolioSummary = {
       totalFaceValue,
-      positionCount: holdings.length,
-      nextMaturityDate: toIsoDateString(sortedByMaturity[0].maturityDate),
+      positionCount: holdings.length + brFiHoldingsList.length,
+      nextMaturityDate:
+        sortedByMaturity.length > 0
+          ? toIsoDateString(sortedByMaturity[0].maturityDate)
+          : null,
       totalCostBasis,
       holdingsWithCostBasis,
       holdingsMissingCostBasis,
+      totalInvestedCents,
       convertedCurrency,
       convertedTotalFaceValue: conversionError ? null : convertedTotalFaceValue,
       convertedTotalCostBasis: conversionError ? null : convertedTotalCostBasis,
+      convertedTotalInvestedCents: conversionError ? null : convertedTotalInvestedCents,
+      byHoldingType,
       ...(conversionError ? { conversionError } : {}),
-      maturityLadder: sortedByMaturity.slice(0, 5).map((holding) => {
-        const converted = convertedHoldings.find((entry) => entry.id === holding.id);
-        return {
-          holdingId: holding.id,
-          issuer: holding.issuer,
-          maturityDate: toIsoDateString(holding.maturityDate),
-          faceValue: holding.faceValue,
-          convertedFaceValue: converted?.convertedFaceValue ?? null,
-          convertedCurrency,
-        };
-      }),
+      maturityLadder: sortedByMaturity.slice(0, 5).map((entry) => ({
+        holdingId: entry.holdingId,
+        issuer: entry.issuer,
+        maturityDate: toIsoDateString(entry.maturityDate),
+        faceValue: entry.faceValue,
+        convertedFaceValue: entry.convertedFaceValue,
+        convertedCurrency,
+      })),
     };
 
     return summary;

@@ -754,6 +754,8 @@ describe('API routes', () => {
     const body = response.json();
     expect(body.positionCount).toBeGreaterThanOrEqual(4);
     expect(body.totalFaceValue).toBeGreaterThan(0);
+    expect(body.totalInvestedCents).toBeGreaterThanOrEqual(body.totalFaceValue);
+    expect(Array.isArray(body.byHoldingType)).toBe(true);
     expect(body.nextMaturityDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(Array.isArray(body.maturityLadder)).toBe(true);
     expect(body.maturityLadder.length).toBeLessThanOrEqual(5);
@@ -782,11 +784,60 @@ describe('API routes', () => {
       totalCostBasis: 0,
       holdingsWithCostBasis: 0,
       holdingsMissingCostBasis: 0,
+      totalInvestedCents: 0,
       convertedCurrency: 'USD',
       convertedTotalFaceValue: 0,
       convertedTotalCostBasis: 0,
+      convertedTotalInvestedCents: 0,
+      byHoldingType: [],
       maturityLadder: [],
     });
+  });
+
+  it('GET /api/portfolio/summary includes BRFI invested amounts and ladder entries', async () => {
+    const accountResponse = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: { name: 'BRFI Summary Account', currencyCodes: ['USD', 'BRL'] },
+    });
+    const accountId = accountResponse.json().id;
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2025-01-15', targetCurrencyCode: 'BRL', rate: 5 },
+    });
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/br-fi-holdings',
+      payload: {
+        accountId,
+        currencyCode: 'BRL',
+        name: 'Route LCI',
+        productType: 'LCI',
+        indexingType: 'CDI_PERCENTAGE',
+        cdiPercentage: 100,
+        purchaseDate: '2025-01-15',
+        maturityDate: '2027-01-15',
+        investedAmountCents: 250_000,
+      },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/summary',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.totalInvestedCents).toBeGreaterThanOrEqual(body.totalFaceValue + 250_000);
+    expect(body.byHoldingType.some((entry: { slug: string }) => entry.slug === 'brazilian-fixed-income')).toBe(
+      true
+    );
+    expect(
+      body.maturityLadder.some((entry: { issuer: string }) => entry.issuer === 'Route LCI')
+    ).toBe(true);
   });
 
   async function createTestHolding(accountKey: 'vanguard' | 'interactiveBrokers' = 'vanguard') {
@@ -1498,6 +1549,7 @@ describe('M6 multi-currency routes', () => {
     const body = response.json();
     expect(body.convertedCurrency).toBe('BRL');
     expect(body.convertedTotalFaceValue).toBe(body.totalFaceValue * 5);
+    expect(body.convertedTotalInvestedCents).toBeGreaterThanOrEqual(body.convertedTotalFaceValue);
   });
 
   it('POST /api/currency-quotes inverts target-to-usd rateDirection', async () => {

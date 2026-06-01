@@ -667,9 +667,12 @@ describe('Repo integration', () => {
       totalCostBasis: 0,
       holdingsWithCostBasis: 0,
       holdingsMissingCostBasis: 0,
+      totalInvestedCents: 0,
       convertedCurrency: 'USD',
       convertedTotalFaceValue: 0,
       convertedTotalCostBasis: 0,
+      convertedTotalInvestedCents: 0,
+      byHoldingType: [],
       maturityLadder: [],
     });
   });
@@ -709,13 +712,76 @@ describe('Repo integration', () => {
 
     const summary = await repo.getPortfolioSummary();
     expect(summary.totalFaceValue).toBe(85_000);
+    expect(summary.totalInvestedCents).toBe(85_000);
     expect(summary.positionCount).toBe(3);
     expect(summary.nextMaturityDate).toBe('2028-01-01');
     expect(summary.totalCostBasis).toBe(150);
     expect(summary.holdingsWithCostBasis).toBe(2);
     expect(summary.holdingsMissingCostBasis).toBe(1);
+    expect(summary.convertedTotalInvestedCents).toBe(85_000);
+    expect(summary.byHoldingType).toEqual([
+      {
+        slug: 'bond',
+        name: 'Bond',
+        positionCount: 3,
+        totalNativeCents: 85_000,
+        convertedTotalCents: 85_000,
+      },
+    ]);
     expect(summary.maturityLadder).toHaveLength(3);
     expect(summary.maturityLadder[0].issuer).toBe('Soon Bond');
+  });
+
+  it('getPortfolioSummary aggregates bonds and BRFI holdings', async () => {
+    const account = await repo.insertAccount({
+      name: 'Mixed Portfolio',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-01-15',
+      targetCurrencyCode: 'BRL',
+      rate: 5,
+    });
+
+    await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'US Bond',
+      faceValue: 100_000,
+      couponRate: 0.04,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+    await repo.insertBrFiHolding({
+      accountId: account.id,
+      currencyCode: 'BRL',
+      name: 'LCI Banco X',
+      productType: 'LCI',
+      indexingType: 'CDI_PERCENTAGE',
+      cdiPercentage: 100,
+      purchaseDate: new Date('2025-01-15'),
+      maturityDate: new Date('2027-06-01'),
+      investedAmountCents: 500_000,
+    });
+
+    const summary = await repo.getPortfolioSummary();
+    expect(summary.totalFaceValue).toBe(100_000);
+    expect(summary.totalInvestedCents).toBe(600_000);
+    expect(summary.positionCount).toBe(2);
+    expect(summary.nextMaturityDate).toBe('2027-06-01');
+    expect(summary.byHoldingType).toHaveLength(2);
+    expect(summary.byHoldingType[0]).toMatchObject({
+      slug: 'bond',
+      positionCount: 1,
+      totalNativeCents: 100_000,
+    });
+    expect(summary.byHoldingType[1]).toMatchObject({
+      slug: 'brazilian-fixed-income',
+      positionCount: 1,
+      totalNativeCents: 500_000,
+    });
+    expect(summary.maturityLadder[0].issuer).toBe('LCI Banco X');
+    expect(summary.maturityLadder[0].faceValue).toBe(500_000);
   });
 
   it('lists seeded holding types in sort order', async () => {
