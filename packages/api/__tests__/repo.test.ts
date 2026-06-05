@@ -1124,4 +1124,171 @@ describe('Repo integration', () => {
       code: 'INDICATOR_IN_USE',
     });
   });
+
+  describe('getDashboard', () => {
+    it('returns zeros and empty arrays for empty portfolio', async () => {
+      const dashboard = await repo.getDashboard();
+      expect(dashboard).toEqual({
+        summary: {
+          totalPortfolioValueCents: 0,
+          convertedTotalPortfolioValueCents: 0,
+          convertedCurrency: 'USD',
+          conversionError: null,
+          positionCount: 0,
+          accountCount: 0,
+          currencyCount: 0,
+          totalFaceValueCents: 0,
+          totalInvestedCents: 0,
+          convertedTotalFaceValueCents: 0,
+          convertedTotalInvestedCents: 0,
+        },
+        allocationByType: [],
+        allocationByAccount: [],
+        projectedIncomeByYear: [],
+        principalForecastByYear: [],
+        upcomingEvents: [],
+        warnings: { holdingsMissingIndicator: 0 },
+      });
+    });
+
+    it('aggregates mixed bond and BRFI holdings with allocations and forecasts', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(Date.UTC(2026, 5, 1)));
+
+      const account = await repo.insertAccount({
+        name: 'Dashboard Mixed',
+        currencyCodes: ['USD', 'BRL'],
+      });
+      await repo.insertCurrencyQuote({
+        quoteDate: '2025-01-15',
+        targetCurrencyCode: 'BRL',
+        rate: 5,
+      });
+      await repo.insertIndicatorValue(await indicatorIdBySlug('CDI'), {
+        valueDate: '2026-01-01',
+        value: 10,
+      });
+
+      await repo.insertBondHolding({
+        accountId: account.id,
+        issuer: 'Dash Bond',
+        faceValue: 100_000,
+        couponRate: 0.04,
+        couponFrequency: 'annual',
+        maturityDate: new Date('2028-06-01'),
+        purchaseDate: new Date('2025-06-01'),
+      });
+      await repo.insertBrFiHolding({
+        accountId: account.id,
+        currencyCode: 'BRL',
+        name: 'Dash LCI',
+        productType: 'LCI',
+        indexingType: 'PRE_FIXED',
+        preFixedRatePercent: 10,
+        purchaseDate: new Date('2025-06-01'),
+        maturityDate: new Date('2027-06-01'),
+        investedAmountCents: 200_000,
+      });
+
+      const dashboard = await repo.getDashboard({
+        from: '2026-01-01',
+        to: '2028-12-31',
+        limit: 10,
+      });
+
+      expect(dashboard.summary.positionCount).toBe(2);
+      expect(dashboard.summary.accountCount).toBe(1);
+      expect(dashboard.summary.currencyCount).toBe(2);
+      expect(dashboard.summary.totalFaceValueCents).toBe(100_000);
+      expect(dashboard.summary.totalInvestedCents).toBe(300_000);
+      expect(dashboard.allocationByType).toHaveLength(2);
+      expect(dashboard.allocationByAccount).toHaveLength(1);
+      expect(dashboard.allocationByAccount[0]).toMatchObject({
+        accountId: account.id,
+        name: 'Dashboard Mixed',
+        percentage: 100,
+      });
+      expect(dashboard.projectedIncomeByYear.length).toBeGreaterThan(0);
+      expect(dashboard.principalForecastByYear.length).toBeGreaterThan(0);
+      expect(dashboard.upcomingEvents.length).toBeGreaterThan(0);
+      expect(dashboard.warnings.holdingsMissingIndicator).toBe(0);
+
+      vi.useRealTimers();
+    });
+
+    it('scopes dashboard to accountId and holdingTypeSlug filters', async () => {
+      const accountA = await repo.insertAccount({ name: 'Dash A' });
+      const accountB = await repo.insertAccount({ name: 'Dash B' });
+
+      await repo.insertBondHolding({
+        accountId: accountA.id,
+        issuer: 'Bond A',
+        faceValue: 10_000,
+        couponRate: 0.03,
+        couponFrequency: 'annual',
+        maturityDate: new Date('2030-01-01'),
+        purchaseDate: new Date('2024-01-01'),
+      });
+      await repo.insertBondHolding({
+        accountId: accountB.id,
+        issuer: 'Bond B',
+        faceValue: 20_000,
+        couponRate: 0.03,
+        couponFrequency: 'annual',
+        maturityDate: new Date('2030-01-01'),
+        purchaseDate: new Date('2024-01-01'),
+      });
+
+      const scoped = await repo.getDashboard({ accountId: accountA.id });
+      expect(scoped.summary.positionCount).toBe(1);
+      expect(scoped.summary.totalInvestedCents).toBe(10_000);
+
+      const bondsOnly = await repo.getDashboard({ holdingTypeSlug: 'bond' });
+      expect(bondsOnly.summary.positionCount).toBe(2);
+      expect(bondsOnly.allocationByType.every((row) => row.slug === 'bond')).toBe(true);
+
+      const brfiOnly = await repo.getDashboard({ holdingTypeSlug: 'brazilian-fixed-income' });
+      expect(brfiOnly.summary.positionCount).toBe(0);
+    });
+
+    it('throws NOT_FOUND for unknown accountId', async () => {
+      await expect(repo.getDashboard({ accountId: '99999' })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
+    it('counts BRFI holdings missing indicator in warnings', async () => {
+      const account = await repo.insertAccount({
+        name: 'Missing Indicator',
+        currencyCodes: ['USD', 'BRL'],
+      });
+      await repo.insertCurrencyQuote({
+        quoteDate: '2025-01-15',
+        targetCurrencyCode: 'BRL',
+        rate: 5,
+      });
+
+      await repo.insertBrFiHolding({
+        accountId: account.id,
+        currencyCode: 'BRL',
+        name: 'No CDI Value',
+        productType: 'LCI',
+        indexingType: 'CDI_PERCENTAGE',
+        marketIndicatorId: await indicatorIdBySlug('CDI'),
+        cdiPercentage: 100,
+        purchaseDate: new Date('2025-01-15'),
+        maturityDate: new Date('2028-01-15'),
+        investedAmountCents: 100_000,
+      });
+
+      const dashboard = await repo.getDashboard({
+        from: '2026-01-01',
+        to: '2028-12-31',
+      });
+      expect(dashboard.warnings.holdingsMissingIndicator).toBe(1);
+      expect(
+        dashboard.projectedIncomeByYear.every((row) => row.interestCents === 0)
+      ).toBe(true);
+    });
+  });
 });

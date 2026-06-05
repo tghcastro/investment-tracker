@@ -1987,4 +1987,137 @@ describe('M6 multi-currency routes', () => {
       );
     });
   });
+
+  describe('GET /api/dashboard', () => {
+    it('returns empty dashboard shape for empty portfolio', async () => {
+      await app.close();
+      sqlite.close();
+
+      const conn = createTestDatabase();
+      sqlite = conn.sqlite;
+      database = conn.database;
+      app = await createServer(database);
+      await app.ready();
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboard',
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({
+        summary: {
+          totalPortfolioValueCents: 0,
+          positionCount: 0,
+          accountCount: 0,
+          currencyCount: 0,
+        },
+        allocationByType: [],
+        allocationByAccount: [],
+        projectedIncomeByYear: [],
+        principalForecastByYear: [],
+        upcomingEvents: [],
+        warnings: { holdingsMissingIndicator: 0 },
+      });
+    });
+
+    it('returns mixed holdings dashboard with allocations and events', async () => {
+      const accountResponse = await app.inject({
+        method: 'POST',
+        url: '/api/accounts',
+        payload: { name: 'Route Dashboard', currencyCodes: ['USD', 'BRL'] },
+      });
+      const accountId = accountResponse.json().id;
+
+      await app.inject({
+        method: 'POST',
+        url: '/api/currency-quotes',
+        payload: { quoteDate: '2025-01-15', targetCurrencyCode: 'BRL', rate: 5 },
+      });
+
+      await app.inject({
+        method: 'POST',
+        url: '/api/holdings',
+        payload: {
+          accountId,
+          issuer: 'Route Dash Bond',
+          faceValue: 50_000,
+          couponRate: 0.04,
+          couponFrequency: 'annual',
+          purchaseDate: '2025-06-01',
+          maturityDate: '2028-06-01',
+        },
+      });
+
+      await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: {
+          accountId,
+          currencyCode: 'BRL',
+          name: 'Route Dash LCI',
+          productType: 'LCI',
+          indexingType: 'PRE_FIXED',
+          preFixedRatePercent: 10,
+          purchaseDate: '2025-06-01',
+          maturityDate: '2027-06-01',
+          investedAmountCents: 100_000,
+        },
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboard?from=2026-01-01&to=2028-12-31&limit=10',
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.summary.positionCount).toBeGreaterThanOrEqual(2);
+      expect(body.allocationByType.length).toBeGreaterThanOrEqual(2);
+      expect(body.allocationByAccount.length).toBeGreaterThanOrEqual(1);
+      expect(body.upcomingEvents.length).toBeGreaterThan(0);
+      expect(body.summary.convertedCurrency).toBe('USD');
+    });
+
+    it('scopes dashboard by accountId and holdingTypeSlug query params', async () => {
+      const vanguardId = seededAccountIds.get('vanguard')!;
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/api/dashboard?accountId=${vanguardId}&holdingTypeSlug=bond`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.summary.positionCount).toBe(2);
+      expect(body.allocationByType).toEqual([
+        expect.objectContaining({ slug: 'bond', percentage: 100 }),
+      ]);
+    });
+
+    it('returns 404 for unknown accountId', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboard?accountId=99999',
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(response.json()).toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
+    it('returns 400 for invalid holdingTypeSlug', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dashboard?holdingTypeSlug=equity',
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toMatchObject({
+        code: 'VALIDATION_ERROR',
+        fields: { holdingTypeSlug: expect.any(Array) },
+      });
+    });
+  });
 });

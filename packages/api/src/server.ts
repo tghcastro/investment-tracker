@@ -34,6 +34,7 @@ import { registerPostCouponPayment } from './routes/coupon-payments/post.js';
 import { registerPortfolioIncomeSummary } from './routes/portfolio/income-summary.js';
 import { registerPortfolioSummary } from './routes/portfolio/summary.js';
 import { registerPortfolioUpcomingCoupons } from './routes/portfolio/upcoming-coupons.js';
+import { registerDashboardRoute } from './routes/dashboard/get.js';
 import { registerFxConvert } from './routes/fx/convert.js';
 import { registerSystemBackup } from './routes/system/backup.js';
 import { registerSystemInfo } from './routes/system/info.js';
@@ -126,6 +127,7 @@ export async function createServer(
   registerBrFiHoldingsRoutes(app, getRepo);
   registerMarketIndicatorsRoutes(app, getRepo);
   registerPortfolioSummary(app, getRepo);
+  registerDashboardRoute(app, getRepo);
   registerPortfolioIncomeSummary(app, getRepo);
   registerPortfolioUpcomingCoupons(app, getRepo);
   registerPostCouponPayment(app, getRepo);

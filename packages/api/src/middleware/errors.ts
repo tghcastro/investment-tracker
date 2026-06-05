@@ -85,11 +85,14 @@ export function mapRepoError(
     case 'INVALID_CURRENCY':
     case 'CURRENCY_NOT_ALLOWED':
     case 'EXCHANGE_RATE_REQUIRED':
+    case 'VALIDATION_ERROR':
     case 'INVALID_MARKET_INDICATOR':
       return {
         statusCode: 400,
         body: {
-          code: error.code === 'INVALID_MARKET_INDICATOR' ? 'VALIDATION_ERROR' : error.code,
+          code: error.code === 'INVALID_MARKET_INDICATOR' || error.code === 'VALIDATION_ERROR'
+            ? 'VALIDATION_ERROR'
+            : error.code,
           message: error.message,
           ...(error.fields ? { fields: error.fields } : {}),
         },
