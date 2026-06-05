@@ -25,7 +25,7 @@ Catalog for agents and humans. **Default agent entry:** [`AGENTS.md`](../AGENTS.
 | `.specs/features/completed/m6.1-multi-currency-follow-ups/` | Archive | Shipped M6.1 | 2026-05-31 |
 | `.specs/features/completed/m7-brazilian-fixed-income/` | Archive | Shipped M7 | 2026-06-05 |
 | `.specs/features/completed/m8-market-indicators/` | Archive | Shipped M8 | 2026-06-05 |
-| `.specs/features/active/m9-dashboard/` | Active | Spec draft M9 | 2026-06-05 |
+| `.specs/features/active/m9-dashboard/` | Active | Approved M9 — design + tasks | 2026-06-05 |
 | `.specs/features/completed/m1-scaffold/` | Archive | Shipped | 2026-05-21 |
 | `.specs/features/completed/m2-core/` | Archive | Shipped | 2026-05-23 |
 | `.specs/features/completed/m3-coupon-income/` | Archive | Shipped | 2026-05-23 |

@@ -1,6 +1,6 @@
 # M9 — Dashboard Specification
 
-**Status:** Draft (2026-06-05)  
+**Status:** Approved (2026-06-05)  
 **Source:** `temp.features.md` — Dashboard  
 **Depends on:** M5 (holding types), M6 (display currency), M7 (BRFI), **M8 (market indicators for index-linked forecasts)**  
 **Architecture:** [API-FIRST.md](../../../codebase/API-FIRST.md) — see **Web vs API** below  

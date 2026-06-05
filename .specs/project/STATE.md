@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-06-05
-**Current Work:** **M9** Dashboard — spec draft in [m9-dashboard](../features/active/m9-dashboard/spec.md); approve → design + tasks. M8 shipped (2026-06-05). **v2.0.0** after M9.
+**Current Work:** **M9** Dashboard — execute [tasks](../features/active/m9-dashboard/tasks.md) P1 on `m9-p1-api`. M8 shipped. **v2.0.0** after M9 P3.
 
 ### AD-010: API-first business rules — web UI only (2026-05-31)
 
@@ -116,8 +116,9 @@ _None yet._
 - [x] Execute M8 P2 — web UI (2026-06-05)
 - [x] Execute M8 P3 — docs + archive (2026-06-05)
 - [x] Specify M8 — `.specs/features/completed/m8-market-indicators/spec.md` (2026-06-05)
-- [ ] Approve M9 spec → Design + tasks (after M8 design)
-- [ ] Specify M9 — `.specs/features/active/m9-dashboard/spec.md` (2026-06-05)
+- [x] Approve M9 spec → Design + tasks (2026-06-05)
+- [x] Specify M9 — `.specs/features/active/m9-dashboard/spec.md` (2026-06-05)
+- [ ] Execute M9 P1 — domain + API [tasks](../features/active/m9-dashboard/tasks.md)
 - [ ] v2.0.0 release after M9 ships (AD-009)
 - [x] Approve M5 spec → Execute P1 [tasks](../features/completed/m5-holdings-framework/tasks.md)
 - [x] Implement M5 — holdings framework on `m5-holdings-framework` (2026-05-29)
