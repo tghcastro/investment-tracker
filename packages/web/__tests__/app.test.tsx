@@ -5,22 +5,30 @@ import App from '../src/App';
 
 vi.mock('../src/hooks/useApi', () => ({
   useApi: vi.fn((url: string) => {
-    if (url === '/api/portfolio/summary') {
+    if (url.startsWith('/api/dashboard')) {
       return {
         data: {
-          totalFaceValue: 0,
-          positionCount: 0,
-          nextMaturityDate: null,
-          totalCostBasis: 0,
-          holdingsWithCostBasis: 0,
-          holdingsMissingCostBasis: 0,
-          totalInvestedCents: 0,
-          convertedCurrency: 'USD',
-          convertedTotalFaceValue: 0,
-          convertedTotalCostBasis: 0,
-          convertedTotalInvestedCents: 0,
-          byHoldingType: [],
-          maturityLadder: [],
+          summary: {
+            totalPortfolioValueCents: 0,
+            convertedTotalPortfolioValueCents: 0,
+            convertedCurrency: 'USD',
+            conversionError: null,
+            positionCount: 0,
+            accountCount: 0,
+            currencyCount: 0,
+            totalFaceValueCents: 0,
+            totalInvestedCents: 0,
+            convertedTotalFaceValueCents: 0,
+            convertedTotalInvestedCents: 0,
+          },
+          allocationByType: [],
+          allocationByAccount: [],
+          projectedIncomeByYear: [],
+          principalForecastByYear: [],
+          upcomingEvents: [],
+          warnings: {
+            holdingsMissingIndicator: 0,
+          },
         },
         loading: false,
         error: undefined,
@@ -37,9 +45,6 @@ vi.mock('../src/hooks/useApi', () => ({
         loading: false,
         error: undefined,
       };
-    }
-    if (url.startsWith('/api/portfolio/upcoming-coupons')) {
-      return { data: [], loading: false, error: undefined };
     }
     if (url.startsWith('/api/system/info')) {
       return {
