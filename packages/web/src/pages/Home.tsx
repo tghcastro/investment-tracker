@@ -45,6 +45,68 @@ function SectionEmpty({ message }: { message: string }) {
   return <p className="cb-home__section-empty cb-body-sm">{message}</p>;
 }
 
+const DASHBOARD_SECTION_SKELETONS = [
+  { label: 'Loading allocation by holding type', tableClassName: 'cb-home__table-skeleton', columns: 3 },
+  { label: 'Loading allocation by account', tableClassName: 'cb-home__table-skeleton', columns: 3 },
+  {
+    label: 'Loading projected income by year',
+    tableClassName: 'cb-home__table-skeleton cb-home__table-skeleton--income',
+    columns: 4,
+  },
+  {
+    label: 'Loading principal forecast by year',
+    tableClassName: 'cb-home__table-skeleton cb-home__table-skeleton--principal',
+    columns: 2,
+  },
+  {
+    label: 'Loading upcoming events',
+    tableClassName: 'cb-home__table-skeleton cb-home__table-skeleton--events',
+    columns: 4,
+  },
+] as const;
+
+function DashboardSectionSkeleton({
+  label,
+  tableClassName,
+  columns,
+}: {
+  label: string;
+  tableClassName: string;
+  columns: 2 | 3 | 4;
+}) {
+  return (
+    <section
+      className="cb-home__section cb-home__section--loading"
+      aria-busy="true"
+      aria-label={label}
+    >
+      <div className="cb-home__section-skeleton-title" />
+      <div className="cb-home__table-scroll">
+        <div className={tableClassName}>
+          {Array.from({ length: 2 }, (_, index) => (
+            <div key={index} className="cb-home__table-skeleton-row">
+              {Array.from({ length: columns }, (_, cellIndex) => (
+                <div
+                  key={cellIndex}
+                  className={[
+                    'cb-home__table-skeleton-cell',
+                    cellIndex === 0 ? 'cb-home__table-skeleton-cell--wide' : '',
+                    cellIndex === columns - 1 && columns > 2
+                      ? 'cb-home__table-skeleton-cell--narrow'
+                      : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const { displayCurrency } = useDisplayCurrency();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -152,12 +214,26 @@ export default function Home() {
       ) : null}
 
       {loading ? (
-        <div className="cb-home__summary cb-home__summary--loading" aria-busy="true">
-          <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
-          <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
-          <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
-          <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
-        </div>
+        <>
+          <section
+            className="cb-home__summary cb-home__summary--loading"
+            aria-busy="true"
+            aria-label="Loading portfolio summary"
+          >
+            <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
+            <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
+            <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
+            <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
+          </section>
+          {DASHBOARD_SECTION_SKELETONS.map((section) => (
+            <DashboardSectionSkeleton
+              key={section.label}
+              label={section.label}
+              tableClassName={section.tableClassName}
+              columns={section.columns}
+            />
+          ))}
+        </>
       ) : null}
 
       {showDashboard && dashboard ? (
@@ -202,6 +278,7 @@ export default function Home() {
           <section className="cb-home__section" aria-label="Allocation by holding type">
             <h2 className="cb-home__section-title">Allocation by holding type</h2>
             {dashboard.allocationByType.length > 0 ? (
+              <div className="cb-home__table-scroll">
               <div className="cb-home__table" role="table">
                 <div className="cb-home__table-header" role="row">
                   <span role="columnheader">Type</span>
@@ -220,6 +297,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+              </div>
             ) : (
               <SectionEmpty message="No allocation data for the current filters." />
             )}
@@ -228,6 +306,7 @@ export default function Home() {
           <section className="cb-home__section" aria-label="Allocation by account">
             <h2 className="cb-home__section-title">Allocation by account</h2>
             {dashboard.allocationByAccount.length > 0 ? (
+              <div className="cb-home__table-scroll">
               <div className="cb-home__table" role="table">
                 <div className="cb-home__table-header" role="row">
                   <span role="columnheader">Account</span>
@@ -246,6 +325,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+              </div>
             ) : (
               <SectionEmpty message="No allocation data for the current filters." />
             )}
@@ -254,6 +334,7 @@ export default function Home() {
           <section className="cb-home__section" aria-label="Projected income by year">
             <h2 className="cb-home__section-title">Projected income by year</h2>
             {dashboard.projectedIncomeByYear.length > 0 ? (
+              <div className="cb-home__table-scroll">
               <div className="cb-home__table cb-home__table--income" role="table">
                 <div className="cb-home__table-header" role="row">
                   <span role="columnheader">Year</span>
@@ -276,6 +357,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+              </div>
             ) : (
               <SectionEmpty message="No projected income in this period." />
             )}
@@ -284,6 +366,7 @@ export default function Home() {
           <section className="cb-home__section" aria-label="Principal forecast by year">
             <h2 className="cb-home__section-title">Principal forecast by year</h2>
             {dashboard.principalForecastByYear.length > 0 ? (
+              <div className="cb-home__table-scroll">
               <div className="cb-home__table cb-home__table--principal" role="table">
                 <div className="cb-home__table-header" role="row">
                   <span role="columnheader">Year</span>
@@ -298,6 +381,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+              </div>
             ) : (
               <SectionEmpty message="No maturities in this period." />
             )}
@@ -306,6 +390,7 @@ export default function Home() {
           <section className="cb-home__section" aria-label="Upcoming events">
             <h2 className="cb-home__section-title">Upcoming events</h2>
             {dashboard.upcomingEvents.length > 0 ? (
+              <div className="cb-home__table-scroll">
               <div className="cb-home__table cb-home__table--events" role="table">
                 <div className="cb-home__table-header" role="row">
                   <span role="columnheader">Date</span>
@@ -327,6 +412,7 @@ export default function Home() {
                     </span>
                   </div>
                 ))}
+              </div>
               </div>
             ) : (
               <SectionEmpty message="No upcoming events in this period." />
