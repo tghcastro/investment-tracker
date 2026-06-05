@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
   { to: '/income', label: 'Income', end: false },
   { to: '/currencies', label: 'Currencies', end: false },
+  { to: '/market-indicators', label: 'Market Indicators', end: false },
   { to: '/settings', label: 'Settings', end: false },
   { to: '/accounts', label: 'Accounts', end: false },
 ] as const;

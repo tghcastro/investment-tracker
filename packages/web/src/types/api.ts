@@ -1,4 +1,11 @@
-import type { Account, BondHolding, BrFiHolding } from 'bonds-domain';
+import type {
+  Account,
+  BondHolding,
+  BrFiHolding,
+  IndicatorCategory,
+  MarketIndicatorLatestValue,
+  MarketIndicatorSummary,
+} from 'bonds-domain';
 
 type SerializeDates<T> = {
   [K in keyof T]: T[K] extends Date
@@ -7,6 +14,32 @@ type SerializeDates<T> = {
       ? string | undefined
       : T[K];
 };
+
+/** JSON shape returned by GET /api/market-indicators */
+export interface ApiMarketIndicator {
+  id: string;
+  slug: string;
+  name: string;
+  category: IndicatorCategory;
+  description?: string;
+  isSystem: boolean;
+  createdAt: string;
+  updatedAt: string;
+  latestValue: MarketIndicatorLatestValue | null;
+  valueCount: number;
+}
+
+/** JSON shape returned by nested /api/market-indicators/:id/values */
+export interface ApiIndicatorValue {
+  id: string;
+  indicatorId: string;
+  valueDate: string;
+  value: number;
+  createdAt: string;
+}
+
+/** Embedded on BRFI holding responses */
+export type ApiMarketIndicatorSummary = MarketIndicatorSummary;
 
 /** JSON shape returned by GET /api/currencies */
 export interface ApiCurrency {
@@ -152,4 +185,9 @@ export interface ApiRestoreResult {
   restoredAt: string;
 }
 
-export type { CouponFrequency, IndexingType, ProductType } from 'bonds-domain';
+export type {
+  CouponFrequency,
+  IndexingType,
+  IndicatorCategory,
+  ProductType,
+} from 'bonds-domain';

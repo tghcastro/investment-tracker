@@ -18,6 +18,7 @@ const BRFI_FORM_FIELD_FOCUS_ORDER = [
   { id: 'brfi-name', errorKey: 'name' },
   { id: 'brfi-product-type', errorKey: 'productType' },
   { id: 'brfi-indexing-type', errorKey: 'indexingType' },
+  { id: 'brfi-market-indicator', errorKey: 'marketIndicatorId' },
   { id: 'brfi-cdi-percentage', errorKey: 'cdiPercentage' },
   { id: 'brfi-ipca-spread', errorKey: 'ipcaSpreadPercent' },
   { id: 'brfi-pre-fixed-rate', errorKey: 'preFixedRatePercent' },
@@ -35,6 +36,7 @@ export interface BrFiFormValues {
   cdiPercentage: string;
   ipcaSpreadPercent: string;
   preFixedRatePercent: string;
+  marketIndicatorId: string;
   purchaseDate: string;
   maturityDate: string;
   investedAmount: string;
@@ -49,6 +51,7 @@ export interface BrFiFormSubmitPayload {
   cdiPercentage?: number;
   ipcaSpreadPercent?: number;
   preFixedRatePercent?: number;
+  marketIndicatorId?: string;
   purchaseDate: string;
   maturityDate: string;
   investedAmountCents: number;
@@ -75,6 +78,7 @@ export const EMPTY_BRFI_FORM_VALUES: BrFiFormValues = {
   cdiPercentage: '',
   ipcaSpreadPercent: '',
   preFixedRatePercent: '',
+  marketIndicatorId: '',
   purchaseDate: '',
   maturityDate: '',
   investedAmount: '',
@@ -139,14 +143,26 @@ function validate(values: BrFiFormValues): Record<string, string> {
   }
 
   if (values.indexingType === 'CDI_PERCENTAGE') {
+    if (!values.marketIndicatorId) {
+      errors.marketIndicatorId = 'Market indicator required';
+    }
     if (parseOptionalPositiveNumber(values.cdiPercentage) === null) {
       errors.cdiPercentage = 'CDI percentage required';
     }
   }
 
   if (values.indexingType === 'IPCA_SPREAD') {
+    if (!values.marketIndicatorId) {
+      errors.marketIndicatorId = 'Market indicator required';
+    }
     if (parseOptionalNonNegativeNumber(values.ipcaSpreadPercent) === null) {
       errors.ipcaSpreadPercent = 'IPCA spread required';
+    }
+  }
+
+  if (values.indexingType === 'SELIC') {
+    if (!values.marketIndicatorId) {
+      errors.marketIndicatorId = 'Market indicator required';
     }
   }
 
@@ -189,9 +205,14 @@ function buildPayload(values: BrFiFormValues): BrFiFormSubmitPayload {
 
   if (values.indexingType === 'CDI_PERCENTAGE') {
     payload.cdiPercentage = parseOptionalPositiveNumber(values.cdiPercentage)!;
+    payload.marketIndicatorId = values.marketIndicatorId;
   }
   if (values.indexingType === 'IPCA_SPREAD') {
     payload.ipcaSpreadPercent = parseOptionalNonNegativeNumber(values.ipcaSpreadPercent)!;
+    payload.marketIndicatorId = values.marketIndicatorId;
+  }
+  if (values.indexingType === 'SELIC') {
+    payload.marketIndicatorId = values.marketIndicatorId;
   }
   if (values.indexingType === 'PRE_FIXED') {
     payload.preFixedRatePercent = parseOptionalPositiveNumber(values.preFixedRatePercent)!;
@@ -284,7 +305,16 @@ export function BrFiForm({
   }, [selectedAccount, values.currencyCode]);
 
   const handleChange = <K extends keyof BrFiFormValues>(key: K, value: BrFiFormValues[K]) => {
-    setValues((current) => ({ ...current, [key]: value }));
+    setValues((current) => {
+      if (key === 'indexingType') {
+        return {
+          ...current,
+          indexingType: value as IndexingType | '',
+          marketIndicatorId: '',
+        };
+      }
+      return { ...current, [key]: value };
+    });
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -373,6 +403,7 @@ export function BrFiForm({
             cdiPercentage: values.cdiPercentage,
             ipcaSpreadPercent: values.ipcaSpreadPercent,
             preFixedRatePercent: values.preFixedRatePercent,
+            marketIndicatorId: values.marketIndicatorId,
           }}
           fieldErrors={fieldErrors}
           loading={loading}
@@ -476,6 +507,7 @@ export function brFiHoldingToFormValues(holding: ApiBrFiHolding): BrFiFormValues
       holding.ipcaSpreadPercent !== undefined ? String(holding.ipcaSpreadPercent) : '',
     preFixedRatePercent:
       holding.preFixedRatePercent !== undefined ? String(holding.preFixedRatePercent) : '',
+    marketIndicatorId: holding.marketIndicatorId ?? '',
     purchaseDate: holding.purchaseDate.slice(0, 10),
     maturityDate: holding.maturityDate.slice(0, 10),
     investedAmount: centsToDollarInput(holding.investedAmountCents),
