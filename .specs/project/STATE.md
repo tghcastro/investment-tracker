@@ -118,7 +118,8 @@ _None yet._
 - [x] Specify M8 — `.specs/features/completed/m8-market-indicators/spec.md` (2026-06-05)
 - [x] Approve M9 spec → Design + tasks (2026-06-05)
 - [x] Specify M9 — `.specs/features/active/m9-dashboard/spec.md` (2026-06-05)
-- [ ] Execute M9 P1 — domain + API [tasks](../features/active/m9-dashboard/tasks.md)
+- [x] Execute M9 P1 — domain + API [tasks](../features/active/m9-dashboard/tasks.md) (2026-06-05)
+- [ ] Execute M9 P2 — web UI
 - [ ] v2.0.0 release after M9 ships (AD-009)
 - [x] Approve M5 spec → Execute P1 [tasks](../features/completed/m5-holdings-framework/tasks.md)
 - [x] Implement M5 — holdings framework on `m5-holdings-framework` (2026-05-29)
