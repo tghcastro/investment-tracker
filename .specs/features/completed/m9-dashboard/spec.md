@@ -1,6 +1,6 @@
 # M9 — Dashboard Specification
 
-**Status:** Approved (2026-06-05)  
+**Status:** Shipped (2026-06-05) — v2.0.0 tag pending UAT  
 **Source:** `temp.features.md` — Dashboard  
 **Depends on:** M5 (holding types), M6 (display currency), M7 (BRFI), **M8 (market indicators for index-linked forecasts)**  
 **Architecture:** [API-FIRST.md](../../../codebase/API-FIRST.md) — see **Web vs API** below  
@@ -21,14 +21,14 @@ The current Home page shows basic portfolio totals, a maturity ladder, and upcom
 
 ## Goals
 
-- [ ] Display total portfolio value in selected display currency
-- [ ] Break down value by account and by holding type with allocation percentages
-- [ ] Project income by calendar year (coupons + interest)
-- [ ] Project principal returns by calendar year (maturities)
-- [ ] Show unified upcoming events (coupon, interest, maturity)
-- [ ] Support filters: account, holding type, date range
-- [ ] Apply forecast rules: bonds from coupon terms; BRFI fixed from registered rate; BRFI index-linked from M8 latest indicator
-- [ ] Automated test coverage per TESTING.md
+- [x] Display total portfolio value in selected display currency
+- [x] Break down value by account and by holding type with allocation percentages
+- [x] Project income by calendar year (coupons + interest)
+- [x] Project principal returns by calendar year (maturities)
+- [x] Show unified upcoming events (coupon, interest, maturity)
+- [x] Support filters: account, holding type, date range
+- [x] Apply forecast rules: bonds from coupon terms; BRFI fixed from registered rate; BRFI index-linked from M8 latest indicator
+- [x] Automated test coverage per TESTING.md
 
 ---
 

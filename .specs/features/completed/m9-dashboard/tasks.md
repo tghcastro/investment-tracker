@@ -1,8 +1,8 @@
 # M9 Tasks — Dashboard
 
-**Design**: `.specs/features/active/m9-dashboard/design.md`  
-**Spec**: `.specs/features/active/m9-dashboard/spec.md`  
-**Status**: Approved — ready to execute  
+**Design**: `.specs/features/completed/m9-dashboard/design.md`  
+**Spec**: `.specs/features/completed/m9-dashboard/spec.md`  
+**Status**: Complete (2026-06-05)  
 **Depends on**: M8 complete  
 **Release**: **v2.0.0** (declares v2 tag when P3 ships)
 

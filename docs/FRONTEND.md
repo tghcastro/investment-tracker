@@ -29,7 +29,9 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 | Pass `?displayCurrency=` and refetch | Apply purchase-date FX |
 | Disable submit when API returns `conversionError` | Validate writes, return error codes |
 | `parseDollarsToCents` for form POST payloads | Face value business meaning |
-| `formatCurrency`, tooltips, skeletons | Schedule generation, upcoming coupons |
+| `formatCurrency`, tooltips, skeletons | Schedule generation, dashboard forecasts |
+
+**Home dashboard (M9):** Single `GET /api/dashboard` with URL-persisted filters (`accountId`, `holdingTypeSlug`, `from`, `to`, `limit`) + `displayCurrency`. Render `allocationByType`, `projectedIncomeByYear`, `upcomingEvents`, etc. from JSON — no local forecast math.
 
 **Coupon estimate:** `expectedCouponAmountCents` on holding JSON from API — `CouponPaymentsSection` renders it; do not recompute.
 
@@ -50,7 +52,8 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 - `TopNav` 64px, canvas background, hairline bottom border; **Holdings** opens a type submenu from `GET /api/holding-types` (Bond → `/holdings`; Brazilian Fixed Income → `/holdings/brazilian-fixed-income`); **Market Indicators** → `/market-indicators`.
 - Main: `.cb-app__main`, max-width ~1200px, padding 32px / 24px.
 - Routes: `/`, `/holdings`, `/holdings/new`, `/holdings/:id`, `/holdings/brazilian-fixed-income`, `/holdings/brazilian-fixed-income/new`, `/holdings/brazilian-fixed-income/:id`, `/accounts`, `/accounts/new`, `/accounts/:id`, `/income`, `/currencies`, `/currencies/quotes`, `/market-indicators`, `/market-indicators/:id`, `/settings`.
-- **Display currency:** `DisplayCurrencyProvider` (`contexts/DisplayCurrencyContext.tsx`) loads `GET /api/currencies/available`; preference in `localStorage` key `displayCurrency`. Append `?displayCurrency=` via `appendDisplayCurrencyParam` on Home/Holdings summary and list fetches.
+- **Display currency:** `DisplayCurrencyProvider` loads `GET /api/currencies/available`; preference in `localStorage` key `displayCurrency`. Home dashboard passes `displayCurrency` via `buildDashboardUrl` (`utils/dashboardUrl.ts`); Holdings lists use `appendDisplayCurrencyParam`.
+- **Home (`/`):** Portfolio dashboard — summary cards, allocation tables, yearly income/principal forecasts, upcoming events; filter bar (account, holding type, date range) synced to URL search params.
 
 ## Components to reuse
 

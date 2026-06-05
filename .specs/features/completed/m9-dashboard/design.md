@@ -1,6 +1,6 @@
 # M9 Design — Dashboard
 
-**Spec**: `.specs/features/active/m9-dashboard/spec.md`  
+**Spec**: `.specs/features/completed/m9-dashboard/spec.md`  
 **Status**: Approved (2026-06-05)  
 **Depends on**: M5, M6, M7, M8  
 **Release**: **v2.0.0** (with M5–M8)

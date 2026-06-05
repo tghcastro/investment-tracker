@@ -1,7 +1,7 @@
 # Architecture
 
 **Analyzed:** 2026-06-05  
-**Status:** Implemented — modular monorepo (domain / API / web); v2 (M5–M9): M5–M8 shipped in code, M9 in spec; v2.0.0 tag when M9 ships.
+**Status:** Implemented — modular monorepo (domain / API / web); **v2 (M5–M9) shipped in code** — v2.0.0 tag pending user validation.
 
 ## High-level diagram
 
@@ -25,7 +25,7 @@
 
 ### `bonds-domain`
 
-- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers, BRFI validators (`brFi.ts`), market indicator validators (`marketIndicator.ts`), FX conversion (`currency.ts`: native → USD → display).
+- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers, dashboard forecasts (`dashboardForecast.ts`), BRFI validators (`brFi.ts`), market indicator validators (`marketIndicator.ts`), FX conversion (`currency.ts`: native → USD → display).
 - **Must not:** Import Fastify, React, Drizzle, or filesystem APIs.
 - **Consumers:** API (`repo`, routes) applies all business rules. Web must **not** import domain runtime functions — see [API-FIRST.md](./API-FIRST.md).
 
@@ -67,7 +67,8 @@
 | Market indicators | CRUD `/api/market-indicators`; nested `/api/market-indicators/:id/values`; `GET .../latest`; list embeds `latestValue` + `valueCount` |
 | FX preview | `GET /api/fx/convert` (M6.1) — form preview |
 | Coupon payments | CRUD linked to bond holdings |
-| Portfolio | `summary` (bonds + BRFI totals), `income-summary`, `upcoming-coupons` — **all forecasts/aggregates server-side** |
+| Portfolio | `summary`, `income-summary`, `upcoming-coupons` — legacy endpoints; Income page still uses income-summary |
+| Dashboard | `GET /api/dashboard` — summary, allocations, yearly income/principal forecasts, upcoming events; filters + `displayCurrency` |
 | System | `GET /api/system/info`, backup download, restore multipart upload |
 
 Exact paths live in `packages/api/src/server.ts` and route modules.
