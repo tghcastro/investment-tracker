@@ -35,7 +35,8 @@ Examples — not exhaustive:
 | **Schedules** | Estimated coupon dates, upcoming list | `GET /api/portfolio/upcoming-coupons` |
 | **Portfolio** | Totals, maturity ladder, income aggregates | `GET /api/portfolio/summary`, `income-summary` |
 | **Validation** | Maturity after purchase, quote required for non-USD | POST/PATCH 400 + `code` |
-| **Future** | BRFI indexing display, YTM, accrual | New `/api/...` routes — not web math |
+| **Shipped (M7)** | BRFI CRUD, indexing validation, portfolio totals | `/api/br-fi-holdings`, summary in `/api/portfolio/summary` |
+| **Future** | YTM, BRFI accrual | New `/api/...` routes — not web math |
 
 ## Response contract pattern
 

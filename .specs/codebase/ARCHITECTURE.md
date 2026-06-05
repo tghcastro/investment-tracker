@@ -1,7 +1,7 @@
 # Architecture
 
-**Analyzed:** 2026-05-29  
-**Status:** Implemented — modular monorepo (domain / API / web).
+**Analyzed:** 2026-06-05  
+**Status:** Implemented — modular monorepo (domain / API / web); v2 (M5–M7) shipped in code, v2.0.0 tag pending.
 
 ## High-level diagram
 
@@ -25,7 +25,7 @@
 
 ### `bonds-domain`
 
-- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers, FX conversion (`currency.ts`: native → USD → display).
+- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers, BRFI validators (`brFi.ts`), FX conversion (`currency.ts`: native → USD → display).
 - **Must not:** Import Fastify, React, Drizzle, or filesystem APIs.
 - **Consumers:** API (`repo`, routes) applies all business rules. Web must **not** import domain runtime functions — see [API-FIRST.md](./API-FIRST.md).
 
@@ -53,7 +53,7 @@
 
 **No direct DB access.** All data via REST. **No business-rule duplication** — render API-derived fields; UI rules only ([API-FIRST.md](./API-FIRST.md)).
 
-## API surface (v1)
+## API surface
 
 | Area | Examples |
 | --- | --- |
@@ -62,10 +62,11 @@
 | Holding types | `GET /api/holding-types` (read-only catalog) |
 | Currencies | `GET /api/currencies`, `GET /api/currencies/available` |
 | Currency quotes | CRUD `/api/currency-quotes` (manual USD-base rates) |
-| Holdings | CRUD; `currencyCode`; `expectedCouponAmountCents` on responses; list/detail include `converted*` (M6.1); `?displayCurrency=` (default USD) |
+| Bond holdings | CRUD `/api/holdings`; `currencyCode`; `expectedCouponAmountCents` on responses; list/detail include `converted*` (M6.1); `?displayCurrency=` (default USD) |
+| BRFI holdings | CRUD `/api/br-fi-holdings`; product/indexing enums; `investedAmountCents`; same FX validation as bonds |
 | FX preview | `GET /api/fx/convert` (M6.1) — form preview |
-| Coupon payments | CRUD linked to holdings |
-| Portfolio | `summary`, `income-summary`, `upcoming-coupons` — **all forecasts/aggregates server-side** |
+| Coupon payments | CRUD linked to bond holdings |
+| Portfolio | `summary` (bonds + BRFI totals), `income-summary`, `upcoming-coupons` — **all forecasts/aggregates server-side** |
 | System | `GET /api/system/info`, backup download, restore multipart upload |
 
 Exact paths live in `packages/api/src/server.ts` and route modules.
@@ -80,7 +81,8 @@ Tables (Drizzle in `schema.ts`):
 - `currency_quotes` — manual USD-base rates by date
 - `holding_types` — slug, display name, sort order (seed: Bond, Brazilian Fixed Income)
 - `bond_holdings` — FK → account + holding type; `currency_code`; issuer, identifiers, face value, coupon rate (decimal in DB), frequency, dates
-- `coupon_payments` — FK → holding; payment date, amount
+- `br_fi_holdings` — FK → account + holding type; `currency_code`; product type, indexing type, indexing params, invested amount (cents), purchase/maturity dates
+- `coupon_payments` — FK → bond holding; payment date, amount
 
 **API convention:** `couponRate` in JSON is **percent** (0–100); stored as decimal fraction in SQLite (see route serializers).
 

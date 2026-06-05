@@ -1,7 +1,7 @@
 # State
 
-**Last Updated:** 2026-05-31
-**Current Work:** **M6.1** shipped (2026-05-31). Next: **M7** Brazilian fixed income — [spec](../features/active/m7-brazilian-fixed-income/spec.md).
+**Last Updated:** 2026-06-05
+**Current Work:** **M7** shipped (2026-06-05). v2 feature set (M5–M7) complete in code — [spec](../features/completed/m7-brazilian-fixed-income/spec.md). **v2.0.0** release tag deferred.
 
 ### AD-010: API-first business rules — web UI only (2026-05-31)
 
@@ -118,8 +118,9 @@ _None yet._
 - [x] Specify M6.1 — `.specs/features/completed/m6.1-multi-currency-follow-ups/` (2026-05-31)
 - [x] Approve M6.1 spec → Execute P1 [tasks](../features/completed/m6.1-multi-currency-follow-ups/tasks.md)
 - [x] Implement M6.1 — multi-currency follow-ups (2026-05-31)
-- [ ] Approve M7 spec (draft ready) — execute next
-- [ ] v2.0.0 release after M7 P3 (AD-009)
+- [x] Approve M7 spec → shipped (2026-06-05)
+- [x] Implement M7 — Brazilian fixed income on `m7-p1-api` (2026-06-05)
+- [ ] v2.0.0 release after M7 P3 (AD-009) — deferred by user
 - [x] Specify M5 — `.specs/features/completed/m5-holdings-framework/` (2026-05-29)
 - [x] Specify M6 — `.specs/features/completed/m6-multi-currency/` (2026-05-29)
 - [x] Specify M7 — `.specs/features/active/m7-brazilian-fixed-income/` (2026-05-29)

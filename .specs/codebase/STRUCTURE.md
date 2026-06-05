@@ -1,7 +1,7 @@
 # Project Structure
 
 **Root:** `/mnt/d/workspace/investment-tracker` (WSL) or `d:\workspace\investment-tracker` (Windows)  
-**Analyzed:** 2026-05-29
+**Analyzed:** 2026-06-05
 
 ## Top-level layout
 
@@ -28,7 +28,7 @@ investment-tracker/
 │   ├── codebase/             # This directory
 │   └── features/
 │       ├── active/           # Next feature specs
-│       └── completed/        # M1–M6 archived specs
+│       └── completed/        # M1–M7 archived specs
 ├── packages/
 │   ├── bonds-domain/
 │   ├── api/
@@ -46,8 +46,9 @@ investment-tracker/
 bonds-domain/
 ├── src/
 │   ├── index.ts          # re-exports
-│   ├── types.ts          # Account, BondHolding, CouponPayment, enums
-│   ├── validators.ts     # Zod create/update schemas
+│   ├── types.ts          # Account, BondHolding, BrFiHolding, CouponPayment, enums
+│   ├── validators.ts     # Zod bond create/update schemas
+│   ├── brFi.ts           # BRFI Zod schemas + indexing validation
 │   ├── currency.ts       # FX conversion helpers (USD base)
 │   └── couponSchedule.ts # estimated dates, expected amounts
 ├── __tests__/
@@ -76,6 +77,7 @@ api/
 │   │   ├── currency-quotes/  # quote CRUD
 │   │   ├── holding-types/
 │   │   ├── holdings/
+│   │   ├── br-fi-holdings/
 │   │   ├── coupon-payments/
 │   │   ├── portfolio/
 │   │   └── system/           # info, backup, restore
@@ -98,9 +100,9 @@ web/
 │   ├── components/
 │   │   ├── ui/               # Button, TopNav, PageHeader, EmptyState, ErrorBanner
 │   │   ├── forms/            # TextInput, FormField, FormDialog, Select
-│   │   └── …                 # HoldingForm, tables, etc.
+│   │   └── …                 # HoldingForm, BrFiForm, tables, etc.
 │   ├── contexts/             # DisplayCurrencyProvider
-│   ├── pages/                # Home, Holdings, Accounts, Income, Currencies, Settings, forms
+│   ├── pages/                # Home, Holdings, BrFiHoldings, Accounts, Income, Currencies, Settings, forms
 │   ├── hooks/                # useApi, useApiMutation
 │   ├── types/api.ts
 │   └── utils/
@@ -117,7 +119,7 @@ web/
 | `.specs/project/ROADMAP.md` | Milestones |
 | `.specs/project/STATE.md` | AD-* decisions, todos |
 | `.specs/features/active/` | New feature work |
-| `.specs/features/completed/` | Shipped M1–M6 (archived) |
+| `.specs/features/completed/` | Shipped M1–M7 (archived) |
 
 ## Config / CI
 
