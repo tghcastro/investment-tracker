@@ -2,7 +2,7 @@
 
 Short index for coding agents. Read only what your task needs — do not load the whole repo docs tree.
 
-**Product:** Personal bond portfolio tracker (React SPA + Fastify API + SQLite). v1.0 bonds-only; M1–M4 shipped.
+**Product:** Personal portfolio tracker (React SPA + Fastify API + SQLite). v1 bonds; v2 (M5–M7) shipped in code — v2.0.0 tag pending.
 
 ## Start here
 
@@ -11,7 +11,7 @@ Short index for coding agents. Read only what your task needs — do not load th
 | Any change | [`.specs/project/STATE.md`](.specs/project/STATE.md) — current work, AD decisions, blockers |
 | Scope / what not to build | [`.specs/project/PROJECT.md`](.specs/project/PROJECT.md) |
 | Milestones / future work | [`.specs/project/ROADMAP.md`](.specs/project/ROADMAP.md) |
-| New feature (M7+) | **Next:** [M7](../.specs/features/active/m7-brazilian-fixed-income/spec.md) (execute). M6.1 shipped — [completed](../.specs/features/completed/m6.1-multi-currency-follow-ups/spec.md). M5–M6 in [`features/completed/`](../.specs/features/completed/); see [`.specs/index.md`](.specs/index.md) |
+| New feature (post-v2) | M5–M7 shipped — see [`features/completed/`](../.specs/features/completed/) and [ROADMAP](../.specs/project/ROADMAP.md) Future Considerations. **v2.0.0** tag deferred. |
 
 ## Codebase (source of truth for implementation)
 

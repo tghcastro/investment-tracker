@@ -35,11 +35,11 @@ export default function Home() {
     <div className="cb-home">
       <section className="cb-home__hero">
         <PageHeader
-          title="Bond portfolio"
-          subtitle="Manual tracking — v1 bonds only"
+          title="Portfolio"
+          subtitle="Bonds and Brazilian fixed income"
         />
         <p className="cb-home__subcopy cb-body-md-muted">
-          Track face value, coupons, and maturity dates across your brokerage accounts.
+          Track invested amounts, bond face value, coupons, and maturity dates across your accounts.
         </p>
       </section>
 
@@ -58,11 +58,20 @@ export default function Home() {
           <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
           <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
           <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
+          <div className="cb-home__metric-card cb-home__metric-card--skeleton" />
         </div>
       ) : null}
 
       {!pageLoading && !fetchError && hasPositions && summary ? (
         <section className="cb-home__summary" aria-label="Portfolio summary">
+          <div className="cb-home__metric-card">
+            <p className="cb-home__metric-label">Total invested</p>
+            <p className="cb-home__metric-value cb-number-display">
+              {summary.convertedTotalInvestedCents !== null
+                ? formatCurrency(summary.convertedTotalInvestedCents, summary.convertedCurrency)
+                : '—'}
+            </p>
+          </div>
           <div className="cb-home__metric-card">
             <p className="cb-home__metric-label">Total face value</p>
             <p className="cb-home__metric-value cb-number-display">
@@ -148,8 +157,8 @@ export default function Home() {
 
       {!pageLoading && !fetchError && !hasPositions ? (
         <EmptyState
-          title="No bond holdings yet"
-          description="Add your first bond position to start tracking face value and maturities."
+          title="No holdings yet"
+          description="Add bond or Brazilian fixed income positions to start tracking your portfolio."
           action={
             <Link to="/holdings/new" className="cb-home__link">
               <Button variant="primary">Add holding</Button>

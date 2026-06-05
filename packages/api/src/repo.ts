@@ -2,6 +2,7 @@ import { and, desc, eq, gt, gte, inArray, isNull, lte } from 'drizzle-orm';
 import type {
   Account,
   BondHolding,
+  BrFiHolding,
   CouponFrequency,
   CouponPayment,
   Currency,
@@ -9,6 +10,8 @@ import type {
   HoldingType,
   HoldingTypeRef,
   HoldingTypeSlug,
+  IndexingType,
+  ProductType,
 } from 'bonds-domain';
 import {
   BASE_CURRENCY_CODE,
@@ -27,6 +30,7 @@ import {
   accountCurrencies,
   accounts,
   bondHoldings,
+  brFiHoldings,
   couponPayments,
   currencies,
   currencyQuotes,
@@ -98,6 +102,34 @@ export type UpdateCouponPaymentData = {
   amount?: number;
 };
 
+export type InsertBrFiHoldingData = {
+  accountId: string;
+  currencyCode?: string;
+  name: string;
+  productType: ProductType;
+  indexingType: IndexingType;
+  cdiPercentage?: number;
+  ipcaSpreadPercent?: number;
+  preFixedRatePercent?: number;
+  purchaseDate: Date;
+  maturityDate: Date;
+  investedAmountCents: number;
+};
+
+export type UpdateBrFiHoldingData = {
+  accountId?: string;
+  currencyCode?: string;
+  name?: string;
+  productType?: ProductType;
+  indexingType?: IndexingType;
+  cdiPercentage?: number;
+  ipcaSpreadPercent?: number;
+  preFixedRatePercent?: number;
+  purchaseDate?: Date;
+  maturityDate?: Date;
+  investedAmountCents?: number;
+};
+
 export type InsertCurrencyQuoteData = {
   quoteDate: string;
   targetCurrencyCode: string;
@@ -157,6 +189,14 @@ export type UpcomingCoupon = {
   estimatedAmount: number;
 };
 
+export type PortfolioSummaryByHoldingType = {
+  slug: string;
+  name: string;
+  positionCount: number;
+  totalNativeCents: number;
+  convertedTotalCents: number | null;
+};
+
 export type PortfolioSummary = {
   totalFaceValue: number;
   positionCount: number;
@@ -164,10 +204,13 @@ export type PortfolioSummary = {
   totalCostBasis: number;
   holdingsWithCostBasis: number;
   holdingsMissingCostBasis: number;
+  totalInvestedCents: number;
   convertedCurrency: string;
   convertedTotalFaceValue: number | null;
   convertedTotalCostBasis: number | null;
+  convertedTotalInvestedCents: number | null;
   conversionError?: string;
+  byHoldingType: PortfolioSummaryByHoldingType[];
   maturityLadder: Array<{
     holdingId: string;
     issuer: string;
@@ -282,6 +325,28 @@ function mapBondHolding(
   };
 }
 
+function mapBrFiHolding(
+  row: typeof brFiHoldings.$inferSelect,
+  holdingTypeRow: typeof holdingTypes.$inferSelect
+): BrFiHolding {
+  return {
+    id: String(row.id),
+    holdingType: mapHoldingTypeRef(holdingTypeRow),
+    accountId: String(row.accountId),
+    currencyCode: row.currencyCode,
+    name: row.name,
+    productType: row.productType as ProductType,
+    indexingType: row.indexingType as IndexingType,
+    cdiPercentage: row.cdiPercentage ?? undefined,
+    ipcaSpreadPercent: row.ipcaSpreadPercent ?? undefined,
+    preFixedRatePercent: row.preFixedRatePercent ?? undefined,
+    purchaseDate: row.purchaseDate,
+    maturityDate: row.maturityDate,
+    investedAmountCents: row.investedAmountCents,
+    updatedAt: row.updatedAt,
+  };
+}
+
 function mapCouponPayment(row: typeof couponPayments.$inferSelect): CouponPayment {
   return {
     id: String(row.id),
@@ -388,14 +453,19 @@ export function createRepo(database: Db) {
     nextCodes: string[]
   ): Promise<void> {
     const numericAccountId = parseId(accountId, 'account id');
-    const holdings = database
+    const bondRows = database
       .select({ currencyCode: bondHoldings.currencyCode })
       .from(bondHoldings)
       .where(eq(bondHoldings.accountId, numericAccountId))
       .all();
+    const brFiRows = database
+      .select({ currencyCode: brFiHoldings.currencyCode })
+      .from(brFiHoldings)
+      .where(eq(brFiHoldings.accountId, numericAccountId))
+      .all();
 
     const nextSet = new Set(nextCodes);
-    for (const holding of holdings) {
+    for (const holding of [...bondRows, ...brFiRows]) {
       if (!nextSet.has(holding.currencyCode)) {
         throw new RepoError(
           'CURRENCY_IN_USE',
@@ -500,6 +570,21 @@ export function createRepo(database: Db) {
     );
   }
 
+  function convertBrFiInvestedCents(
+    holding: BrFiHolding,
+    convertedCurrency: string,
+    quoteHistory: QuoteHistory
+  ): number | null {
+    const purchaseDateIso = toIsoDateString(holding.purchaseDate);
+    const quoteMap = buildQuoteRateMapForHolding(quoteHistory, purchaseDateIso);
+    return convertNativeCents(
+      holding.investedAmountCents,
+      holding.currencyCode,
+      convertedCurrency,
+      quoteMap
+    );
+  }
+
   function selectBondHoldingsWithType() {
     return database
       .select({
@@ -508,6 +593,75 @@ export function createRepo(database: Db) {
       })
       .from(bondHoldings)
       .innerJoin(holdingTypes, eq(bondHoldings.holdingTypeId, holdingTypes.id));
+  }
+
+  function selectBrFiHoldingsWithType() {
+    return database
+      .select({
+        brFi: brFiHoldings,
+        holdingType: holdingTypes,
+      })
+      .from(brFiHoldings)
+      .innerJoin(holdingTypes, eq(brFiHoldings.holdingTypeId, holdingTypes.id));
+  }
+
+  function indexingParamsForInsert(data: InsertBrFiHoldingData): {
+    cdiPercentage: number | null;
+    ipcaSpreadPercent: number | null;
+    preFixedRatePercent: number | null;
+  } {
+    switch (data.indexingType) {
+      case 'CDI_PERCENTAGE':
+        return {
+          cdiPercentage: data.cdiPercentage ?? null,
+          ipcaSpreadPercent: null,
+          preFixedRatePercent: null,
+        };
+      case 'IPCA_SPREAD':
+        return {
+          cdiPercentage: null,
+          ipcaSpreadPercent: data.ipcaSpreadPercent ?? null,
+          preFixedRatePercent: null,
+        };
+      case 'SELIC':
+        return {
+          cdiPercentage: null,
+          ipcaSpreadPercent: null,
+          preFixedRatePercent: null,
+        };
+      case 'PRE_FIXED':
+        return {
+          cdiPercentage: null,
+          ipcaSpreadPercent: null,
+          preFixedRatePercent: data.preFixedRatePercent ?? null,
+        };
+    }
+  }
+
+  function indexingParamsForUpdate(
+    existing: BrFiHolding,
+    data: UpdateBrFiHoldingData
+  ): {
+    cdiPercentage: number | null;
+    ipcaSpreadPercent: number | null;
+    preFixedRatePercent: number | null;
+  } {
+    const nextIndexingType = data.indexingType ?? existing.indexingType;
+    const merged = {
+      cdiPercentage: data.cdiPercentage ?? existing.cdiPercentage,
+      ipcaSpreadPercent: data.ipcaSpreadPercent ?? existing.ipcaSpreadPercent,
+      preFixedRatePercent: data.preFixedRatePercent ?? existing.preFixedRatePercent,
+    };
+    return indexingParamsForInsert({
+      accountId: existing.accountId,
+      name: existing.name,
+      productType: existing.productType,
+      indexingType: nextIndexingType,
+      purchaseDate: existing.purchaseDate,
+      maturityDate: existing.maturityDate,
+      investedAmountCents: existing.investedAmountCents,
+      ...merged,
+    });
   }
 
   async function getHoldingTypeBySlug(slug: HoldingTypeSlug): Promise<HoldingType | null> {
@@ -791,6 +945,163 @@ export function createRepo(database: Db) {
     return true;
   }
 
+  async function insertBrFiHolding(data: InsertBrFiHoldingData): Promise<BrFiHolding> {
+    await assertAccountNotArchived(database, data.accountId);
+    const accountId = parseId(data.accountId, 'account id');
+    const currencyCode = data.currencyCode ?? BASE_CURRENCY_CODE;
+    await assertCurrencyAllowedForAccount(data.accountId, currencyCode);
+    await assertApplicableQuoteForHolding(currencyCode, data.purchaseDate);
+
+    const brFiType = await getHoldingTypeBySlug('brazilian-fixed-income');
+    if (!brFiType) {
+      throw new RepoError(
+        'HOLDING_TYPE_NOT_FOUND',
+        'Brazilian Fixed Income holding type is not configured'
+      );
+    }
+    const holdingTypeId = parseId(brFiType.id, 'holding type id');
+    const indexingParams = indexingParamsForInsert(data);
+
+    try {
+      const [row] = database
+        .insert(brFiHoldings)
+        .values({
+          holdingTypeId,
+          accountId,
+          currencyCode,
+          name: data.name,
+          productType: data.productType,
+          indexingType: data.indexingType,
+          ...indexingParams,
+          purchaseDate: data.purchaseDate,
+          maturityDate: data.maturityDate,
+          investedAmountCents: data.investedAmountCents,
+        })
+        .returning()
+        .all();
+      const holding = await getBrFiHolding(String(row.id));
+      if (!holding) {
+        throw new RepoError('HOLDING_NOT_FOUND', 'Created BRFI holding could not be loaded');
+      }
+      return holding;
+    } catch (error) {
+      wrapDbError(error);
+    }
+  }
+
+  async function getBrFiHolding(id: string): Promise<BrFiHolding | null> {
+    const numericId = parseId(id, 'holding id');
+    const [row] = selectBrFiHoldingsWithType()
+      .where(eq(brFiHoldings.id, numericId))
+      .all();
+    return row ? mapBrFiHolding(row.brFi, row.holdingType) : null;
+  }
+
+  async function updateBrFiHolding(
+    id: string,
+    data: UpdateBrFiHoldingData
+  ): Promise<BrFiHolding | null> {
+    const numericId = parseId(id, 'holding id');
+    const existing = await getBrFiHolding(id);
+    if (!existing) {
+      return null;
+    }
+
+    if (data.accountId !== undefined) {
+      await assertAccountNotArchived(database, data.accountId);
+    }
+
+    const targetAccountId = data.accountId ?? existing.accountId;
+    if (data.currencyCode !== undefined) {
+      await assertCurrencyAllowedForAccount(targetAccountId, data.currencyCode);
+    } else if (data.accountId !== undefined && data.accountId !== existing.accountId) {
+      await assertCurrencyAllowedForAccount(targetAccountId, existing.currencyCode);
+    }
+
+    const nextCurrencyCode = data.currencyCode ?? existing.currencyCode;
+    const nextPurchaseDate = data.purchaseDate ?? existing.purchaseDate;
+    await assertApplicableQuoteForHolding(nextCurrencyCode, nextPurchaseDate);
+
+    const indexingParams = indexingParamsForUpdate(existing, data);
+    const updates: Partial<typeof brFiHoldings.$inferInsert> = {
+      updatedAt: new Date(),
+      ...indexingParams,
+    };
+    if (data.accountId !== undefined) {
+      updates.accountId = parseId(data.accountId, 'account id');
+    }
+    if (data.currencyCode !== undefined) {
+      updates.currencyCode = data.currencyCode;
+    }
+    if (data.name !== undefined) {
+      updates.name = data.name;
+    }
+    if (data.productType !== undefined) {
+      updates.productType = data.productType;
+    }
+    if (data.indexingType !== undefined) {
+      updates.indexingType = data.indexingType;
+    }
+    if (data.purchaseDate !== undefined) {
+      updates.purchaseDate = data.purchaseDate;
+    }
+    if (data.maturityDate !== undefined) {
+      updates.maturityDate = data.maturityDate;
+    }
+    if (data.investedAmountCents !== undefined) {
+      updates.investedAmountCents = data.investedAmountCents;
+    }
+
+    database
+      .update(brFiHoldings)
+      .set(updates)
+      .where(eq(brFiHoldings.id, numericId))
+      .run();
+    return getBrFiHolding(id);
+  }
+
+  async function deleteBrFiHolding(id: string): Promise<boolean> {
+    const existing = await getBrFiHolding(id);
+    if (!existing) {
+      return false;
+    }
+
+    const numericId = parseId(id, 'holding id');
+    database.delete(brFiHoldings).where(eq(brFiHoldings.id, numericId)).run();
+    return true;
+  }
+
+  async function listBrFiHoldingsFiltered(filters: {
+    accountId?: string;
+  }): Promise<BrFiHolding[]> {
+    const { accountId } = filters;
+
+    if (accountId !== undefined) {
+      const account = await getAccount(accountId);
+      if (!account) {
+        return [];
+      }
+    }
+
+    const conditions = [];
+    if (accountId !== undefined) {
+      conditions.push(eq(brFiHoldings.accountId, parseId(accountId, 'account id')));
+    }
+
+    const whereClause =
+      conditions.length === 0
+        ? undefined
+        : conditions.length === 1
+          ? conditions[0]
+          : and(...conditions);
+
+    const rows = selectBrFiHoldingsWithType()
+      .where(whereClause)
+      .orderBy(brFiHoldings.maturityDate, brFiHoldings.id)
+      .all();
+    return rows.map((row) => mapBrFiHolding(row.brFi, row.holdingType));
+  }
+
   async function listBondHoldings(): Promise<BondHolding[]> {
     const rows = selectBondHoldingsWithType().orderBy(bondHoldings.id).all();
     return rows.map((row) => mapBondHolding(row.bond, row.holdingType));
@@ -902,9 +1213,10 @@ export function createRepo(database: Db) {
     options?: PortfolioSummaryOptions
   ): Promise<PortfolioSummary> {
     const holdings = await listBondHoldings();
+    const brFiHoldingsList = await listBrFiHoldingsFiltered({});
+    const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
 
-    if (holdings.length === 0) {
-      const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
+    if (holdings.length === 0 && brFiHoldingsList.length === 0) {
       return {
         totalFaceValue: 0,
         positionCount: 0,
@@ -912,9 +1224,12 @@ export function createRepo(database: Db) {
         totalCostBasis: 0,
         holdingsWithCostBasis: 0,
         holdingsMissingCostBasis: 0,
+        totalInvestedCents: 0,
         convertedCurrency,
         convertedTotalFaceValue: 0,
         convertedTotalCostBasis: 0,
+        convertedTotalInvestedCents: 0,
+        byHoldingType: [],
         maturityLadder: [],
       };
     }
@@ -923,6 +1238,7 @@ export function createRepo(database: Db) {
     let totalCostBasis = 0;
     let holdingsWithCostBasis = 0;
     let holdingsMissingCostBasis = 0;
+    let brFiTotalInvested = 0;
 
     for (const holding of holdings) {
       totalFaceValue += holding.faceValue;
@@ -934,11 +1250,20 @@ export function createRepo(database: Db) {
       }
     }
 
-    const sortedByMaturity = [...holdings].sort(
-      (a, b) => a.maturityDate.getTime() - b.maturityDate.getTime()
-    );
+    for (const holding of brFiHoldingsList) {
+      brFiTotalInvested += holding.investedAmountCents;
+    }
 
-    const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
+    const totalInvestedCents = totalFaceValue + brFiTotalInvested;
+
+    type MaturityLadderEntry = {
+      holdingId: string;
+      issuer: string;
+      maturityDate: Date;
+      faceValue: number;
+      convertedFaceValue: number | null;
+    };
+
     const quoteHistory = await loadGroupedQuoteHistory();
     const convertedHoldings = attachConvertedFieldsToHoldings(
       holdings,
@@ -948,49 +1273,114 @@ export function createRepo(database: Db) {
 
     let convertedTotalFaceValue = 0;
     let convertedTotalCostBasis = 0;
+    let convertedTotalInvestedCents = 0;
+    let convertedBondTotal = 0;
+    let convertedBrFiTotal = 0;
     let conversionError: string | undefined;
 
     for (const holding of convertedHoldings) {
       if (holding.convertedFaceValue === null) {
         conversionError = 'EXCHANGE_RATE_REQUIRED';
-        convertedTotalFaceValue = 0;
-        convertedTotalCostBasis = 0;
         break;
       }
       convertedTotalFaceValue += holding.convertedFaceValue;
+      convertedBondTotal += holding.convertedFaceValue;
+      convertedTotalInvestedCents += holding.convertedFaceValue;
       if (holding.purchasePrice !== undefined) {
         if (holding.convertedPurchasePrice === null || holding.convertedPurchasePrice === undefined) {
           conversionError = 'EXCHANGE_RATE_REQUIRED';
-          convertedTotalFaceValue = 0;
-          convertedTotalCostBasis = 0;
           break;
         }
         convertedTotalCostBasis += holding.convertedPurchasePrice;
       }
     }
 
+    const brFiConvertedById = new Map<string, number | null>();
+    if (!conversionError) {
+      for (const holding of brFiHoldingsList) {
+        const convertedInvested = convertBrFiInvestedCents(
+          holding,
+          convertedCurrency,
+          quoteHistory
+        );
+        brFiConvertedById.set(holding.id, convertedInvested);
+        if (convertedInvested === null) {
+          conversionError = 'EXCHANGE_RATE_REQUIRED';
+          break;
+        }
+        convertedBrFiTotal += convertedInvested;
+        convertedTotalInvestedCents += convertedInvested;
+      }
+    }
+
+    const bondLadderEntries: MaturityLadderEntry[] = holdings.map((holding) => {
+      const converted = convertedHoldings.find((entry) => entry.id === holding.id);
+      return {
+        holdingId: holding.id,
+        issuer: holding.issuer,
+        maturityDate: holding.maturityDate,
+        faceValue: holding.faceValue,
+        convertedFaceValue: converted?.convertedFaceValue ?? null,
+      };
+    });
+
+    const brFiLadderEntries: MaturityLadderEntry[] = brFiHoldingsList.map((holding) => ({
+      holdingId: holding.id,
+      issuer: holding.name,
+      maturityDate: holding.maturityDate,
+      faceValue: holding.investedAmountCents,
+      convertedFaceValue: brFiConvertedById.get(holding.id) ?? null,
+    }));
+
+    const sortedByMaturity = [...bondLadderEntries, ...brFiLadderEntries].sort(
+      (a, b) => a.maturityDate.getTime() - b.maturityDate.getTime()
+    );
+
+    const byHoldingType: PortfolioSummaryByHoldingType[] = [];
+    if (holdings.length > 0) {
+      byHoldingType.push({
+        slug: holdings[0].holdingType.slug,
+        name: holdings[0].holdingType.name,
+        positionCount: holdings.length,
+        totalNativeCents: totalFaceValue,
+        convertedTotalCents: conversionError ? null : convertedBondTotal,
+      });
+    }
+    if (brFiHoldingsList.length > 0) {
+      byHoldingType.push({
+        slug: brFiHoldingsList[0].holdingType.slug,
+        name: brFiHoldingsList[0].holdingType.name,
+        positionCount: brFiHoldingsList.length,
+        totalNativeCents: brFiTotalInvested,
+        convertedTotalCents: conversionError ? null : convertedBrFiTotal,
+      });
+    }
+
     const summary: PortfolioSummary = {
       totalFaceValue,
-      positionCount: holdings.length,
-      nextMaturityDate: toIsoDateString(sortedByMaturity[0].maturityDate),
+      positionCount: holdings.length + brFiHoldingsList.length,
+      nextMaturityDate:
+        sortedByMaturity.length > 0
+          ? toIsoDateString(sortedByMaturity[0].maturityDate)
+          : null,
       totalCostBasis,
       holdingsWithCostBasis,
       holdingsMissingCostBasis,
+      totalInvestedCents,
       convertedCurrency,
       convertedTotalFaceValue: conversionError ? null : convertedTotalFaceValue,
       convertedTotalCostBasis: conversionError ? null : convertedTotalCostBasis,
+      convertedTotalInvestedCents: conversionError ? null : convertedTotalInvestedCents,
+      byHoldingType,
       ...(conversionError ? { conversionError } : {}),
-      maturityLadder: sortedByMaturity.slice(0, 5).map((holding) => {
-        const converted = convertedHoldings.find((entry) => entry.id === holding.id);
-        return {
-          holdingId: holding.id,
-          issuer: holding.issuer,
-          maturityDate: toIsoDateString(holding.maturityDate),
-          faceValue: holding.faceValue,
-          convertedFaceValue: converted?.convertedFaceValue ?? null,
-          convertedCurrency,
-        };
-      }),
+      maturityLadder: sortedByMaturity.slice(0, 5).map((entry) => ({
+        holdingId: entry.holdingId,
+        issuer: entry.issuer,
+        maturityDate: toIsoDateString(entry.maturityDate),
+        faceValue: entry.faceValue,
+        convertedFaceValue: entry.convertedFaceValue,
+        convertedCurrency,
+      })),
     };
 
     return summary;
@@ -1344,6 +1734,11 @@ export function createRepo(database: Db) {
     listBondHoldingsByAccount,
     listBondHoldingsByMaturity,
     listBondHoldingsFiltered,
+    insertBrFiHolding,
+    getBrFiHolding,
+    updateBrFiHolding,
+    deleteBrFiHolding,
+    listBrFiHoldingsFiltered,
     getPortfolioSummary,
     insertCouponPayment,
     listCouponPaymentsByHolding,

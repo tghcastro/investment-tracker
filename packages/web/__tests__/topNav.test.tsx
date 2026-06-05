@@ -190,7 +190,7 @@ describe('TopNav responsive behavior', () => {
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
   });
 
-  it('renders holdings submenu from API with Bond link and BRFI placeholder', async () => {
+  it('renders holdings submenu from API with Bond and BRFI links', async () => {
     mockMatchMedia(false);
     const user = userEvent.setup();
 
@@ -207,10 +207,10 @@ describe('TopNav responsive behavior', () => {
     await user.click(screen.getByRole('button', { name: 'Holdings' }));
 
     expect(screen.getByRole('menuitem', { name: 'Bond' })).toHaveAttribute('href', '/holdings');
-    expect(screen.getByRole('menuitem', { name: /Brazilian Fixed Income/i })).toHaveAttribute(
-      'aria-disabled',
-      'true'
+    expect(screen.getByRole('menuitem', { name: 'Brazilian Fixed Income' })).toHaveAttribute(
+      'href',
+      '/holdings/brazilian-fixed-income'
     );
-    expect(screen.getByText('Coming in v2')).toBeInTheDocument();
+    expect(screen.queryByText('Coming in v2')).not.toBeInTheDocument();
   });
 });

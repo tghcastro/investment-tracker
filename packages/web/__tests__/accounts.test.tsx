@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import Accounts from '../src/pages/Accounts';
-import type { ApiAccount, ApiBondHolding } from '../src/types/api';
+import type { ApiAccount, ApiBondHolding, ApiBrFiHolding } from '../src/types/api';
 
 const mockUseApi = vi.fn();
 
@@ -75,6 +75,22 @@ const sampleHoldings: ApiBondHolding[] = [
   },
 ];
 
+const sampleBrFiHoldings: ApiBrFiHolding[] = [
+  {
+    id: '4',
+    accountId: '10',
+    currencyCode: 'BRL',
+    name: 'LCI Banco X',
+    productType: 'LCI',
+    indexingType: 'CDI_PERCENTAGE',
+    cdiPercentage: 100,
+    purchaseDate: '2025-01-15',
+    maturityDate: '2027-01-15',
+    investedAmountCents: 1_000_000,
+    updatedAt: '2025-01-15T00:00:00.000Z',
+  },
+];
+
 describe('Accounts', () => {
   it('renders account cards with holding counts from mocked useApi data', () => {
     mockUseApi.mockImplementation((url: string) => {
@@ -83,6 +99,9 @@ describe('Accounts', () => {
       }
       if (url === '/api/holdings') {
         return { data: sampleHoldings, loading: false, error: undefined };
+      }
+      if (url === '/api/br-fi-holdings') {
+        return { data: sampleBrFiHoldings, loading: false, error: undefined };
       }
       return { data: undefined, loading: false, error: undefined };
     });
@@ -96,7 +115,7 @@ describe('Accounts', () => {
     expect(screen.getByRole('heading', { name: 'Accounts' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Vanguard' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Interactive Brokers' })).toBeInTheDocument();
-    expect(screen.getByText('2 holdings')).toBeInTheDocument();
+    expect(screen.getByText('3 holdings')).toBeInTheDocument();
     expect(screen.getByText('1 holding')).toBeInTheDocument();
     const viewHoldingsLinks = screen.getAllByRole('link', { name: 'View holdings' });
     expect(viewHoldingsLinks).toHaveLength(2);
@@ -111,6 +130,9 @@ describe('Accounts', () => {
       }
       if (url === '/api/holdings') {
         return { data: undefined, loading: false, error: 'Network error' };
+      }
+      if (url === '/api/br-fi-holdings') {
+        return { data: [], loading: false, error: undefined };
       }
       return { data: undefined, loading: false, error: undefined };
     });

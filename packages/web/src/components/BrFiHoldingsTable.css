@@ -1,0 +1,165 @@
+.cb-brfi-holdings-table {
+  border-top: 1px solid var(--cb-hairline);
+}
+
+.cb-brfi-holdings-table__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--cb-space-base);
+  padding: var(--cb-space-base) 0;
+  border-bottom: 1px solid var(--cb-hairline);
+}
+
+.cb-brfi-holdings-table__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cb-space-sm);
+  flex-shrink: 0;
+}
+
+.cb-brfi-holdings-table__name-block {
+  display: flex;
+  align-items: center;
+  gap: var(--cb-space-base);
+  min-width: 0;
+}
+
+.cb-brfi-holdings-table__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--cb-radius-full);
+  background-color: var(--cb-surface-strong);
+  font-family: var(--cb-font-caption-strong-family);
+  font-size: var(--cb-font-caption-strong-size);
+  font-weight: var(--cb-font-caption-strong-weight);
+  color: var(--cb-ink);
+}
+
+.cb-brfi-holdings-table__labels {
+  min-width: 0;
+}
+
+.cb-brfi-holdings-table__title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--cb-space-sm);
+}
+
+.cb-brfi-holdings-table__type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--cb-radius-full);
+  background-color: var(--cb-surface-strong);
+  font-family: var(--cb-font-caption-family);
+  font-size: var(--cb-font-caption-size);
+  color: var(--cb-ink);
+}
+
+.cb-brfi-holdings-table__name {
+  margin: 0;
+  font-family: var(--cb-font-title-md-family);
+  font-size: var(--cb-font-title-md-size);
+  font-weight: var(--cb-font-title-md-weight);
+  line-height: var(--cb-font-title-md-line-height);
+  letter-spacing: var(--cb-font-title-md-letter-spacing);
+  color: var(--cb-ink);
+}
+
+.cb-brfi-holdings-table__account {
+  margin: var(--cb-space-xs) 0 0;
+  font-family: var(--cb-font-caption-family);
+  font-size: var(--cb-font-caption-size);
+  font-weight: var(--cb-font-caption-weight);
+  line-height: var(--cb-font-caption-line-height);
+  letter-spacing: var(--cb-font-caption-letter-spacing);
+  color: var(--cb-muted);
+}
+
+.cb-brfi-holdings-table__metrics {
+  display: flex;
+  align-items: center;
+  gap: var(--cb-space-lg);
+  text-align: right;
+}
+
+.cb-brfi-holdings-table__amount {
+  min-width: 7rem;
+  text-align: right;
+}
+
+.cb-brfi-holdings-table__skeleton-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--cb-space-base);
+  padding: var(--cb-space-base) 0;
+  border-bottom: 1px solid var(--cb-hairline);
+}
+
+.cb-brfi-holdings-table__skeleton-icon,
+.cb-brfi-holdings-table__skeleton-line {
+  background-color: var(--cb-surface-strong);
+  border-radius: var(--cb-radius-md);
+}
+
+.cb-brfi-holdings-table__skeleton-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--cb-radius-full);
+}
+
+.cb-brfi-holdings-table__skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cb-space-xs);
+}
+
+.cb-brfi-holdings-table__skeleton-line {
+  height: 14px;
+}
+
+.cb-brfi-holdings-table__skeleton-line--wide {
+  width: 160px;
+}
+
+.cb-brfi-holdings-table__skeleton-line--narrow {
+  width: 96px;
+}
+
+.cb-brfi-holdings-table__skeleton-metrics {
+  display: flex;
+  gap: var(--cb-space-base);
+}
+
+.cb-brfi-holdings-table__skeleton-line--metric {
+  width: 64px;
+}
+
+@media (max-width: 639px) {
+  .cb-brfi-holdings-table__row {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .cb-brfi-holdings-table__metrics {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    text-align: left;
+    padding-left: calc(32px + var(--cb-space-base));
+  }
+
+  .cb-brfi-holdings-table__amount {
+    text-align: left;
+  }
+
+  .cb-brfi-holdings-table__actions {
+    padding-left: calc(32px + var(--cb-space-base));
+  }
+}

@@ -15,7 +15,7 @@
 
 .cb-home__summary {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: var(--cb-space-lg);
   padding: var(--cb-space-xl);
   margin-bottom: var(--cb-space-xl);

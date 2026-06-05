@@ -31,9 +31,20 @@ const sampleSummary: ApiPortfolioSummary = {
   totalCostBasis: 145_000,
   holdingsWithCostBasis: 1,
   holdingsMissingCostBasis: 1,
+  totalInvestedCents: 175_000,
   convertedCurrency: 'USD',
   convertedTotalFaceValue: 150_000,
   convertedTotalCostBasis: 145_000,
+  convertedTotalInvestedCents: 175_000,
+  byHoldingType: [
+    {
+      slug: 'bond',
+      name: 'Bond',
+      positionCount: 2,
+      totalNativeCents: 150_000,
+      convertedTotalCents: 150_000,
+    },
+  ],
   maturityLadder: [
     {
       holdingId: '2',
@@ -112,8 +123,10 @@ describe('Home', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: 'Bond portfolio' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Portfolio' })).toBeInTheDocument();
     expect(screen.getByLabelText('Portfolio summary')).toBeInTheDocument();
+    expect(screen.getByText('Total invested')).toBeInTheDocument();
+    expect(screen.getByText('$1,750.00')).toBeInTheDocument();
     expect(screen.getByText('$1,500.00')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
     expect(screen.getAllByText('May 1, 2027').length).toBeGreaterThanOrEqual(1);
@@ -199,9 +212,12 @@ describe('Home', () => {
         totalCostBasis: 0,
         holdingsWithCostBasis: 0,
         holdingsMissingCostBasis: 0,
+        totalInvestedCents: 0,
         convertedCurrency: 'USD',
         convertedTotalFaceValue: 0,
         convertedTotalCostBasis: 0,
+        convertedTotalInvestedCents: 0,
+        byHoldingType: [],
         maturityLadder: [],
       },
       upcoming: [],
@@ -213,7 +229,7 @@ describe('Home', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: 'No bond holdings yet' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'No holdings yet' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Add holding' })).toHaveAttribute('href', '/holdings/new');
     expect(screen.queryByText('Coupon income (YTD)')).not.toBeInTheDocument();
   });

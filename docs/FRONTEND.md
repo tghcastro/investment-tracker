@@ -47,9 +47,9 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 
 ## App shell
 
-- `TopNav` 64px, canvas background, hairline bottom border; **Holdings** opens a type submenu from `GET /api/holding-types` (Bond → `/holdings`; BRFI placeholder until M7).
+- `TopNav` 64px, canvas background, hairline bottom border; **Holdings** opens a type submenu from `GET /api/holding-types` (Bond → `/holdings`; Brazilian Fixed Income → `/holdings/brazilian-fixed-income`).
 - Main: `.cb-app__main`, max-width ~1200px, padding 32px / 24px.
-- Routes: `/`, `/holdings`, `/holdings/new`, `/holdings/:id`, `/accounts`, `/accounts/new`, `/accounts/:id`, `/income`, `/currencies`, `/currencies/quotes`, `/settings`.
+- Routes: `/`, `/holdings`, `/holdings/new`, `/holdings/:id`, `/holdings/brazilian-fixed-income`, `/holdings/brazilian-fixed-income/new`, `/holdings/brazilian-fixed-income/:id`, `/accounts`, `/accounts/new`, `/accounts/:id`, `/income`, `/currencies`, `/currencies/quotes`, `/settings`.
 - **Display currency:** `DisplayCurrencyProvider` (`contexts/DisplayCurrencyContext.tsx`) loads `GET /api/currencies/available`; preference in `localStorage` key `displayCurrency`. Append `?displayCurrency=` via `appendDisplayCurrencyParam` on Home/Holdings summary and list fetches.
 
 ## Components to reuse
@@ -62,7 +62,8 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 | `EmptyState` | Zero-data lists |
 | `ErrorBanner` | Fetch/validation errors (text on soft surface) |
 | `TextInput` / `FormField` / `Select` | All CRUD forms |
-| `HoldingsTable`, `CouponPaymentsTable` | Data tables |
+| `HoldingsTable`, `BrFiHoldingsTable`, `CouponPaymentsTable` | Data tables |
+| `BrFiForm`, `IndexingFields` | BRFI create/edit (product + indexing params) |
 | `CurrencySelector` | Display-currency dropdown (Home, Holdings toolbar) |
 
 ## Forms
@@ -71,6 +72,7 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 - Use domain-aligned names: `faceValue`, `couponRate`, `couponFrequency`, `maturityDate`, `currencyCode`, `currencyCodes`.
 - **AccountForm:** multi-select checkboxes for allowed account currencies (`GET /api/currencies`).
 - **HoldingForm:** currency `<Select>` limited to selected account’s `currencyCodes`.
+- **BrFiForm:** product type, indexing type + conditional params (`IndexingFields`); `investedAmount` in cents via `parseDollarsToCents`; currency from account allowed set; optional `?accountId=` filter on list.
 - On submit failure, call `focusFirstFieldError` (`utils/focusFirstFieldError.ts`).
 - `couponRate` in API is **percent** (0–100) in JSON.
 

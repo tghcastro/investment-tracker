@@ -117,6 +117,42 @@ export const bondHoldings = sqliteTable(
   })
 );
 
+export const brFiHoldings = sqliteTable(
+  'br_fi_holdings',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    accountId: integer('account_id').notNull(),
+    holdingTypeId: integer('holding_type_id').notNull(),
+    name: text('name').notNull(),
+    productType: text('product_type').notNull(),
+    indexingType: text('indexing_type').notNull(),
+    cdiPercentage: real('cdi_percentage'),
+    ipcaSpreadPercent: real('ipca_spread_percent'),
+    preFixedRatePercent: real('pre_fixed_rate_percent'),
+    purchaseDate: integer('purchase_date', { mode: 'timestamp_ms' }).notNull(),
+    maturityDate: integer('maturity_date', { mode: 'timestamp_ms' }).notNull(),
+    investedAmountCents: integer('invested_amount_cents').notNull(),
+    currencyCode: text('currency_code').notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => ({
+    accountIdRef: foreignKey({
+      columns: [table.accountId],
+      foreignColumns: [accounts.id],
+    }),
+    holdingTypeIdRef: foreignKey({
+      columns: [table.holdingTypeId],
+      foreignColumns: [holdingTypes.id],
+    }),
+    currencyCodeRef: foreignKey({
+      columns: [table.currencyCode],
+      foreignColumns: [currencies.code],
+    }),
+  })
+);
+
 export const couponPayments = sqliteTable(
   'coupon_payments',
   {

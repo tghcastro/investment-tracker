@@ -1,8 +1,8 @@
 # Roadmap
 
-**Current Milestone:** M7 — Brazilian fixed income  
-**Status:** M6.1 complete (2026-05-31); M7 specified — execute next  
-**Active specs:** [m7-brazilian-fixed-income](../features/active/m7-brazilian-fixed-income/spec.md)
+**Current Milestone:** v2.0.0 release (deferred)  
+**Status:** M7 shipped in code (2026-06-05); M5–M7 complete — tag **v2.0.0** when ready  
+**Latest shipped:** [m7-brazilian-fixed-income](../features/completed/m7-brazilian-fixed-income/spec.md)
 
 ---
 
@@ -180,31 +180,31 @@
 ## M7 — Brazilian fixed income
 
 **Goal:** Support Brazilian fixed-income investments as a dedicated Holding Type, distinct from international bonds.
-**Target:** Full CRUD for common Brazilian products with indexing configuration; accounts may hold both bonds and Brazilian fixed income; **v2.0.0** release.
-**Status:** Specified (deferred) — [spec](../features/active/m7-brazilian-fixed-income/spec.md) · [design](../features/active/m7-brazilian-fixed-income/design.md) · [tasks](../features/active/m7-brazilian-fixed-income/tasks.md)
+**Target:** Full CRUD for common Brazilian products with indexing configuration; accounts may hold both bonds and Brazilian fixed income.
+**Status:** Complete (2026-06-05) — [spec](../features/completed/m7-brazilian-fixed-income/spec.md) · [design](../features/completed/m7-brazilian-fixed-income/design.md) · [tasks](../features/completed/m7-brazilian-fixed-income/tasks.md)
 
 ### Features
 
-**Brazilian Fixed Income holdings** — PLANNED
+**Brazilian Fixed Income holdings** — DONE
 
 - Products: LCI, LCA, Tesouro Direto, CRI, CRA
 - Fields: name, product type, indexing type, purchase/maturity dates, invested amount, account, currency (inherited from account)
 - No face value, ISIN, or CUSIP
 
-**Indexing configuration** — PLANNED
+**Indexing configuration** — DONE
 
 - CDI Percentage (e.g. 105% CDI)
 - IPCA + Spread (e.g. IPCA + 6.5%)
 - SELIC
 - Pre-Fixed (e.g. 12.5% fixed rate)
 
-**Account & navigation integration** — PLANNED
+**Account & navigation integration** — DONE
 
 - Accounts support multiple Holding Types (Bond + Brazilian Fixed Income)
-- Architecture allows future types (stocks, ETFs, funds, REITs, crypto) without changing existing types
-- Navigation organized by Holding Type (depends on M5)
+- Portfolio summary and Home totals include BRFI invested amounts (display currency via M6)
+- Navigation organized by Holding Type (M5 submenu)
 
-**Out of scope (M7):** Broker integrations, automatic/file imports, additional Holding Types beyond BRFI
+**Out of scope (M7):** Broker integrations, automatic/file imports, additional Holding Types beyond BRFI, **v2.0.0 tag** (deferred)
 
 ---
 

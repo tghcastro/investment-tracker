@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 
 const HOLDINGS_ROUTE_BY_SLUG: Record<string, string | null> = {
   bond: '/holdings',
-  'brazilian-fixed-income': null,
+  'brazilian-fixed-income': '/holdings/brazilian-fixed-income',
 };
 
 function HoldingsNavItem({ onNavigate }: { onNavigate: () => void }) {

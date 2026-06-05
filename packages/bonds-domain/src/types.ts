@@ -3,6 +3,7 @@
  * These are the core data structures with no HTTP or DB knowledge.
  */
 
+import type { IndexingType, ProductType } from './brFi.js';
 import type { HoldingTypeRef } from './holdingTypes.js';
 
 export interface Account {
@@ -40,4 +41,21 @@ export interface CouponPayment {
   paymentDate: Date;
   amount: number; // in cents
   recordedAt: Date;
+}
+
+export interface BrFiHolding {
+  id: string;
+  holdingType: HoldingTypeRef;
+  accountId: string;
+  currencyCode: string;
+  name: string;
+  productType: ProductType;
+  indexingType: IndexingType;
+  cdiPercentage?: number;
+  ipcaSpreadPercent?: number;
+  preFixedRatePercent?: number;
+  purchaseDate: Date;
+  maturityDate: Date;
+  investedAmountCents: number;
+  updatedAt: Date;
 }
