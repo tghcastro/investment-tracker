@@ -20,6 +20,7 @@ import {
 } from './routes/currency-quotes/crud.js';
 import { registerListHoldingTypes } from './routes/holding-types/list.js';
 import { registerBrFiHoldingsRoutes } from './routes/br-fi-holdings/index.js';
+import { registerMarketIndicatorsRoutes } from './routes/market-indicators/index.js';
 import { registerDeleteHolding } from './routes/holdings/delete.js';
 import { registerGetHoldingById } from './routes/holdings/get-by-id.js';
 import { registerListHoldings } from './routes/holdings/list.js';
@@ -123,6 +124,7 @@ export async function createServer(
   registerPatchHolding(app, getRepo);
   registerDeleteHolding(app, getRepo);
   registerBrFiHoldingsRoutes(app, getRepo);
+  registerMarketIndicatorsRoutes(app, getRepo);
   registerPortfolioSummary(app, getRepo);
   registerPortfolioIncomeSummary(app, getRepo);
   registerPortfolioUpcomingCoupons(app, getRepo);

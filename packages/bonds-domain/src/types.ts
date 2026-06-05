@@ -5,6 +5,7 @@
 
 import type { IndexingType, ProductType } from './brFi.js';
 import type { HoldingTypeRef } from './holdingTypes.js';
+import type { IndicatorCategory } from './marketIndicator.js';
 
 export interface Account {
   id: string;
@@ -43,6 +44,40 @@ export interface CouponPayment {
   recordedAt: Date;
 }
 
+export interface MarketIndicatorLatestValue {
+  valueDate: string;
+  value: number;
+}
+
+export interface MarketIndicatorSummary {
+  id: string;
+  slug: string;
+  name: string;
+  category: IndicatorCategory;
+  latestValue: MarketIndicatorLatestValue | null;
+}
+
+export interface MarketIndicator {
+  id: string;
+  slug: string;
+  name: string;
+  category: IndicatorCategory;
+  description?: string;
+  isSystem: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  latestValue?: MarketIndicatorLatestValue | null;
+  valueCount?: number;
+}
+
+export interface IndicatorValue {
+  id: string;
+  indicatorId: string;
+  valueDate: string;
+  value: number;
+  createdAt: Date;
+}
+
 export interface BrFiHolding {
   id: string;
   holdingType: HoldingTypeRef;
@@ -51,6 +86,8 @@ export interface BrFiHolding {
   name: string;
   productType: ProductType;
   indexingType: IndexingType;
+  marketIndicatorId?: string;
+  marketIndicator?: MarketIndicatorSummary;
   cdiPercentage?: number;
   ipcaSpreadPercent?: number;
   preFixedRatePercent?: number;

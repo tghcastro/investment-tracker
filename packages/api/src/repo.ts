@@ -11,6 +11,10 @@ import type {
   HoldingTypeRef,
   HoldingTypeSlug,
   IndexingType,
+  IndicatorCategory,
+  IndicatorValue,
+  MarketIndicator,
+  MarketIndicatorSummary,
   ProductType,
 } from 'bonds-domain';
 import {
@@ -22,7 +26,9 @@ import {
   normalizeUsdToTargetRate,
   type QuoteHistory,
   type RateDirection,
+  resolveLatestIndicatorValue,
   validateHoldingExchangeRate,
+  validateMarketIndicatorForIndexing,
 } from 'bonds-domain';
 
 import type { Database } from './db.js';
@@ -35,6 +41,8 @@ import {
   currencies,
   currencyQuotes,
   holdingTypes,
+  marketIndicatorValues,
+  marketIndicators,
 } from './schema.js';
 
 type Db = Database;
@@ -108,6 +116,7 @@ export type InsertBrFiHoldingData = {
   name: string;
   productType: ProductType;
   indexingType: IndexingType;
+  marketIndicatorId?: string;
   cdiPercentage?: number;
   ipcaSpreadPercent?: number;
   preFixedRatePercent?: number;
@@ -122,12 +131,36 @@ export type UpdateBrFiHoldingData = {
   name?: string;
   productType?: ProductType;
   indexingType?: IndexingType;
+  marketIndicatorId?: string;
   cdiPercentage?: number;
   ipcaSpreadPercent?: number;
   preFixedRatePercent?: number;
   purchaseDate?: Date;
   maturityDate?: Date;
   investedAmountCents?: number;
+};
+
+export type InsertMarketIndicatorData = {
+  slug: string;
+  name: string;
+  category: IndicatorCategory;
+  description?: string;
+};
+
+export type UpdateMarketIndicatorData = {
+  name?: string;
+  category?: IndicatorCategory;
+  description?: string | null;
+};
+
+export type InsertIndicatorValueData = {
+  valueDate: string;
+  value: number;
+};
+
+export type UpdateIndicatorValueData = {
+  valueDate?: string;
+  value?: number;
 };
 
 export type InsertCurrencyQuoteData = {
@@ -327,7 +360,8 @@ function mapBondHolding(
 
 function mapBrFiHolding(
   row: typeof brFiHoldings.$inferSelect,
-  holdingTypeRow: typeof holdingTypes.$inferSelect
+  holdingTypeRow: typeof holdingTypes.$inferSelect,
+  marketIndicator?: MarketIndicatorSummary
 ): BrFiHolding {
   return {
     id: String(row.id),
@@ -337,6 +371,10 @@ function mapBrFiHolding(
     name: row.name,
     productType: row.productType as ProductType,
     indexingType: row.indexingType as IndexingType,
+    ...(row.marketIndicatorId !== null
+      ? { marketIndicatorId: String(row.marketIndicatorId) }
+      : {}),
+    ...(marketIndicator ? { marketIndicator } : {}),
     cdiPercentage: row.cdiPercentage ?? undefined,
     ipcaSpreadPercent: row.ipcaSpreadPercent ?? undefined,
     preFixedRatePercent: row.preFixedRatePercent ?? undefined,
@@ -344,6 +382,47 @@ function mapBrFiHolding(
     maturityDate: row.maturityDate,
     investedAmountCents: row.investedAmountCents,
     updatedAt: row.updatedAt,
+  };
+}
+
+function mapMarketIndicator(
+  row: typeof marketIndicators.$inferSelect,
+  extras?: {
+    latestValue?: MarketIndicator['latestValue'];
+    valueCount?: number;
+  }
+): MarketIndicator {
+  return {
+    id: String(row.id),
+    slug: row.slug,
+    name: row.name,
+    category: row.category as IndicatorCategory,
+    description: row.description ?? undefined,
+    isSystem: row.isSystem === 1,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    ...(extras?.latestValue !== undefined ? { latestValue: extras.latestValue } : {}),
+    ...(extras?.valueCount !== undefined ? { valueCount: extras.valueCount } : {}),
+  };
+}
+
+function mapIndicatorValue(row: typeof marketIndicatorValues.$inferSelect): IndicatorValue {
+  return {
+    id: String(row.id),
+    indicatorId: String(row.indicatorId),
+    valueDate: row.valueDate,
+    value: row.value,
+    createdAt: row.createdAt,
+  };
+}
+
+function toMarketIndicatorSummary(indicator: MarketIndicator): MarketIndicatorSummary {
+  return {
+    id: indicator.id,
+    slug: indicator.slug,
+    name: indicator.name,
+    category: indicator.category,
+    latestValue: indicator.latestValue ?? null,
   };
 }
 
@@ -366,6 +445,18 @@ function wrapDbError(error: unknown): never {
     throw new RepoError(
       'DUPLICATE_QUOTE',
       'A quote already exists for this date and currency'
+    );
+  }
+  if (message.includes('UNIQUE constraint failed') && message.includes('market_indicators')) {
+    throw new RepoError('DUPLICATE_INDICATOR_SLUG', 'An indicator with this slug already exists');
+  }
+  if (
+    message.includes('UNIQUE constraint failed') &&
+    message.includes('market_indicator_values')
+  ) {
+    throw new RepoError(
+      'DUPLICATE_INDICATOR_VALUE',
+      'A value already exists for this indicator and date'
     );
   }
   throw error;
@@ -945,6 +1036,336 @@ export function createRepo(database: Db) {
     return true;
   }
 
+  function loadIndicatorValueRows(indicatorId: number) {
+    return database
+      .select()
+      .from(marketIndicatorValues)
+      .where(eq(marketIndicatorValues.indicatorId, indicatorId))
+      .orderBy(desc(marketIndicatorValues.valueDate))
+      .all();
+  }
+
+  async function getMarketIndicator(id: string): Promise<MarketIndicator | null> {
+    const numericId = parseId(id, 'indicator id');
+    const [row] = database
+      .select()
+      .from(marketIndicators)
+      .where(eq(marketIndicators.id, numericId))
+      .all();
+    if (!row) {
+      return null;
+    }
+    const valueRows = loadIndicatorValueRows(numericId);
+    return mapMarketIndicator(row, {
+      latestValue: resolveLatestIndicatorValue(
+        valueRows.map((valueRow) => ({
+          valueDate: valueRow.valueDate,
+          value: valueRow.value,
+        }))
+      ),
+      valueCount: valueRows.length,
+    });
+  }
+
+  async function listMarketIndicators(filters?: {
+    category?: IndicatorCategory;
+  }): Promise<MarketIndicator[]> {
+    const rows = database
+      .select()
+      .from(marketIndicators)
+      .where(
+        filters?.category ? eq(marketIndicators.category, filters.category) : undefined
+      )
+      .orderBy(marketIndicators.name)
+      .all();
+
+    const valueRows = database.select().from(marketIndicatorValues).all();
+    const valuesByIndicator = new Map<number, Array<{ valueDate: string; value: number }>>();
+    for (const valueRow of valueRows) {
+      const bucket = valuesByIndicator.get(valueRow.indicatorId) ?? [];
+      bucket.push({ valueDate: valueRow.valueDate, value: valueRow.value });
+      valuesByIndicator.set(valueRow.indicatorId, bucket);
+    }
+
+    return rows.map((row) => {
+      const indicatorValues = valuesByIndicator.get(row.id) ?? [];
+      return mapMarketIndicator(row, {
+        latestValue: resolveLatestIndicatorValue(indicatorValues),
+        valueCount: indicatorValues.length,
+      });
+    });
+  }
+
+  async function insertMarketIndicator(
+    data: InsertMarketIndicatorData
+  ): Promise<MarketIndicator> {
+    try {
+      const [row] = database
+        .insert(marketIndicators)
+        .values({
+          slug: data.slug,
+          name: data.name,
+          category: data.category,
+          description: data.description,
+          isSystem: 0,
+        })
+        .returning()
+        .all();
+      return mapMarketIndicator(row, { latestValue: null, valueCount: 0 });
+    } catch (error) {
+      wrapDbError(error);
+    }
+  }
+
+  async function updateMarketIndicator(
+    id: string,
+    data: UpdateMarketIndicatorData
+  ): Promise<MarketIndicator | null> {
+    const numericId = parseId(id, 'indicator id');
+    const existing = await getMarketIndicator(id);
+    if (!existing) {
+      return null;
+    }
+
+    if (existing.isSystem) {
+      if (data.name !== undefined || data.category !== undefined) {
+        throw new RepoError(
+          'SYSTEM_INDICATOR',
+          'System indicators can only have description updated'
+        );
+      }
+    }
+
+    const updates: Partial<typeof marketIndicators.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+    if (!existing.isSystem) {
+      if (data.name !== undefined) {
+        updates.name = data.name;
+      }
+      if (data.category !== undefined) {
+        updates.category = data.category;
+      }
+    }
+    if (data.description !== undefined) {
+      updates.description = data.description;
+    }
+
+    database
+      .update(marketIndicators)
+      .set(updates)
+      .where(eq(marketIndicators.id, numericId))
+      .run();
+    return getMarketIndicator(id);
+  }
+
+  async function deleteMarketIndicator(id: string): Promise<boolean> {
+    const existing = await getMarketIndicator(id);
+    if (!existing) {
+      return false;
+    }
+
+    if (existing.isSystem) {
+      throw new RepoError('SYSTEM_INDICATOR', 'Cannot delete system indicator');
+    }
+
+    const numericId = parseId(id, 'indicator id');
+    const [reference] = database
+      .select({ id: brFiHoldings.id })
+      .from(brFiHoldings)
+      .where(eq(brFiHoldings.marketIndicatorId, numericId))
+      .limit(1)
+      .all();
+    if (reference) {
+      throw new RepoError(
+        'INDICATOR_IN_USE',
+        'Cannot delete indicator referenced by Brazilian fixed income holdings'
+      );
+    }
+
+    database.delete(marketIndicators).where(eq(marketIndicators.id, numericId)).run();
+    return true;
+  }
+
+  async function listIndicatorValues(
+    indicatorId: string,
+    filters?: { fromDate?: string; toDate?: string }
+  ): Promise<IndicatorValue[]> {
+    const numericIndicatorId = parseId(indicatorId, 'indicator id');
+    const indicator = await getMarketIndicator(indicatorId);
+    if (!indicator) {
+      throw new RepoError('NOT_FOUND', 'Market indicator not found');
+    }
+
+    const conditions = [eq(marketIndicatorValues.indicatorId, numericIndicatorId)];
+    if (filters?.fromDate) {
+      conditions.push(gte(marketIndicatorValues.valueDate, filters.fromDate));
+    }
+    if (filters?.toDate) {
+      conditions.push(lte(marketIndicatorValues.valueDate, filters.toDate));
+    }
+
+    const whereClause = conditions.length === 1 ? conditions[0] : and(...conditions);
+    const rows = database
+      .select()
+      .from(marketIndicatorValues)
+      .where(whereClause)
+      .orderBy(desc(marketIndicatorValues.valueDate))
+      .all();
+    return rows.map(mapIndicatorValue);
+  }
+
+  async function getIndicatorValue(
+    indicatorId: string,
+    valueId: string
+  ): Promise<IndicatorValue | null> {
+    const numericIndicatorId = parseId(indicatorId, 'indicator id');
+    const numericValueId = parseId(valueId, 'value id');
+    const [row] = database
+      .select()
+      .from(marketIndicatorValues)
+      .where(
+        and(
+          eq(marketIndicatorValues.id, numericValueId),
+          eq(marketIndicatorValues.indicatorId, numericIndicatorId)
+        )
+      )
+      .all();
+    return row ? mapIndicatorValue(row) : null;
+  }
+
+  async function insertIndicatorValue(
+    indicatorId: string,
+    data: InsertIndicatorValueData
+  ): Promise<IndicatorValue> {
+    const numericIndicatorId = parseId(indicatorId, 'indicator id');
+    const indicator = await getMarketIndicator(indicatorId);
+    if (!indicator) {
+      throw new RepoError('NOT_FOUND', 'Market indicator not found');
+    }
+
+    try {
+      const [row] = database
+        .insert(marketIndicatorValues)
+        .values({
+          indicatorId: numericIndicatorId,
+          valueDate: data.valueDate,
+          value: data.value,
+        })
+        .returning()
+        .all();
+      return mapIndicatorValue(row);
+    } catch (error) {
+      wrapDbError(error);
+    }
+  }
+
+  async function updateIndicatorValue(
+    indicatorId: string,
+    valueId: string,
+    data: UpdateIndicatorValueData
+  ): Promise<IndicatorValue | null> {
+    const existing = await getIndicatorValue(indicatorId, valueId);
+    if (!existing) {
+      return null;
+    }
+
+    const numericValueId = parseId(valueId, 'value id');
+    const updates: Partial<typeof marketIndicatorValues.$inferInsert> = {};
+    if (data.valueDate !== undefined) {
+      updates.valueDate = data.valueDate;
+    }
+    if (data.value !== undefined) {
+      updates.value = data.value;
+    }
+
+    try {
+      const [row] = database
+        .update(marketIndicatorValues)
+        .set(updates)
+        .where(eq(marketIndicatorValues.id, numericValueId))
+        .returning()
+        .all();
+      return mapIndicatorValue(row);
+    } catch (error) {
+      wrapDbError(error);
+    }
+  }
+
+  async function deleteIndicatorValue(
+    indicatorId: string,
+    valueId: string
+  ): Promise<boolean> {
+    const existing = await getIndicatorValue(indicatorId, valueId);
+    if (!existing) {
+      return false;
+    }
+
+    const numericValueId = parseId(valueId, 'value id');
+    database.delete(marketIndicatorValues).where(eq(marketIndicatorValues.id, numericValueId)).run();
+    return true;
+  }
+
+  async function getLatestIndicatorValue(
+    indicatorId: string
+  ): Promise<{ latestValue: MarketIndicator['latestValue'] }> {
+    const indicator = await getMarketIndicator(indicatorId);
+    if (!indicator) {
+      throw new RepoError('NOT_FOUND', 'Market indicator not found');
+    }
+    return { latestValue: indicator.latestValue ?? null };
+  }
+
+  async function resolveBrFiMarketIndicator(
+    indexingType: IndexingType,
+    marketIndicatorId: string | undefined
+  ): Promise<{ marketIndicatorId: number | null }> {
+    const indicator = marketIndicatorId ? await getMarketIndicator(marketIndicatorId) : null;
+
+    if (marketIndicatorId && !indicator) {
+      throw new RepoError('FOREIGN_KEY', 'Referenced market indicator does not exist', {
+        marketIndicatorId: ['Market indicator not found'],
+      });
+    }
+
+    const validation = validateMarketIndicatorForIndexing(
+      indexingType,
+      indicator ? { category: indicator.category } : null
+    );
+    if (!validation.ok) {
+      throw new RepoError(
+        'INVALID_MARKET_INDICATOR',
+        'Invalid market indicator for indexing type',
+        validation.fields
+      );
+    }
+
+    return {
+      marketIndicatorId: indicator ? parseId(indicator.id, 'market indicator id') : null,
+    };
+  }
+
+  async function loadMarketIndicatorSummary(
+    marketIndicatorId: number | null
+  ): Promise<MarketIndicatorSummary | undefined> {
+    if (marketIndicatorId === null) {
+      return undefined;
+    }
+    const indicator = await getMarketIndicator(String(marketIndicatorId));
+    if (!indicator) {
+      return undefined;
+    }
+    return toMarketIndicatorSummary(indicator);
+  }
+
+  async function mapBrFiRowWithIndicator(
+    row: typeof brFiHoldings.$inferSelect,
+    holdingTypeRow: typeof holdingTypes.$inferSelect
+  ): Promise<BrFiHolding> {
+    const marketIndicator = await loadMarketIndicatorSummary(row.marketIndicatorId);
+    return mapBrFiHolding(row, holdingTypeRow, marketIndicator);
+  }
+
   async function insertBrFiHolding(data: InsertBrFiHoldingData): Promise<BrFiHolding> {
     await assertAccountNotArchived(database, data.accountId);
     const accountId = parseId(data.accountId, 'account id');
@@ -961,6 +1382,10 @@ export function createRepo(database: Db) {
     }
     const holdingTypeId = parseId(brFiType.id, 'holding type id');
     const indexingParams = indexingParamsForInsert(data);
+    const { marketIndicatorId } = await resolveBrFiMarketIndicator(
+      data.indexingType,
+      data.marketIndicatorId
+    );
 
     try {
       const [row] = database
@@ -972,6 +1397,7 @@ export function createRepo(database: Db) {
           name: data.name,
           productType: data.productType,
           indexingType: data.indexingType,
+          marketIndicatorId,
           ...indexingParams,
           purchaseDate: data.purchaseDate,
           maturityDate: data.maturityDate,
@@ -994,7 +1420,7 @@ export function createRepo(database: Db) {
     const [row] = selectBrFiHoldingsWithType()
       .where(eq(brFiHoldings.id, numericId))
       .all();
-    return row ? mapBrFiHolding(row.brFi, row.holdingType) : null;
+    return row ? mapBrFiRowWithIndicator(row.brFi, row.holdingType) : null;
   }
 
   async function updateBrFiHolding(
@@ -1022,9 +1448,19 @@ export function createRepo(database: Db) {
     const nextPurchaseDate = data.purchaseDate ?? existing.purchaseDate;
     await assertApplicableQuoteForHolding(nextCurrencyCode, nextPurchaseDate);
 
+    const nextIndexingType = data.indexingType ?? existing.indexingType;
+    const nextMarketIndicatorId =
+      data.marketIndicatorId ??
+      (data.indexingType !== undefined ? undefined : existing.marketIndicatorId);
+    const { marketIndicatorId } = await resolveBrFiMarketIndicator(
+      nextIndexingType,
+      nextMarketIndicatorId
+    );
+
     const indexingParams = indexingParamsForUpdate(existing, data);
     const updates: Partial<typeof brFiHoldings.$inferInsert> = {
       updatedAt: new Date(),
+      marketIndicatorId,
       ...indexingParams,
     };
     if (data.accountId !== undefined) {
@@ -1099,7 +1535,7 @@ export function createRepo(database: Db) {
       .where(whereClause)
       .orderBy(brFiHoldings.maturityDate, brFiHoldings.id)
       .all();
-    return rows.map((row) => mapBrFiHolding(row.brFi, row.holdingType));
+    return Promise.all(rows.map((row) => mapBrFiRowWithIndicator(row.brFi, row.holdingType)));
   }
 
   async function listBondHoldings(): Promise<BondHolding[]> {
@@ -1755,6 +2191,17 @@ export function createRepo(database: Db) {
     insertCurrencyQuote,
     updateCurrencyQuote,
     deleteCurrencyQuote,
+    listMarketIndicators,
+    getMarketIndicator,
+    insertMarketIndicator,
+    updateMarketIndicator,
+    deleteMarketIndicator,
+    listIndicatorValues,
+    getIndicatorValue,
+    insertIndicatorValue,
+    updateIndicatorValue,
+    deleteIndicatorValue,
+    getLatestIndicatorValue,
   };
 }
 

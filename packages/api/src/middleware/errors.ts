@@ -59,10 +59,25 @@ export function mapRepoError(
     case 'FOREIGN_KEY':
     case 'INVALID_ID':
     case 'ARCHIVED_ACCOUNT':
-      return { statusCode: 400, body: { code: error.code, message: error.message } };
+    case 'SYSTEM_INDICATOR':
+    case 'DUPLICATE_INDICATOR_SLUG':
+    case 'DUPLICATE_INDICATOR_VALUE':
+      return {
+        statusCode: 400,
+        body: {
+          code: error.code === 'SYSTEM_INDICATOR' || error.code.startsWith('DUPLICATE_')
+            ? 'VALIDATION_ERROR'
+            : error.code,
+          message: error.message,
+          ...(error.fields ? { fields: error.fields } : {}),
+        },
+      };
+    case 'NOT_FOUND':
+      return { statusCode: 404, body: { code: 'NOT_FOUND', message: error.message } };
     case 'HAS_COUPON_PAYMENTS':
     case 'DUPLICATE_QUOTE':
     case 'CURRENCY_IN_USE':
+    case 'INDICATOR_IN_USE':
       return {
         statusCode: 409,
         body: { code: 'CONFLICT', message: error.message },
@@ -70,10 +85,11 @@ export function mapRepoError(
     case 'INVALID_CURRENCY':
     case 'CURRENCY_NOT_ALLOWED':
     case 'EXCHANGE_RATE_REQUIRED':
+    case 'INVALID_MARKET_INDICATOR':
       return {
         statusCode: 400,
         body: {
-          code: error.code,
+          code: error.code === 'INVALID_MARKET_INDICATOR' ? 'VALIDATION_ERROR' : error.code,
           message: error.message,
           ...(error.fields ? { fields: error.fields } : {}),
         },

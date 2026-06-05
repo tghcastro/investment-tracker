@@ -12,6 +12,7 @@ describe('Brazilian Fixed Income validators', () => {
     name: 'LCI Banco X',
     productType: 'LCI' as const,
     indexingType: 'CDI_PERCENTAGE' as const,
+    marketIndicatorId: '1',
     cdiPercentage: 105,
     purchaseDate: new Date('2025-01-15'),
     maturityDate: new Date('2027-01-15'),
@@ -79,6 +80,7 @@ describe('Brazilian Fixed Income validators', () => {
         brFiHoldingCreateSchema.parse({
           ...validBase,
           indexingType: 'IPCA_SPREAD',
+          marketIndicatorId: '3',
           cdiPercentage: undefined,
         })
       ).toThrow();
@@ -88,9 +90,31 @@ describe('Brazilian Fixed Income validators', () => {
       const result = brFiHoldingCreateSchema.parse({
         ...validBase,
         indexingType: 'SELIC',
+        marketIndicatorId: '2',
         cdiPercentage: undefined,
       });
       expect(result.indexingType).toBe('SELIC');
+    });
+
+    it('rejects index-linked types without marketIndicatorId', () => {
+      expect(() =>
+        brFiHoldingCreateSchema.parse({
+          ...validBase,
+          marketIndicatorId: undefined,
+        })
+      ).toThrow('Market indicator is required');
+    });
+
+    it('rejects PRE_FIXED with marketIndicatorId', () => {
+      expect(() =>
+        brFiHoldingCreateSchema.parse({
+          ...validBase,
+          indexingType: 'PRE_FIXED',
+          marketIndicatorId: '1',
+          cdiPercentage: undefined,
+          preFixedRatePercent: 12.5,
+        })
+      ).toThrow('Pre-fixed holdings must not reference a market indicator');
     });
 
     it('rejects invalid productType', () => {
@@ -131,6 +155,7 @@ describe('Brazilian Fixed Income validators', () => {
       expect(() =>
         brFiHoldingUpdateSchema.parse({
           indexingType: 'PRE_FIXED',
+          marketIndicatorId: undefined,
         })
       ).toThrow();
     });

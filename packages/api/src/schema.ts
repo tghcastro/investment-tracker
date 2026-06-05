@@ -117,6 +117,44 @@ export const bondHoldings = sqliteTable(
   })
 );
 
+export const marketIndicators = sqliteTable('market_indicators', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  category: text('category').notNull(),
+  description: text('description'),
+  isSystem: integer('is_system').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+export const marketIndicatorValues = sqliteTable(
+  'market_indicator_values',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    indicatorId: integer('indicator_id').notNull(),
+    valueDate: text('value_date').notNull(),
+    value: real('value').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+  },
+  (table) => ({
+    indicatorRef: foreignKey({
+      columns: [table.indicatorId],
+      foreignColumns: [marketIndicators.id],
+    }).onDelete('cascade'),
+    indicatorDateUnique: uniqueIndex('market_indicator_values_indicator_date_unique').on(
+      table.indicatorId,
+      table.valueDate
+    ),
+  })
+);
+
 export const brFiHoldings = sqliteTable(
   'br_fi_holdings',
   {
@@ -126,6 +164,7 @@ export const brFiHoldings = sqliteTable(
     name: text('name').notNull(),
     productType: text('product_type').notNull(),
     indexingType: text('indexing_type').notNull(),
+    marketIndicatorId: integer('market_indicator_id'),
     cdiPercentage: real('cdi_percentage'),
     ipcaSpreadPercent: real('ipca_spread_percent'),
     preFixedRatePercent: real('pre_fixed_rate_percent'),
@@ -149,6 +188,10 @@ export const brFiHoldings = sqliteTable(
     currencyCodeRef: foreignKey({
       columns: [table.currencyCode],
       foreignColumns: [currencies.code],
+    }),
+    marketIndicatorRef: foreignKey({
+      columns: [table.marketIndicatorId],
+      foreignColumns: [marketIndicators.id],
     }),
   })
 );

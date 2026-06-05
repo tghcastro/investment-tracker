@@ -808,6 +808,14 @@ describe('API routes', () => {
       payload: { quoteDate: '2025-01-15', targetCurrencyCode: 'BRL', rate: 5 },
     });
 
+    const indicatorsResponse = await app.inject({
+      method: 'GET',
+      url: '/api/market-indicators',
+    });
+    const cdiId = indicatorsResponse
+      .json()
+      .find((row: { slug: string }) => row.slug === 'CDI').id;
+
     await app.inject({
       method: 'POST',
       url: '/api/br-fi-holdings',
@@ -817,6 +825,7 @@ describe('API routes', () => {
         name: 'Route LCI',
         productType: 'LCI',
         indexingType: 'CDI_PERCENTAGE',
+        marketIndicatorId: cdiId,
         cdiPercentage: 100,
         purchaseDate: '2025-01-15',
         maturityDate: '2027-01-15',
@@ -1625,6 +1634,124 @@ describe('M6 multi-currency routes', () => {
     });
   });
 
+  describe('Market indicators', () => {
+    async function getIndicatorId(slug: string): Promise<string> {
+      const response = await app.inject({ method: 'GET', url: '/api/market-indicators' });
+      const indicator = response
+        .json()
+        .find((row: { slug: string }) => row.slug === slug);
+      expect(indicator).toBeDefined();
+      return indicator.id;
+    }
+
+    it('GET /api/market-indicators returns seeded indicators', async () => {
+      const response = await app.inject({ method: 'GET', url: '/api/market-indicators' });
+      expect(response.statusCode).toBe(200);
+      const indicators = response.json();
+      expect(indicators.length).toBeGreaterThanOrEqual(7);
+      expect(indicators.find((row: { slug: string }) => row.slug === 'CDI')).toMatchObject({
+        category: 'INTEREST_RATE',
+        isSystem: true,
+        valueCount: 0,
+        latestValue: null,
+      });
+    });
+
+    it('POST /api/market-indicators creates custom indicator', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/market-indicators',
+        payload: {
+          slug: 'custom_rate',
+          name: 'Custom Rate',
+          category: 'INTEREST_RATE',
+        },
+      });
+      expect(response.statusCode).toBe(201);
+      expect(response.json()).toMatchObject({
+        slug: 'CUSTOM_RATE',
+        name: 'Custom Rate',
+        isSystem: false,
+      });
+    });
+
+    it('POST /api/market-indicators rejects duplicate slug', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/market-indicators',
+        payload: {
+          slug: 'CDI',
+          name: 'Duplicate CDI',
+          category: 'INTEREST_RATE',
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json().code).toBe('VALIDATION_ERROR');
+    });
+
+    it('manages indicator values and latest endpoint', async () => {
+      const cdiId = await getIndicatorId('CDI');
+
+      await app.inject({
+        method: 'POST',
+        url: `/api/market-indicators/${cdiId}/values`,
+        payload: { valueDate: '2026-04-01', value: 13.5 },
+      });
+      await app.inject({
+        method: 'POST',
+        url: `/api/market-indicators/${cdiId}/values`,
+        payload: { valueDate: '2026-06-01', value: 14.75 },
+      });
+
+      const latestResponse = await app.inject({
+        method: 'GET',
+        url: `/api/market-indicators/${cdiId}/latest`,
+      });
+      expect(latestResponse.statusCode).toBe(200);
+      expect(latestResponse.json()).toEqual({
+        latestValue: { valueDate: '2026-06-01', value: 14.75 },
+      });
+
+      const valuesResponse = await app.inject({
+        method: 'GET',
+        url: `/api/market-indicators/${cdiId}/values`,
+      });
+      expect(valuesResponse.statusCode).toBe(200);
+      expect(valuesResponse.json()).toHaveLength(2);
+    });
+
+    it('DELETE custom indicator cascades values; blocks system delete', async () => {
+      const cdiId = await getIndicatorId('CDI');
+      const systemDelete = await app.inject({
+        method: 'DELETE',
+        url: `/api/market-indicators/${cdiId}`,
+      });
+      expect(systemDelete.statusCode).toBe(400);
+
+      const createResponse = await app.inject({
+        method: 'POST',
+        url: '/api/market-indicators',
+        payload: {
+          slug: 'temp_indicator',
+          name: 'Temp Indicator',
+          category: 'INFLATION',
+        },
+      });
+      const customId = createResponse.json().id;
+      await app.inject({
+        method: 'POST',
+        url: `/api/market-indicators/${customId}/values`,
+        payload: { valueDate: '2026-01-01', value: 5 },
+      });
+
+      const deleteResponse = await app.inject({
+        method: 'DELETE',
+        url: `/api/market-indicators/${customId}`,
+      });
+      expect(deleteResponse.statusCode).toBe(204);
+    });
+  });
+
   describe('Brazilian Fixed Income holdings', () => {
     async function createBrFiAccountWithQuote() {
       const accountResponse = await app.inject({
@@ -1641,12 +1768,22 @@ describe('M6 multi-currency routes', () => {
       return accountId as string;
     }
 
-    const validBrFiPayload = (accountId: string) => ({
+    async function getIndicatorId(slug: string): Promise<string> {
+      const response = await app.inject({ method: 'GET', url: '/api/market-indicators' });
+      const indicator = response
+        .json()
+        .find((row: { slug: string }) => row.slug === slug);
+      expect(indicator).toBeDefined();
+      return indicator.id;
+    }
+
+    const validBrFiPayload = async (accountId: string) => ({
       accountId,
       currencyCode: 'BRL',
       name: 'LCI Banco X',
       productType: 'LCI',
       indexingType: 'CDI_PERCENTAGE',
+      marketIndicatorId: await getIndicatorId('CDI'),
       cdiPercentage: 105,
       purchaseDate: '2025-01-15',
       maturityDate: '2027-01-15',
@@ -1659,7 +1796,7 @@ describe('M6 multi-currency routes', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/br-fi-holdings',
-        payload: validBrFiPayload(accountId),
+        payload: await validBrFiPayload(accountId),
       });
 
       expect(response.statusCode).toBe(201);
@@ -1679,6 +1816,10 @@ describe('M6 multi-currency routes', () => {
         slug: 'brazilian-fixed-income',
         name: 'Brazilian Fixed Income',
       });
+      expect(body.marketIndicator).toMatchObject({
+        slug: 'CDI',
+        category: 'INTEREST_RATE',
+      });
     });
 
     it('GET /api/br-fi-holdings lists created holdings', async () => {
@@ -1686,7 +1827,7 @@ describe('M6 multi-currency routes', () => {
       await app.inject({
         method: 'POST',
         url: '/api/br-fi-holdings',
-        payload: validBrFiPayload(accountId),
+        payload: await validBrFiPayload(accountId),
       });
 
       const response = await app.inject({ method: 'GET', url: '/api/br-fi-holdings' });
@@ -1701,7 +1842,7 @@ describe('M6 multi-currency routes', () => {
       const postResponse = await app.inject({
         method: 'POST',
         url: '/api/br-fi-holdings',
-        payload: validBrFiPayload(accountId),
+        payload: await validBrFiPayload(accountId),
       });
       const posted = postResponse.json();
 
@@ -1722,7 +1863,7 @@ describe('M6 multi-currency routes', () => {
       const postResponse = await app.inject({
         method: 'POST',
         url: '/api/br-fi-holdings',
-        payload: validBrFiPayload(accountId),
+        payload: await validBrFiPayload(accountId),
       });
       const holdingId = postResponse.json().id;
 
@@ -1744,7 +1885,7 @@ describe('M6 multi-currency routes', () => {
       const postResponse = await app.inject({
         method: 'POST',
         url: '/api/br-fi-holdings',
-        payload: validBrFiPayload(accountId),
+        payload: await validBrFiPayload(accountId),
       });
       const holdingId = postResponse.json().id;
 
@@ -1768,7 +1909,7 @@ describe('M6 multi-currency routes', () => {
         method: 'POST',
         url: '/api/br-fi-holdings',
         payload: {
-          ...validBrFiPayload(accountId),
+          ...(await validBrFiPayload(accountId)),
           purchaseDate: '2027-01-15',
           maturityDate: '2025-01-15',
         },
@@ -1785,7 +1926,7 @@ describe('M6 multi-currency routes', () => {
         method: 'POST',
         url: '/api/br-fi-holdings',
         payload: {
-          ...validBrFiPayload(accountId),
+          ...(await validBrFiPayload(accountId)),
           cdiPercentage: undefined,
         },
       });
@@ -1800,7 +1941,7 @@ describe('M6 multi-currency routes', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/br-fi-holdings',
-        payload: validBrFiPayload(accountId),
+        payload: await validBrFiPayload(accountId),
       });
 
       expect(response.statusCode).toBe(400);
@@ -1818,7 +1959,7 @@ describe('M6 multi-currency routes', () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/br-fi-holdings',
-        payload: validBrFiPayload(accountId),
+        payload: await validBrFiPayload(accountId),
       });
 
       expect(response.statusCode).toBe(400);
@@ -1830,7 +1971,7 @@ describe('M6 multi-currency routes', () => {
       await app.inject({
         method: 'POST',
         url: '/api/br-fi-holdings',
-        payload: validBrFiPayload(accountId),
+        payload: await validBrFiPayload(accountId),
       });
 
       const response = await app.inject({
