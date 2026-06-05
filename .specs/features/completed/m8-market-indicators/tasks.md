@@ -1,8 +1,8 @@
 # M8 Tasks — Market Indicators
 
-**Design**: `.specs/features/active/m8-market-indicators/design.md`  
-**Spec**: `.specs/features/active/m8-market-indicators/spec.md`  
-**Status**: Approved — ready to execute  
+**Design**: `.specs/features/completed/m8-market-indicators/design.md`  
+**Spec**: `.specs/features/completed/m8-market-indicators/spec.md`  
+**Status**: Complete (2026-06-05)  
 **Depends on**: M7 complete  
 **Release**: Part of **v2.0.0** (M9 follows; tag after M9)
 

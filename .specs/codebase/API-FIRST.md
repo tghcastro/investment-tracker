@@ -1,6 +1,6 @@
 # API-first business rules
 
-**Status:** Active (2026-05-31)  
+**Status:** Active (2026-06-05)  
 **Decision:** AD-010 in [STATE.md](../project/STATE.md)  
 **Applies to:** All milestones — currency (M6.1), coupons, portfolio summaries, forecasts, future BRFI/yield logic
 
@@ -36,7 +36,9 @@ Examples — not exhaustive:
 | **Portfolio** | Totals, maturity ladder, income aggregates | `GET /api/portfolio/summary`, `income-summary` |
 | **Validation** | Maturity after purchase, quote required for non-USD | POST/PATCH 400 + `code` |
 | **Shipped (M7)** | BRFI CRUD, indexing validation, portfolio totals | `/api/br-fi-holdings`, summary in `/api/portfolio/summary` |
-| **Future** | YTM, BRFI accrual | New `/api/...` routes — not web math |
+| **Shipped (M8)** | Market indicators, latest value, BRFI indicator link | `/api/market-indicators`, embedded on BRFI responses |
+| **Planned (M9)** | Dashboard allocations, forecasts, upcoming events | `GET /api/dashboard` — web passes filters/displayCurrency only |
+| **Future** | YTM, daily BRFI accrual | New `/api/...` routes — not web math |
 
 ## Response contract pattern
 

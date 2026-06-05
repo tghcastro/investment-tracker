@@ -9,7 +9,7 @@ Catalog for agents and humans. **Default agent entry:** [`AGENTS.md`](../AGENTS.
 | `.specs/project/ROADMAP.md` | Agent + human | Active | 2026-06-05 |
 | `.specs/project/STATE.md` | Agent + human | Active | 2026-06-05 |
 | `.specs/codebase/ARCHITECTURE.md` | Agent | Active | 2026-06-05 |
-| `.specs/codebase/API-FIRST.md` | Agent | Active | 2026-05-31 |
+| `.specs/codebase/API-FIRST.md` | Agent | Active | 2026-06-05 |
 | `.specs/codebase/STRUCTURE.md` | Agent | Active | 2026-06-05 |
 | `.specs/codebase/STACK.md` | Agent | Active | 2026-05-29 |
 | `.specs/codebase/CONVENTIONS.md` | Agent | Active | 2026-05-29 |
@@ -17,13 +17,15 @@ Catalog for agents and humans. **Default agent entry:** [`AGENTS.md`](../AGENTS.
 | `.specs/codebase/TESTING.md` | Agent | Active | 2026-05-28 |
 | `.specs/codebase/INTEGRATIONS.md` | Agent | Active | 2026-05-29 |
 | `docs/harness.md` | Agent + human | Active | 2026-05-29 |
-| `docs/FRONTEND.md` | Agent (UI) | Active | 2026-06-05 (M7 BRFI routes) |
+| `docs/FRONTEND.md` | Agent (UI) | Active | 2026-06-05 (M8 market indicators routes) |
 | `docs/references/node22-wsl.md` | Agent | Active | 2026-05-29 |
 | `DESIGN.md` | Agent (UI tasks) | Active | 2026-05-20 |
 | `.specs/features/completed/m5-holdings-framework/` | Archive | Shipped M5 | 2026-05-29 |
 | `.specs/features/completed/m6-multi-currency/` | Archive | Shipped M6 | 2026-05-29 |
 | `.specs/features/completed/m6.1-multi-currency-follow-ups/` | Archive | Shipped M6.1 | 2026-05-31 |
 | `.specs/features/completed/m7-brazilian-fixed-income/` | Archive | Shipped M7 | 2026-06-05 |
+| `.specs/features/completed/m8-market-indicators/` | Archive | Shipped M8 | 2026-06-05 |
+| `.specs/features/active/m9-dashboard/` | Active | Spec draft M9 | 2026-06-05 |
 | `.specs/features/completed/m1-scaffold/` | Archive | Shipped | 2026-05-21 |
 | `.specs/features/completed/m2-core/` | Archive | Shipped | 2026-05-23 |
 | `.specs/features/completed/m3-coupon-income/` | Archive | Shipped | 2026-05-23 |

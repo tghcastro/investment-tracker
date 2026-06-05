@@ -1,7 +1,7 @@
 # Architecture
 
 **Analyzed:** 2026-06-05  
-**Status:** Implemented — modular monorepo (domain / API / web); v2 (M5–M7) shipped in code, v2.0.0 tag pending.
+**Status:** Implemented — modular monorepo (domain / API / web); v2 (M5–M9): M5–M8 shipped in code, M9 in spec; v2.0.0 tag when M9 ships.
 
 ## High-level diagram
 
@@ -25,7 +25,7 @@
 
 ### `bonds-domain`
 
-- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers, BRFI validators (`brFi.ts`), FX conversion (`currency.ts`: native → USD → display).
+- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers, BRFI validators (`brFi.ts`), market indicator validators (`marketIndicator.ts`), FX conversion (`currency.ts`: native → USD → display).
 - **Must not:** Import Fastify, React, Drizzle, or filesystem APIs.
 - **Consumers:** API (`repo`, routes) applies all business rules. Web must **not** import domain runtime functions — see [API-FIRST.md](./API-FIRST.md).
 
@@ -63,7 +63,8 @@
 | Currencies | `GET /api/currencies`, `GET /api/currencies/available` |
 | Currency quotes | CRUD `/api/currency-quotes` (manual USD-base rates) |
 | Bond holdings | CRUD `/api/holdings`; `currencyCode`; `expectedCouponAmountCents` on responses; list/detail include `converted*` (M6.1); `?displayCurrency=` (default USD) |
-| BRFI holdings | CRUD `/api/br-fi-holdings`; product/indexing enums; `investedAmountCents`; same FX validation as bonds |
+| BRFI holdings | CRUD `/api/br-fi-holdings`; product/indexing enums; `investedAmountCents`; optional `marketIndicatorId` for index-linked types; embedded `marketIndicator` + `latestValue`; same FX validation as bonds |
+| Market indicators | CRUD `/api/market-indicators`; nested `/api/market-indicators/:id/values`; `GET .../latest`; list embeds `latestValue` + `valueCount` |
 | FX preview | `GET /api/fx/convert` (M6.1) — form preview |
 | Coupon payments | CRUD linked to bond holdings |
 | Portfolio | `summary` (bonds + BRFI totals), `income-summary`, `upcoming-coupons` — **all forecasts/aggregates server-side** |
@@ -81,7 +82,9 @@ Tables (Drizzle in `schema.ts`):
 - `currency_quotes` — manual USD-base rates by date
 - `holding_types` — slug, display name, sort order (seed: Bond, Brazilian Fixed Income)
 - `bond_holdings` — FK → account + holding type; `currency_code`; issuer, identifiers, face value, coupon rate (decimal in DB), frequency, dates
-- `br_fi_holdings` — FK → account + holding type; `currency_code`; product type, indexing type, indexing params, invested amount (cents), purchase/maturity dates
+- `br_fi_holdings` — FK → account + holding type; `currency_code`; optional FK → `market_indicators`; product type, indexing type, indexing params, invested amount (cents), purchase/maturity dates
+- `market_indicators` — slug, name, category, `is_system` (seed catalog)
+- `market_indicator_values` — FK → indicator; dated percentage values (unique per indicator + date)
 - `coupon_payments` — FK → bond holding; payment date, amount
 
 **API convention:** `couponRate` in JSON is **percent** (0–100); stored as decimal fraction in SQLite (see route serializers).

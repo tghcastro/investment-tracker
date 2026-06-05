@@ -1,6 +1,6 @@
 # M8 Design — Market Indicators
 
-**Spec**: `.specs/features/active/m8-market-indicators/spec.md`  
+**Spec**: `.specs/features/completed/m8-market-indicators/spec.md`  
 **Status**: Approved (2026-06-05)  
 **Depends on**: M7 complete  
 **Release**: **v2.0.0** (with M5–M9)

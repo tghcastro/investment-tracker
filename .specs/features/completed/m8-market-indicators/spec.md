@@ -1,6 +1,6 @@
 # M8 — Market Indicators Specification
 
-**Status:** Approved (2026-06-05)  
+**Status:** Shipped (2026-06-05) — v2.0.0 tag deferred until M9  
 **Source:** `temp.features.md` — Market Indicator  
 **Depends on:** M7 (BRFI indexing types; holdings may reference indicators)  
 **Architecture:** [API-FIRST.md](../../../codebase/API-FIRST.md) — see **Web vs API** below  
@@ -21,14 +21,14 @@ Brazilian fixed-income holdings are indexed to CDI, IPCA, and SELIC, but the app
 
 ## Goals
 
-- [ ] CRUD for market indicators (create, read, update, delete, list)
-- [ ] Support indicator **categories**: Interest Rate, Inflation, Stock Index
-- [ ] Store and manage **historical values** per indicator (manual entry)
-- [ ] Display values ordered by date; one value per indicator per date
-- [ ] Provide **latest available value** via API for calculations and downstream forecasts (M9)
-- [ ] Allow **BRFI holdings** to reference a market indicator when indexing type is CDI Percentage, IPCA + Spread, or SELIC
-- [ ] Seed suggested system indicators (CDI, SELIC, IPCA, CPI, IBOV, S&P 500, Nasdaq 100)
-- [ ] Automated test coverage per TESTING.md
+- [x] CRUD for market indicators (create, read, update, delete, list)
+- [x] Support indicator **categories**: Interest Rate, Inflation, Stock Index
+- [x] Store and manage **historical values** per indicator (manual entry)
+- [x] Display values ordered by date; one value per indicator per date
+- [x] Provide **latest available value** via API for calculations and downstream forecasts (M9)
+- [x] Allow **BRFI holdings** to reference a market indicator when indexing type is CDI Percentage, IPCA + Spread, or SELIC
+- [x] Seed suggested system indicators (CDI, SELIC, IPCA, CPI, IBOV, S&P 500, Nasdaq 100)
+- [x] Automated test coverage per TESTING.md
 
 ---
 
