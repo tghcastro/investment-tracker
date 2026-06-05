@@ -43,6 +43,13 @@
       "when": 1748822400000,
       "tag": "006_br_fi_holdings",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1748908800000,
+      "tag": "007_market_indicators",
+      "breakpoints": true
     }
   ]
 }

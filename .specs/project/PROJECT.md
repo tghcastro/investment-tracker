@@ -7,7 +7,7 @@
 ## Goals
 
 - **v1:** Replace spreadsheet-based bond tracking with a reliable web app for recording holdings, key bond terms, and coupon income.
-- **v2 (M5–M7):** Holdings framework, multi-currency (USD base, manual quotes), and Brazilian fixed income — **shipped in code** (2026-06-05); **v2.0.0** tag deferred. Specs: [ROADMAP.md](ROADMAP.md).
+- **v2 (M5–M9):** Holdings framework, multi-currency, Brazilian fixed income, market indicators, and portfolio dashboard — M5–M8 **shipped in code** (2026-06-05); M9 spec draft; **v2.0.0** tag when M9 ships. Specs: [ROADMAP.md](ROADMAP.md).
 - **Long term:** Additional asset classes, multi-account aggregation, performance analytics, and net-worth history in one modular platform.
 - **Quality bar:** A user can see all bond positions and upcoming/matured cash flows without maintaining parallel spreadsheets.
 
@@ -44,17 +44,22 @@
 - Market-data feeds and automated bond pricing (all bond data is user-entered in v1)
 - Mobile-native apps (responsive web is sufficient)
 
-**v2 adds (M5–M7, single v2.0.0 release):**
+**v2 adds (M5–M9, single v2.0.0 release):**
 
 - Holding Type framework (Bond + Brazilian Fixed Income seed types)
 - Multi-currency catalog, manual USD-based quotes, account currency config, display-currency on Home/Holdings
 - Brazilian Fixed Income CRUD (LCI, LCA, Tesouro Direto, CRI, CRA) with CDI/IPCA/SELIC/pre-fixed indexing
+- Market indicator catalog + manual historical values (CDI, SELIC, IPCA, indexes)
+- BRFI index-linked holdings reference indicators; latest value via API
+- Consolidated dashboard: allocation, yearly income/principal forecasts, upcoming events (evolves Home)
+- **Business rules in API/domain only** — web requests and passes parameters ([API-FIRST.md](../codebase/API-FIRST.md), AD-010)
 
 **Still out of scope (v2):**
 
 - Stocks, ETFs, funds, crypto (future Holding Types only)
-- Automatic FX feeds, broker sync, BRFI yield accrual engine
+- Automatic FX/indicator feeds, broker sync, daily BRFI accrual ledger, live bond pricing
 - Multi-user auth, tax reporting, mobile-native apps
+- Stock/equity holding types (index indicators stored for future use)
 
 ## Constraints
 

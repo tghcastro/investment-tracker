@@ -178,6 +178,21 @@ describe('TopNav responsive behavior', () => {
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
   });
 
+  it('includes Market Indicators nav link to /market-indicators', () => {
+    mockMatchMedia(false);
+
+    render(
+      <MemoryRouter>
+        <TopNav />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('link', { name: 'Market Indicators' })).toHaveAttribute(
+      'href',
+      '/market-indicators'
+    );
+  });
+
   it('includes Settings nav link to /settings', () => {
     mockMatchMedia(false);
 

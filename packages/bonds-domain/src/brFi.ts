@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { BASE_CURRENCY_CODE } from './currency.js';
+import { requiredIndicatorCategory } from './marketIndicator.js';
 import { currencyCodeSchema } from './validators.js';
 
 export const PRODUCT_TYPES = ['LCI', 'LCA', 'TESOURO_DIRETO', 'CRI', 'CRA'] as const;
@@ -29,6 +30,7 @@ const brFiHoldingFieldsSchema = z.object({
   name: z.string().min(1, 'Name required').max(255),
   productType: productTypeSchema,
   indexingType: indexingTypeSchema,
+  marketIndicatorId: positiveIntegerId('Market indicator ID').optional(),
   cdiPercentage: z.number().positive('CDI percentage must be positive').optional(),
   ipcaSpreadPercent: z.number().min(0, 'IPCA spread must be non-negative').optional(),
   preFixedRatePercent: z
@@ -93,6 +95,33 @@ function addIndexingIssues(
   }
 }
 
+function addMarketIndicatorPresenceIssues(
+  ctx: z.RefinementCtx,
+  indexingType: IndexingType,
+  marketIndicatorId: string | undefined
+): void {
+  const requiredCategory = requiredIndicatorCategory(indexingType);
+
+  if (requiredCategory === null) {
+    if (marketIndicatorId !== undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Pre-fixed holdings must not reference a market indicator',
+        path: ['marketIndicatorId'],
+      });
+    }
+    return;
+  }
+
+  if (marketIndicatorId === undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Market indicator is required for this indexing type',
+      path: ['marketIndicatorId'],
+    });
+  }
+}
+
 export const brFiHoldingCreateSchema = brFiHoldingFieldsSchema
   .superRefine((data, ctx) => {
     if (data.maturityDate <= data.purchaseDate) {
@@ -103,6 +132,7 @@ export const brFiHoldingCreateSchema = brFiHoldingFieldsSchema
       });
     }
     addIndexingIssues(ctx, data.indexingType, data);
+    addMarketIndicatorPresenceIssues(ctx, data.indexingType, data.marketIndicatorId);
   });
 
 export const brFiHoldingUpdateSchema = brFiHoldingFieldsSchema.partial().superRefine((data, ctx) => {
@@ -117,6 +147,13 @@ export const brFiHoldingUpdateSchema = brFiHoldingFieldsSchema.partial().superRe
   }
   if (data.indexingType !== undefined) {
     addIndexingIssues(ctx, data.indexingType, data);
+    addMarketIndicatorPresenceIssues(ctx, data.indexingType, data.marketIndicatorId);
+  } else if (data.marketIndicatorId !== undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'indexingType is required when marketIndicatorId is provided',
+      path: ['indexingType'],
+    });
   }
 });
 

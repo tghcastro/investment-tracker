@@ -15,6 +15,8 @@ export type ApiBrFiHoldingResponse = {
   name: string;
   productType: BrFiHolding['productType'];
   indexingType: BrFiHolding['indexingType'];
+  marketIndicatorId?: string;
+  marketIndicator?: BrFiHolding['marketIndicator'];
   cdiPercentage?: number;
   ipcaSpreadPercent?: number;
   preFixedRatePercent?: number;
@@ -33,6 +35,12 @@ export function toApiBrFiHolding(holding: BrFiHolding): ApiBrFiHoldingResponse {
     name: holding.name,
     productType: holding.productType,
     indexingType: holding.indexingType,
+    ...(holding.marketIndicatorId !== undefined
+      ? { marketIndicatorId: holding.marketIndicatorId }
+      : {}),
+    ...(holding.marketIndicator !== undefined
+      ? { marketIndicator: holding.marketIndicator }
+      : {}),
     ...(holding.cdiPercentage !== undefined ? { cdiPercentage: holding.cdiPercentage } : {}),
     ...(holding.ipcaSpreadPercent !== undefined
       ? { ipcaSpreadPercent: holding.ipcaSpreadPercent }

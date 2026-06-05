@@ -12,6 +12,8 @@ import HoldingFormPage from './pages/HoldingFormPage';
 import Home from './pages/Home';
 import Holdings from './pages/Holdings';
 import Income from './pages/Income';
+import MarketIndicatorDetail from './pages/MarketIndicatorDetail';
+import MarketIndicators from './pages/MarketIndicators';
 import Settings from './pages/Settings';
 import './App.css';
 
@@ -49,6 +51,8 @@ export default function App() {
               <Route path="/income" element={<Income />} />
               <Route path="/currencies/quotes" element={<CurrencyQuotes />} />
               <Route path="/currencies" element={<Currencies />} />
+              <Route path="/market-indicators/:id" element={<MarketIndicatorDetail />} />
+              <Route path="/market-indicators" element={<MarketIndicators />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/accounts/new" element={<AccountFormPage mode="create" />} />
               <Route path="/accounts/:id" element={<AccountFormPage mode="edit" />} />

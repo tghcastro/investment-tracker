@@ -100,6 +100,10 @@ describe('App', () => {
     expect(screen.getByRole('menuitem', { name: 'Bond' })).toHaveAttribute('href', '/holdings');
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
     expect(screen.getByRole('link', { name: 'Currencies' })).toHaveAttribute('href', '/currencies');
+    expect(screen.getByRole('link', { name: 'Market Indicators' })).toHaveAttribute(
+      'href',
+      '/market-indicators'
+    );
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
     expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
     expect(screen.getByRole('heading', { name: 'Portfolio' })).toBeInTheDocument();
@@ -146,5 +150,12 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+  });
+
+  it('resolves /market-indicators route', () => {
+    window.history.pushState({}, '', '/market-indicators');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Market indicators' })).toBeInTheDocument();
   });
 });

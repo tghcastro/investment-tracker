@@ -28,7 +28,7 @@ investment-tracker/
 │   ├── codebase/             # This directory
 │   └── features/
 │       ├── active/           # Next feature specs
-│       └── completed/        # M1–M7 archived specs
+│       └── completed/        # M1–M8 archived specs
 ├── packages/
 │   ├── bonds-domain/
 │   ├── api/
@@ -49,6 +49,7 @@ bonds-domain/
 │   ├── types.ts          # Account, BondHolding, BrFiHolding, CouponPayment, enums
 │   ├── validators.ts     # Zod bond create/update schemas
 │   ├── brFi.ts           # BRFI Zod schemas + indexing validation
+│   ├── marketIndicator.ts # Indicator types, latest-value, indexing validation
 │   ├── currency.ts       # FX conversion helpers (USD base)
 │   └── couponSchedule.ts # estimated dates, expected amounts
 ├── __tests__/
@@ -78,6 +79,7 @@ api/
 │   │   ├── holding-types/
 │   │   ├── holdings/
 │   │   ├── br-fi-holdings/
+│   │   ├── market-indicators/ # CRUD + nested values + latest
 │   │   ├── coupon-payments/
 │   │   ├── portfolio/
 │   │   └── system/           # info, backup, restore
@@ -102,7 +104,7 @@ web/
 │   │   ├── forms/            # TextInput, FormField, FormDialog, Select
 │   │   └── …                 # HoldingForm, BrFiForm, tables, etc.
 │   ├── contexts/             # DisplayCurrencyProvider
-│   ├── pages/                # Home, Holdings, BrFiHoldings, Accounts, Income, Currencies, Settings, forms
+│   ├── pages/                # Home, Holdings, BrFiHoldings, MarketIndicators, Accounts, Income, Currencies, Settings, forms
 │   ├── hooks/                # useApi, useApiMutation
 │   ├── types/api.ts
 │   └── utils/
@@ -119,7 +121,7 @@ web/
 | `.specs/project/ROADMAP.md` | Milestones |
 | `.specs/project/STATE.md` | AD-* decisions, todos |
 | `.specs/features/active/` | New feature work |
-| `.specs/features/completed/` | Shipped M1–M7 (archived) |
+| `.specs/features/completed/` | Shipped M1–M8 (archived) |
 
 ## Config / CI
 

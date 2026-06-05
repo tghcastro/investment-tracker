@@ -1,8 +1,9 @@
 # Roadmap
 
-**Current Milestone:** v2.0.0 release (deferred)  
-**Status:** M7 shipped in code (2026-06-05); M5–M7 complete — tag **v2.0.0** when ready  
-**Latest shipped:** [m7-brazilian-fixed-income](../features/completed/m7-brazilian-fixed-income/spec.md)
+**Current Milestone:** M9 — Dashboard (spec draft)  
+**Status:** M5–M8 shipped in code (2026-06-05); M9 completes **v2.0.0** scope — tag when M9 ships  
+**Latest shipped:** [m8-market-indicators](../features/completed/m8-market-indicators/spec.md)  
+**Next:** [m9-dashboard](../features/active/m9-dashboard/spec.md) → **v2.0.0**
 
 ---
 
@@ -205,6 +206,55 @@
 - Navigation organized by Holding Type (M5 submenu)
 
 **Out of scope (M7):** Broker integrations, automatic/file imports, additional Holding Types beyond BRFI, **v2.0.0 tag** (deferred)
+
+---
+
+## M8 — Market indicators
+
+**Goal:** Store manual historical values for benchmarks (CDI, SELIC, IPCA, stock indexes) and link index-linked BRFI holdings to indicators for downstream forecasts.  
+**Target:** Indicator + value CRUD (API + web); BRFI requires indicator reference for CDI/IPCA/SELIC indexing; latest value endpoint for calculations.  
+**Status:** Complete (2026-06-05) — [spec](../features/completed/m8-market-indicators/spec.md) · [design](../features/completed/m8-market-indicators/design.md) · [tasks](../features/completed/m8-market-indicators/tasks.md)  
+**Depends on:** M7  
+**Release:** **v2.0.0** (with M5–M7, M9)
+
+### Features
+
+**Indicator catalog & values** — DONE
+
+- CRUD market indicators (Interest Rate, Inflation, Stock Index categories)
+- CRUD dated values; one value per indicator per day; latest value for API
+- Seed: CDI, SELIC, IPCA, CPI, IBOV, S&P 500, Nasdaq 100
+
+**BRFI integration** — DONE
+
+- Index-linked BRFI holdings reference a market indicator (required for CDI/IPCA/SELIC)
+- API embeds indicator summary + latest value on BRFI responses
+
+**Out of scope (M8):** Auto feeds, file import, bond indicator links, dashboard forecasts (M9)
+
+---
+
+## M9 — Dashboard
+
+**Goal:** Consolidated portfolio dashboard with allocation, yearly income/principal forecasts, and unified upcoming events — replacing the minimal Home summary.  
+**Target:** `GET /api/dashboard` with filters; Home UI shows all sections; BRFI index-linked interest uses M8 latest indicator values.  
+**Status:** Spec draft (2026-06-05) — [spec](../features/active/m9-dashboard/spec.md)  
+**Depends on:** M5, M6, M7, **M8**  
+**Release:** **v2.0.0** (with M5–M8)
+
+### Features
+
+**Dashboard API** — PLANNED
+
+- Portfolio summary, allocation by type and account, projected income by year, principal forecast by year, upcoming events timeline
+- Filters: account, holding type, date range; display currency (M6)
+
+**Dashboard UI** — PLANNED
+
+- Evolve Home (`/`) into full dashboard; URL-persisted filters
+- API-first — no client-side forecast math; web requests and passes query params only (AD-010)
+
+**Out of scope (M9):** Daily BRFI accrual ledger, live bond pricing, chart library requirement, PDF export
 
 ---
 

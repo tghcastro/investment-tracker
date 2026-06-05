@@ -39,6 +39,13 @@ describe('Repo integration', () => {
     sqlite.close();
   });
 
+  async function indicatorIdBySlug(slug: string): Promise<string> {
+    const indicators = await repo.listMarketIndicators();
+    const match = indicators.find((row) => row.slug === slug);
+    expect(match).toBeDefined();
+    return match!.id;
+  }
+
   it('inserts account and retrieves matching data', async () => {
     const inserted = await repo.insertAccount({
       name: 'Test Broker',
@@ -758,6 +765,7 @@ describe('Repo integration', () => {
       name: 'LCI Banco X',
       productType: 'LCI',
       indexingType: 'CDI_PERCENTAGE',
+      marketIndicatorId: await indicatorIdBySlug('CDI'),
       cdiPercentage: 100,
       purchaseDate: new Date('2025-01-15'),
       maturityDate: new Date('2027-06-01'),
@@ -851,12 +859,14 @@ describe('Repo integration', () => {
       rate: 5,
     });
 
+    const cdiId = await indicatorIdBySlug('CDI');
     const inserted = await repo.insertBrFiHolding({
       accountId: account.id,
       currencyCode: 'BRL',
       name: 'LCI Test',
       productType: 'LCI',
       indexingType: 'CDI_PERCENTAGE',
+      marketIndicatorId: cdiId,
       cdiPercentage: 105,
       purchaseDate: new Date('2025-01-15'),
       maturityDate: new Date('2027-01-15'),
@@ -869,9 +879,15 @@ describe('Repo integration', () => {
       name: 'LCI Test',
       productType: 'LCI',
       indexingType: 'CDI_PERCENTAGE',
+      marketIndicatorId: cdiId,
       cdiPercentage: 105,
       investedAmountCents: 10_000_000,
       currencyCode: 'BRL',
+    });
+    expect(retrieved?.marketIndicator).toMatchObject({
+      id: cdiId,
+      slug: 'CDI',
+      category: 'INTEREST_RATE',
     });
     expect(retrieved?.holdingType).toMatchObject({
       slug: 'brazilian-fixed-income',
@@ -896,6 +912,7 @@ describe('Repo integration', () => {
       name: 'CRA Test',
       productType: 'CRA',
       indexingType: 'SELIC',
+      marketIndicatorId: await indicatorIdBySlug('SELIC'),
       purchaseDate: new Date('2025-01-15'),
       maturityDate: new Date('2027-01-15'),
       investedAmountCents: 5_000_000,
@@ -934,6 +951,7 @@ describe('Repo integration', () => {
       name: 'Account A LCI',
       productType: 'LCI',
       indexingType: 'CDI_PERCENTAGE',
+      marketIndicatorId: await indicatorIdBySlug('CDI'),
       cdiPercentage: 100,
       purchaseDate: new Date('2025-01-15'),
       maturityDate: new Date('2027-01-15'),
@@ -972,6 +990,7 @@ describe('Repo integration', () => {
       name: 'BRL LCI',
       productType: 'LCI',
       indexingType: 'CDI_PERCENTAGE',
+      marketIndicatorId: await indicatorIdBySlug('CDI'),
       cdiPercentage: 100,
       purchaseDate: new Date('2025-01-15'),
       maturityDate: new Date('2027-01-15'),
@@ -993,6 +1012,7 @@ describe('Repo integration', () => {
         name: 'Invalid Currency',
         productType: 'LCI',
         indexingType: 'CDI_PERCENTAGE',
+        marketIndicatorId: await indicatorIdBySlug('CDI'),
         cdiPercentage: 100,
         purchaseDate: new Date('2025-01-15'),
         maturityDate: new Date('2027-01-15'),
@@ -1014,11 +1034,94 @@ describe('Repo integration', () => {
         name: 'Missing Quote',
         productType: 'LCI',
         indexingType: 'CDI_PERCENTAGE',
+        marketIndicatorId: await indicatorIdBySlug('CDI'),
         cdiPercentage: 100,
         purchaseDate: new Date('2025-01-15'),
         maturityDate: new Date('2027-01-15'),
         investedAmountCents: 1_000_000,
       })
     ).rejects.toMatchObject({ code: 'EXCHANGE_RATE_REQUIRED' });
+  });
+
+  it('lists seeded market indicators with latest value metadata', async () => {
+    const indicators = await repo.listMarketIndicators();
+    expect(indicators.length).toBeGreaterThanOrEqual(7);
+    const cdi = indicators.find((row) => row.slug === 'CDI');
+    expect(cdi).toMatchObject({
+      slug: 'CDI',
+      category: 'INTEREST_RATE',
+      isSystem: true,
+      valueCount: 0,
+      latestValue: null,
+    });
+  });
+
+  it('creates indicator values and resolves latest value', async () => {
+    const cdi = (await repo.listMarketIndicators()).find((row) => row.slug === 'CDI');
+    expect(cdi).toBeDefined();
+
+    await repo.insertIndicatorValue(cdi!.id, {
+      valueDate: '2026-04-01',
+      value: 13.5,
+    });
+    await repo.insertIndicatorValue(cdi!.id, {
+      valueDate: '2026-06-01',
+      value: 14.75,
+    });
+
+    const latest = await repo.getLatestIndicatorValue(cdi!.id);
+    expect(latest.latestValue).toEqual({
+      valueDate: '2026-06-01',
+      value: 14.75,
+    });
+  });
+
+  it('rejects duplicate indicator value dates', async () => {
+    const cdi = (await repo.listMarketIndicators()).find((row) => row.slug === 'CDI');
+    expect(cdi).toBeDefined();
+    await repo.insertIndicatorValue(cdi!.id, {
+      valueDate: '2026-05-01',
+      value: 14,
+    });
+
+    await expect(
+      repo.insertIndicatorValue(cdi!.id, {
+        valueDate: '2026-05-01',
+        value: 14.1,
+      })
+    ).rejects.toMatchObject({ code: 'DUPLICATE_INDICATOR_VALUE' });
+  });
+
+  it('blocks deleting indicator referenced by BRFI holding', async () => {
+    const account = await repo.insertAccount({
+      name: 'Indicator Ref',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-01-15',
+      targetCurrencyCode: 'BRL',
+      rate: 5,
+    });
+    const customIndicator = await repo.insertMarketIndicator({
+      slug: 'CUSTOM_REF',
+      name: 'Custom Ref Rate',
+      category: 'INTEREST_RATE',
+    });
+    await repo.insertBrFiHolding({
+      accountId: account.id,
+      currencyCode: 'BRL',
+      name: 'Linked LCI',
+      productType: 'LCI',
+      indexingType: 'CDI_PERCENTAGE',
+      marketIndicatorId: customIndicator.id,
+      cdiPercentage: 100,
+      purchaseDate: new Date('2025-01-15'),
+      maturityDate: new Date('2027-01-15'),
+      investedAmountCents: 1_000_000,
+    });
+
+    await expect(repo.deleteMarketIndicator(customIndicator.id)).rejects.toMatchObject({
+      code: 'INDICATOR_IN_USE',
+    });
   });
 });
