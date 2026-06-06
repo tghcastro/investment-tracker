@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-06-06
-**Current Work:** **v1.1.0** released (2026-06-06) — M5–M9 features shipped since v1.0.0.
+**Current Work:** **M10–M16** planned in [ROADMAP.md](ROADMAP.md) — per-milestone releases **v1.2.0–v1.8.0** (AD-011). Next implement: **M10**.
 
 ### AD-010: API-first business rules — web UI only (2026-05-31)
 
@@ -13,6 +13,20 @@
 ---
 
 ## Recent Decisions (Last 60 days)
+
+### AD-011: Per-milestone versioning post-v1.1.0 (2026-06-06)
+
+**Decision:** After **v1.1.0** (M5–M9 bundle), each new milestone ships as its **own semver tag** on the **1.x** line. No multi-milestone release bundles unless explicitly re-decided.
+**Reason:** User wants incremental shippable versions (M10–M16); smaller UAT gates; faster feedback.
+**Trade-off:** More release overhead (7 tags vs one); shared infra (Tools page) still sequenced M10 first.
+**Impact:** [ROADMAP.md](ROADMAP.md) M10–M16; supersedes AD-009 bundled v2.0.0 intent for **future** work only (v1.1.0 already shipped).
+
+### AD-012: M10–M16 planning decisions (2026-06-06)
+
+**Decision:** (1) "Add currency" = **currency quotes** modal, UI-only continue-creating. (2) BRFI `couponFrequency` = bonds enum; UI **Mensal / Trimestral / Semestral / Anual**; migration default `annual`. (3) Index-linked coupon math uses **indicator history accumulated over each coupon period** (per M11 spec examples), not latest-value shortcut. (4) DB file picker: **prompt each session** — no persisted path across API restarts. (5) DB picker = app feature (DEV + PROD), not Docker-only. (6) Ship order: M10 → M11 → M13 → M14 → M15 → M16 → **M12 last** (v1.8.0). (7) **Retrocompatibility:** additive migrations only; existing DBs/backups must upgrade in place.
+**Reason:** User confirmations on open questions.
+**Trade-off:** Session DB picker means re-upload after API restart; period-based indicator math needs M8 history gaps handled gracefully (null estimate).
+**Impact:** M11 domain/API design; M12 no persistence layer; release map in ROADMAP.
 
 ### AD-001: v1 scope is bonds-only (2026-05-19)
 
@@ -111,6 +125,13 @@ _None yet._
 
 ## Todos
 
+- [ ] Specify M10 — navigation & Tools shell → [ROADMAP](ROADMAP.md#m10--navigation--tools-shell)
+- [ ] Specify M11 — BRFI coupon engine
+- [ ] Specify M12 — database file picker
+- [ ] Specify M13 — CSV currency quotes import
+- [ ] Specify M14 — CSV market indicators import
+- [ ] Specify M15 — compound & simple interest calculators
+- [ ] Specify M16 — million goal calculator
 - [x] Approve M8 spec → Design + tasks (2026-06-05)
 - [x] Execute M8 P1 — domain + API [tasks](../features/completed/m8-market-indicators/tasks.md) (2026-06-05)
 - [x] Execute M8 P2 — web UI (2026-06-05)
@@ -190,5 +211,11 @@ _None yet._
 
 ## Open Questions
 
+- **M15 chart library:** No chart dep in web today — pick at M15 design (e.g. lightweight SVG vs add `recharts`). Deferred to M15 spec.
 - **Hosting:** Docker images on Hub + compose for local/VPS deploy (see AD-007). Cloud multi-instance or managed DB still TBD.
+- ~~**M10 "Add currency"**~~ — **Resolved (AD-012):** currency quotes modal
+- ~~**M11 coupon frequency**~~ — **Resolved (AD-012):** bonds enum + PT labels; default `annual` migration
+- ~~**M11 index math**~~ — **Resolved (AD-012):** period accumulation from indicator history
+- ~~**M12 persistence / Docker / ship order**~~ — **Resolved (AD-012):** session-only; app-level; ships last
+- ~~**Version series**~~ — **Resolved (AD-012):** 1.x through v1.8.0
 - ~~**API style:** REST (default) vs tRPC~~ — **Resolved:** REST + Fastify (M1 implementation, AD-002)

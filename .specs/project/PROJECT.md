@@ -7,7 +7,8 @@
 ## Goals
 
 - **v1:** Replace spreadsheet-based bond tracking with a reliable web app for recording holdings, key bond terms, and coupon income.
-- **v2 (M5–M9):** Holdings framework, multi-currency, Brazilian fixed income, market indicators, and portfolio dashboard — **shipped in code** (2026-06-05); **v2.0.0** tag pending manual UAT. Specs: [ROADMAP.md](ROADMAP.md).
+- **v1.1 (M5–M9):** Holdings framework, multi-currency, Brazilian fixed income, market indicators, and portfolio dashboard — **shipped** as **v1.1.0** (2026-06-06). Specs: [ROADMAP.md](ROADMAP.md).
+- **v1.2–v1.8 (M10–M16):** Tools hub, BRFI coupon engine, CSV imports, financial calculators, DB picker (last) — [ROADMAP.md](ROADMAP.md); **one milestone = one version** on **1.x** (AD-011, AD-012); **additive DB migrations only**.
 - **Long term:** Additional asset classes, multi-account aggregation, performance analytics, and net-worth history in one modular platform.
 - **Quality bar:** A user can see all bond positions and upcoming/matured cash flows without maintaining parallel spreadsheets.
 

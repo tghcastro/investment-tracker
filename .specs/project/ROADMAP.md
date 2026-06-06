@@ -1,9 +1,9 @@
 # Roadmap
 
-**Current Milestone:** Post-v1.1.0 maintenance  
+**Current Milestone:** M10 — Navigation & Tools shell  
 **Status:** M5–M9 shipped — **v1.1.0** released 2026-06-06  
 **Latest shipped:** [m9-dashboard](../features/completed/m9-dashboard/spec.md)  
-**Next:** Future considerations (import, equities, etc.) per PROJECT.md
+**Next:** M10 → **v1.2.0** (per-milestone releases — AD-011)
 
 ---
 
@@ -258,6 +258,237 @@
 
 ---
 
+## M10 — Navigation & Tools shell
+
+**Goal:** Rename nav for clarity; introduce Tools hub; improve bulk data-entry UX with "continue creating".  
+**Target:** **v1.2.0** — shippable without API changes.  
+**Status:** Planned  
+**Depends on:** v1.1.0
+
+### Features
+
+**Navigation rename** — PLANNED
+
+- TopNav **Reference** → **Configurations** (same routes: Currencies, Currency Quotes, Market Indicators)
+- TopNav **Settings** → **Tools** → `/tools` (remove standalone `/settings` or redirect)
+
+**Tools page** — PLANNED
+
+- Card grid layout (pattern: Accounts page)
+- First card: **Backup / Restore** (content moved from current Settings page)
+- Card shows tool name + short description; click opens tool view
+
+**Continue creating (UI only)** — PLANNED
+
+- **Currency quotes** add modal (not new ISO codes): checkbox "Continue creating" (default off); on success keep modal open, clear value fields only
+- Add coupon payment modal (bonds): same pattern
+- Add interest payment modal (BRFI): same pattern
+- No API changes
+
+**Out of scope (M10):** New tools (DB picker, CSV, calculators), BRFI coupon math, user currency catalog CRUD
+
+---
+
+## M11 — BRFI coupon engine
+
+**Goal:** Full coupon/interest rules for Brazilian fixed income per indexing type; projected coupons in API/dashboard.  
+**Target:** **v1.3.0**  
+**Status:** Planned  
+**Depends on:** M7, M8 (indicators for index-linked calcs)
+
+### Features
+
+**Coupon calculation (domain + API)** — PLANNED
+
+- **Pre-fixed:** fixed annual rate ÷ frequency × face (invested amount)
+- **IPCA + Spread:** inflation-adjusted principal × real semiannual rate (historical IPCA accumulation)
+- **CDI-linked:** accumulated CDI over coupon period × CDI percentage
+- **SELIC-linked:** accumulated SELIC over coupon period × SELIC percentage
+- Coupons as independent cash flows; principal unchanged until maturity
+- Historical payments immutable; included in total return / dashboard forecasts
+
+**BRFI holding model** — PLANNED
+
+- New field: `couponFrequency` — same enum as bonds (`monthly` | `quarterly` | `semi-annual` | `annual`); UI labels **Mensal / Trimestral / Semestral / Anual**
+- Migration `009_*`: additive column, default `annual` for existing rows (matches current yearly projection behaviour)
+- API embeds `expectedInterestAmountCents` on BRFI GET responses
+- Projected future coupons when rate data sufficient (M8 indicator **history** between coupon dates — see AD-012)
+
+**Web** — PLANNED
+
+- Interest payment section shows API estimate (AD-010); "continue creating" if not done in M10
+- Dashboard/upcoming events use new API projections
+
+**Baseline today:** BRFI interest payment CRUD exists; dashboard uses simplified annual `brFiAnnualInterestCents` + yearly dates — does **not** meet planned M11 semiannual/IPCA/CDI-period rules.
+
+**Out of scope (M11):** Daily accrual ledger, broker feeds, bond coupon rule changes (bonds already covered in M3)
+
+**Retrocompatibility:** Migration only adds `coupon_frequency` with default; existing BRFI rows + backups restore cleanly; no data rewrite.
+
+---
+
+## M13 — CSV import: currency quotes
+
+**Goal:** Bulk import/update currency quotes from CSV via Tools.  
+**Target:** **v1.4.0**  
+**Status:** Planned  
+**Depends on:** M10, M6
+
+### Features
+
+**CSV format** — PLANNED
+
+- Columns: `date` (YYYY-MM-DD), `currency` (ISO code in DB), `value` (rate)
+- All lines validated before any write; summary: total / created / updated
+
+**API** — PLANNED
+
+- `POST /api/tools/import/currency-quotes` (or similar) — transactional all-or-nothing
+
+**Web** — PLANNED
+
+- Tools card + upload UI + result summary
+
+**Out of scope (M13):** New currency codes, automatic FX feeds
+
+---
+
+## M14 — CSV import: market indicators
+
+**Goal:** Bulk import/update market indicator values from CSV via Tools.  
+**Target:** **v1.5.0**  
+**Status:** Planned  
+**Depends on:** M10, M8
+
+### Features
+
+**CSV format** — PLANNED
+
+- Columns: `date`, `slug` (indicator slug in DB), `value`
+- Same validation and summary rules as M13
+
+**API + Web** — PLANNED
+
+- Import endpoint + Tools card (mirror M13 pattern)
+
+**Note:** `next.spec.md` line "Currency code available in database only" under indicators is assumed **typo** → indicator slug must exist in DB.
+
+**Out of scope (M14):** New indicator definitions, auto feeds
+
+---
+
+## M15 — Financial calculators (compound & simple interest)
+
+**Goal:** Standalone simulation tools for compound and simple interest with chart + projection table.  
+**Target:** **v1.6.0**  
+**Status:** Planned  
+**Depends on:** M10, M6 (display currency formatting)
+
+### Features
+
+**Compound Interest Calculator** — PLANNED
+
+- Inputs: initial amount, periodic contribution, rate, rate frequency, period, period unit
+- Outputs: final value, total invested, total interest, projection table, growth chart (FR-001–FR-009)
+- Auto-recalc on input change; ≤1s for 100-year monthly sim (NFR-001)
+- Decimal arithmetic in domain — not floating point for money (NFR-002)
+
+**Simple Interest Calculator** — PLANNED
+
+- Same UX shell; simple-interest formula instead of compound
+
+**API-first (AD-010)** — PLANNED
+
+- Calc logic in `bonds-domain`; API simulation endpoint(s); web renders only
+
+**Out of scope (M15):** Persisted simulations, tax/fees/inflation modeling
+
+---
+
+## M16 — Million goal calculator
+
+**Goal:** Target-amount planner — required monthly contribution or time-to-goal.  
+**Target:** **v1.7.0**  
+**Status:** Planned  
+**Depends on:** M10, M15 (shared calc/chart infrastructure)
+
+### Features
+
+**Mode 1 — Required monthly contribution** — PLANNED
+
+- Inputs: initial, target (default BRL 1M), rate, rate periodicity, investment period (years)
+- Output: required monthly contribution + summary metrics
+
+**Mode 2 — Time to reach goal** — PLANNED
+
+- Inputs: initial, monthly contribution, target, rate
+- Output: years + months to goal (month-by-month simulation)
+
+**Outputs** — PLANNED
+
+- Summary cards, annual evolution table, growth chart with target reference line
+- Annual → monthly rate: `(1 + r_annual)^(1/12) - 1`
+
+**API-first** — PLANNED
+
+- Domain formulas + API endpoints; web presentation only
+
+**Out of scope (M16):** Taxes, fees, inflation, volatility
+
+---
+
+## M12 — Database file picker *(ships last)*
+
+**Goal:** User chooses which SQLite file the app uses — at startup and from Tools.  
+**Target:** **v1.8.0**  
+**Status:** Planned  
+**Depends on:** M10 (Tools page)  
+**Ship order:** After M16 (user decision 2026-06-06)
+
+### Features
+
+**Startup flow** — PLANNED
+
+- Modal on **each new browser session** prompting database file selection (no server-side persist across API restarts — AD-012)
+- Accept `.db` and backup files (same validation as restore)
+- After load → Home; all data from chosen file
+
+**Tools card** — PLANNED
+
+- "Choose database file" tool on `/tools`
+- Re-use `AppState.reconnect()` pattern from restore
+
+**API** — PLANNED
+
+- Endpoint to load/switch database file (upload-based; browser cannot pass host paths)
+- Session-scoped active DB in API process memory only; new API process → user picks file again
+
+**Deploy** — PLANNED
+
+- Application feature (DEV + PROD); not a Docker-specific capability — works wherever api + web run
+
+**Out of scope (M12):** Multi-user concurrent DB access, cloud-hosted DB, persisting chosen path to disk/env
+
+**Retrocompatibility:** No schema change; any valid v1.x backup file loadable.
+
+---
+
+## Release map (post-v1.1.0)
+
+| Order | Milestone | Version | Theme |
+| --- | --- | --- | --- |
+| 1 | M10 | **v1.2.0** | Nav + Tools shell + continue creating |
+| 2 | M11 | **v1.3.0** | BRFI coupon engine |
+| 3 | M13 | **v1.4.0** | CSV currency quotes |
+| 4 | M14 | **v1.5.0** | CSV market indicators |
+| 5 | M15 | **v1.6.0** | Compound + simple calculators |
+| 6 | M16 | **v1.7.0** | Million goal calculator |
+| 7 | M12 | **v1.8.0** | Database file picker |
+
+**Cross-cutting:** All milestones use **additive SQLite migrations only**; backups from prior versions must restore and run forward migrations.
+
+---
+
 ## Future Considerations
 
 - Additional asset classes beyond M7: equities, ETFs, cash — extend Holding Type framework from M5
@@ -266,5 +497,5 @@
 - Net worth over time across all assets
 - Live pricing and yield-to-maturity from market-data providers
 - Authentication and multi-user households
-- Import data (spreadsheet/CSV)
 - Export and reporting for tax prep
+- Yield-to-maturity / duration calculators (deferred idea)
