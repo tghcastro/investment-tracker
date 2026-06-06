@@ -4,10 +4,10 @@ Catalog for agents and humans. **Default agent entry:** [`AGENTS.md`](../AGENTS.
 
 | Path | Audience | Status | Last verified |
 | --- | --- | --- | --- |
-| `AGENTS.md` | Agent | Active | 2026-06-05 |
+| `AGENTS.md` | Agent | Active | 2026-06-06 (v1.1.0) |
 | `.specs/project/PROJECT.md` | Agent + human | Active | 2026-06-05 |
-| `.specs/project/ROADMAP.md` | Agent + human | Active | 2026-06-05 |
-| `.specs/project/STATE.md` | Agent + human | Active | 2026-06-05 |
+| `.specs/project/ROADMAP.md` | Agent + human | Active | 2026-06-06 (v1.1.0) |
+| `.specs/project/STATE.md` | Agent + human | Active | 2026-06-06 (v1.1.0) |
 | `.specs/codebase/ARCHITECTURE.md` | Agent | Active | 2026-06-06 (BRFI interest payments) |
 | `.specs/codebase/API-FIRST.md` | Agent | Active | 2026-06-05 (M9 shipped) |
 | `.specs/codebase/STRUCTURE.md` | Agent | Active | 2026-06-06 |

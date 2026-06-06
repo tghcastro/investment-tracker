@@ -1,9 +1,9 @@
 # Roadmap
 
-**Current Milestone:** v2.0.0 release (pending validation)  
-**Status:** M5–M9 shipped in code (2026-06-05) — tag **v2.0.0** after manual UAT  
+**Current Milestone:** Post-v1.1.0 maintenance  
+**Status:** M5–M9 shipped — **v1.1.0** released 2026-06-06  
 **Latest shipped:** [m9-dashboard](../features/completed/m9-dashboard/spec.md)  
-**Next:** Manual validation → v2.0.0 release
+**Next:** Future considerations (import, equities, etc.) per PROJECT.md
 
 ---
 
