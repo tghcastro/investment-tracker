@@ -77,7 +77,11 @@ export interface ApiHoldingTypeRef {
 export type ApiAccount = SerializeDates<Account>;
 
 /** JSON shape returned by GET /api/br-fi-holdings */
-export type ApiBrFiHolding = SerializeDates<BrFiHolding>;
+export type ApiBrFiHolding = SerializeDates<BrFiHolding> & {
+  convertedInvestedAmountCents: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
+};
 
 /** JSON shape returned by GET /api/holdings */
 export type ApiBondHolding = SerializeDates<BondHolding> & {

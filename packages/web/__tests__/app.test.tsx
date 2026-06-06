@@ -102,7 +102,18 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Investment Tracker' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
     expect(screen.getByRole('button', { name: 'Holdings' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Bond' })).toHaveAttribute('href', '/holdings');
+    const holdingsSubmenu = document.getElementById('holdings-submenu');
+    expect(holdingsSubmenu).not.toBeNull();
+    expect(holdingsSubmenu!.querySelector('[href="/holdings"]')).toHaveTextContent('Bond');
+    expect(holdingsSubmenu!.querySelector('[href="/holdings/brazilian-fixed-income"]')).toHaveTextContent(
+      'Brazilian Fixed Income'
+    );
+    const addSubmenu = document.getElementById('add-holding-submenu');
+    expect(addSubmenu).not.toBeNull();
+    expect(addSubmenu!.closest('.cb-top-nav__item--cta')?.querySelector('button')).toHaveTextContent(
+      'Add holding'
+    );
+    expect(addSubmenu!.querySelector('[href="/holdings/new"]')).toHaveTextContent('Bond');
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
     expect(screen.getByRole('button', { name: 'Reference' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Currencies' })).toHaveAttribute(

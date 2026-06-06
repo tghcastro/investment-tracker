@@ -28,6 +28,8 @@ const sampleHolding: ApiBrFiHolding = {
   purchaseDate: '2024-01-01',
   maturityDate: '2026-01-01',
   investedAmountCents: 10_000_00,
+  convertedInvestedAmountCents: 2_000_00,
+  convertedCurrency: 'USD',
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
 

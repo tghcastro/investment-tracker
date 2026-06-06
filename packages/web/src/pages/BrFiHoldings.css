@@ -1,3 +1,13 @@
+.cb-brfi-holdings-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--cb-space-base);
+}
+
+.cb-brfi-holdings-page__add-link {
+  text-decoration: none;
+}
+
 .cb-brfi-holdings-filters {
   display: flex;
   flex-wrap: wrap;

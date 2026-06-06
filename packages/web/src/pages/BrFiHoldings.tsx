@@ -5,13 +5,19 @@ import {
   BrFiHoldingsTableSkeleton,
   type AccountInfo,
 } from '../components/BrFiHoldingsTable';
+import { CurrencySelector } from '../components/CurrencySelector';
 import { ConfirmDialog } from '../components/forms';
 import { Button, EmptyState, ErrorBanner, PageHeader } from '../components/ui';
+import {
+  appendDisplayCurrencyParam,
+  useDisplayCurrency,
+} from '../contexts/DisplayCurrencyContext';
 import { useApi, useApiMutation } from '../hooks';
 import type { ApiAccount, ApiBrFiHolding } from '../types/api';
 import './BrFiHoldings.css';
 
 export default function BrFiHoldings() {
+  const { displayCurrency } = useDisplayCurrency();
   const [searchParams, setSearchParams] = useSearchParams();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -20,11 +26,14 @@ export default function BrFiHoldings() {
   const accountId = searchParams.get('accountId') ?? undefined;
 
   const holdingsUrl = useMemo(() => {
-    if (!accountId) {
-      return '/api/br-fi-holdings';
+    const params = new URLSearchParams();
+    if (accountId) {
+      params.set('accountId', accountId);
     }
-    return `/api/br-fi-holdings?accountId=${encodeURIComponent(accountId)}`;
-  }, [accountId]);
+    const qs = params.toString();
+    const base = qs ? `/api/br-fi-holdings?${qs}` : '/api/br-fi-holdings';
+    return appendDisplayCurrencyParam(base, displayCurrency);
+  }, [accountId, displayCurrency]);
 
   const { data: holdings, loading, error } = useApi<ApiBrFiHolding[]>(holdingsUrl);
   const { data: accounts } = useApi<ApiAccount[]>('/api/accounts?includeArchived=true');
@@ -88,7 +97,21 @@ export default function BrFiHoldings() {
       <PageHeader
         title="Brazilian Fixed Income"
         subtitle="LCI, LCA, Tesouro Direto, CRI, and CRA positions"
+        action={
+          <Link
+            to="/holdings/brazilian-fixed-income/new"
+            className="cb-brfi-holdings-page__add-link"
+          >
+            <Button variant="primary">Add holding</Button>
+          </Link>
+        }
       />
+
+      {!loading && !error ? (
+        <div className="cb-brfi-holdings-toolbar">
+          <CurrencySelector />
+        </div>
+      ) : null}
 
       {error ? <ErrorBanner message={error} /> : null}
       {deleteMutation.error ? <ErrorBanner message={deleteMutation.error} /> : null}

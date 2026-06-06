@@ -138,6 +138,8 @@ const sampleBrFiHoldings: ApiBrFiHolding[] = [
     purchaseDate: '2025-01-15',
     maturityDate: '2027-01-15',
     investedAmountCents: 1_000_000,
+    convertedInvestedAmountCents: 200_000,
+    convertedCurrency: 'USD',
     updatedAt: '2025-01-15T00:00:00.000Z',
   },
 ];

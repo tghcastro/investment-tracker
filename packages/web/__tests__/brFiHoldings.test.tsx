@@ -15,6 +15,21 @@ vi.mock('../src/hooks/useApi', () => ({
   useApi: (url: string) => mockUseApi(url),
 }));
 
+vi.mock('../src/contexts/DisplayCurrencyContext', () => ({
+  useDisplayCurrency: () => ({
+    displayCurrency: 'USD',
+    displaySymbol: '$',
+    availableCurrencies: [
+      { code: 'USD', symbol: '$', name: 'US Dollar' },
+      { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+    ],
+    loading: false,
+    setDisplayCurrency: vi.fn(),
+  }),
+  appendDisplayCurrencyParam: (url: string) => url,
+  DisplayCurrencyProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 vi.mock('../src/hooks/useApiMutation', () => ({
   useApiMutation: () => ({
     mutate: mockMutate,
@@ -74,6 +89,8 @@ const sampleHoldings: ApiBrFiHolding[] = [
     purchaseDate: '2024-03-01',
     maturityDate: '2027-03-01',
     investedAmountCents: 50_000_00,
+    convertedInvestedAmountCents: 10_000_00,
+    convertedCurrency: 'USD',
     updatedAt: '2024-03-01T00:00:00.000Z',
   },
   {
@@ -89,6 +106,8 @@ const sampleHoldings: ApiBrFiHolding[] = [
     purchaseDate: '2023-06-15',
     maturityDate: '2030-08-15',
     investedAmountCents: 10_000_00,
+    convertedInvestedAmountCents: 2_000_00,
+    convertedCurrency: 'USD',
     updatedAt: '2023-06-15T00:00:00.000Z',
   },
 ];
@@ -124,6 +143,11 @@ describe('BrFiHoldings', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Brazilian Fixed Income' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Add holding' })).toHaveAttribute(
+      'href',
+      '/holdings/brazilian-fixed-income/new'
+    );
+    expect(screen.getByLabelText('Display currency')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'XP LCI 2027' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Tesouro IPCA+ 2030' })).toBeInTheDocument();
     expect(screen.getByText('105% CDI')).toBeInTheDocument();

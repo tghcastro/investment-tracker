@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 
+import { validateDisplayCurrencyQuery } from '../coupon-payments/display-currency.js';
 import type { Repo } from '../../repo.js';
 import { toApiBrFiHoldings } from './serialize.js';
 
@@ -17,7 +18,15 @@ function parsePositiveIntegerId(
 export function registerListBrFiHoldings(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/br-fi-holdings', async (request, reply) => {
     const repo = getRepo();
-    const { accountId } = request.query as { accountId?: string };
+    const { accountId, displayCurrency } = request.query as {
+      accountId?: string;
+      displayCurrency?: string;
+    };
+
+    const displayCurrencyResult = validateDisplayCurrencyQuery(displayCurrency);
+    if ('status' in displayCurrencyResult) {
+      return reply.status(displayCurrencyResult.status).send(displayCurrencyResult.body);
+    }
 
     let parsedAccountId: string | undefined;
     if (accountId !== undefined) {
@@ -32,9 +41,12 @@ export function registerListBrFiHoldings(app: FastifyInstance, getRepo: () => Re
       parsedAccountId = parsed.id;
     }
 
-    const holdings = await repo.listBrFiHoldingsFiltered({
-      accountId: parsedAccountId,
-    });
+    const holdings = await repo.listBrFiHoldingsFiltered(
+      {
+        accountId: parsedAccountId,
+      },
+      { displayCurrency: displayCurrencyResult.displayCurrency }
+    );
     return reply.status(200).send(toApiBrFiHoldings(holdings));
   });
 }

@@ -1835,6 +1835,30 @@ describe('M6 multi-currency routes', () => {
       const holdings = response.json();
       expect(holdings.length).toBeGreaterThanOrEqual(1);
       expect(holdings[0].holdingType.slug).toBe('brazilian-fixed-income');
+      expect(holdings[0]).toMatchObject({
+        convertedInvestedAmountCents: expect.any(Number),
+        convertedCurrency: 'USD',
+      });
+    });
+
+    it('GET /api/br-fi-holdings converts invested amounts with displayCurrency', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+      await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: await validBrFiPayload(accountId),
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/br-fi-holdings?displayCurrency=BRL',
+      });
+
+      expect(response.statusCode).toBe(200);
+      const holdings = response.json();
+      expect(holdings.length).toBeGreaterThanOrEqual(1);
+      expect(holdings[0].convertedCurrency).toBe('BRL');
+      expect(holdings[0].convertedInvestedAmountCents).toBe(holdings[0].investedAmountCents);
     });
 
     it('GET /api/br-fi-holdings/:id returns holding by id', async () => {
