@@ -153,8 +153,9 @@ describe('TopNav responsive behavior', () => {
     expect(screen.getByLabelText('Development mode')).toBeInTheDocument();
   });
 
-  it('enables Add holding link to /holdings/new', () => {
+  it('shows Add holding submenu with Bond and BRFI create links', async () => {
     mockMatchMedia(false);
+    const user = userEvent.setup();
 
     render(
       <MemoryRouter>
@@ -162,9 +163,25 @@ describe('TopNav responsive behavior', () => {
       </MemoryRouter>
     );
 
-    const addLink = screen.getByRole('link', { name: 'Add holding' });
-    expect(addLink).toHaveAttribute('href', '/holdings/new');
-    expect(addLink.querySelector('button')).not.toBeDisabled();
+    const addButton = screen.getByRole('button', { name: 'Add holding' });
+    expect(addButton).not.toBeDisabled();
+
+    const addItem = addButton.closest('.cb-top-nav__item--cta');
+    expect(addItem).not.toBeNull();
+
+    await user.hover(addItem!);
+
+    const addSubmenu = document.getElementById('add-holding-submenu');
+    expect(addSubmenu).not.toBeNull();
+
+    await waitFor(() => {
+      expect(addSubmenu!.querySelector('[href="/holdings/new"]')).toBeInTheDocument();
+    });
+
+    expect(addSubmenu!.querySelector('[href="/holdings/new"]')).toHaveTextContent('Bond');
+    expect(addSubmenu!.querySelector('[href="/holdings/brazilian-fixed-income/new"]')).toHaveTextContent(
+      'Brazilian Fixed Income'
+    );
   });
 
   it('includes Income nav link to /income', () => {
@@ -241,14 +258,16 @@ describe('TopNav responsive behavior', () => {
 
     await user.hover(holdingsItem!);
 
+    const holdingsSubmenu = document.getElementById('holdings-submenu');
+    expect(holdingsSubmenu).not.toBeNull();
+
     await waitFor(() => {
-      expect(screen.getByRole('menuitem', { name: 'Bond' })).toBeInTheDocument();
+      expect(holdingsSubmenu!.querySelector('[href="/holdings"]')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('menuitem', { name: 'Bond' })).toHaveAttribute('href', '/holdings');
-    expect(screen.getByRole('menuitem', { name: 'Brazilian Fixed Income' })).toHaveAttribute(
-      'href',
-      '/holdings/brazilian-fixed-income'
+    expect(holdingsSubmenu!.querySelector('[href="/holdings"]')).toHaveTextContent('Bond');
+    expect(holdingsSubmenu!.querySelector('[href="/holdings/brazilian-fixed-income"]')).toHaveTextContent(
+      'Brazilian Fixed Income'
     );
     expect(screen.queryByText('Coming in v2')).not.toBeInTheDocument();
   });

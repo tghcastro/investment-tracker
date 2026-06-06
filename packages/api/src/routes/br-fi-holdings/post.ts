@@ -15,6 +15,7 @@ export function registerPostBrFiHolding(app: FastifyInstance, getRepo: () => Rep
       currencyCode,
       marketIndicatorId: parsed.marketIndicatorId,
     });
-    return reply.status(201).send(toApiBrFiHolding(holding));
+    const holdingWithConverted = await repo.getBrFiHoldingWithConverted(holding.id);
+    return reply.status(201).send(toApiBrFiHolding(holdingWithConverted!));
   });
 }

@@ -1,8 +1,11 @@
 import { useEffect, useState, type MouseEvent } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useHoldingTypes } from '../../hooks';
 import { showDevBadge } from '../../showDevBadge';
-import { Button } from './Button';
+import {
+  HOLDINGS_LIST_ROUTE_BY_SLUG,
+  HOLDINGS_NEW_ROUTE_BY_SLUG,
+} from '../../utils/holdingTypeRoutes';
 import './TopNav.css';
 
 const NAV_ITEMS = [
@@ -16,11 +19,6 @@ const REFERENCE_NAV_ITEMS = [
   { to: '/currencies', label: 'Currencies' },
   { to: '/accounts', label: 'Accounts' },
 ] as const;
-
-const HOLDINGS_ROUTE_BY_SLUG: Record<string, string | null> = {
-  bond: '/holdings',
-  'brazilian-fixed-income': '/holdings/brazilian-fixed-income',
-};
 
 function isReferenceActive(pathname: string): boolean {
   return REFERENCE_NAV_ITEMS.some(({ to }) => pathname.startsWith(to));
@@ -93,7 +91,7 @@ function HoldingsNavItem({ onNavigate }: { onNavigate: () => void }) {
           </li>
         ) : (
           types?.map((type) => {
-            const route = HOLDINGS_ROUTE_BY_SLUG[type.slug];
+            const route = HOLDINGS_LIST_ROUTE_BY_SLUG[type.slug];
             if (route) {
               return (
                 <li key={type.id} role="none">
@@ -185,6 +183,78 @@ function ReferenceNavItem({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
+function AddHoldingNavItem() {
+  const { data: types, loading } = useHoldingTypes();
+  const { open, setOpen, isMobile, closeSubmenu, handleMouseLeave } = useSubmenuOpenState();
+
+  return (
+    <div
+      className={`cb-top-nav__item cb-top-nav__item--submenu cb-top-nav__item--cta${
+        open ? ' cb-top-nav__item--open' : ''
+      }`}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={handleMouseLeave}
+    >
+      <button
+        type="button"
+        className="cb-button cb-button--primary cb-top-nav__cta-trigger"
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-controls="add-holding-submenu"
+        onClick={isMobile ? () => setOpen((value) => !value) : undefined}
+      >
+        Add holding
+      </button>
+      <ul
+        id="add-holding-submenu"
+        className="cb-top-nav__submenu cb-top-nav__submenu--cta"
+        role="menu"
+      >
+        {loading ? (
+          <li role="none">
+            <span className="cb-top-nav__submenu-placeholder">Loading…</span>
+          </li>
+        ) : (
+          types?.map((type) => {
+            const route = HOLDINGS_NEW_ROUTE_BY_SLUG[type.slug];
+            if (route) {
+              return (
+                <li key={type.id} role="none">
+                  <NavLink
+                    to={route}
+                    role="menuitem"
+                    className={({ isActive }) =>
+                      isActive
+                        ? 'cb-top-nav__submenu-link cb-top-nav__submenu-link--active'
+                        : 'cb-top-nav__submenu-link'
+                    }
+                    onClick={closeSubmenu}
+                  >
+                    {type.name}
+                  </NavLink>
+                </li>
+              );
+            }
+
+            return (
+              <li key={type.id} role="none">
+                <span
+                  className="cb-top-nav__submenu-item cb-top-nav__submenu-item--disabled"
+                  aria-disabled="true"
+                  role="menuitem"
+                >
+                  <span>{type.name}</span>
+                  <span className="cb-top-nav__submenu-caption">Coming in v2</span>
+                </span>
+              </li>
+            );
+          })
+        )}
+      </ul>
+    </div>
+  );
+}
+
 export function TopNav() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -269,9 +339,7 @@ export function TopNav() {
         </nav>
 
         <div className="cb-top-nav__right">
-          <Link to="/holdings/new" className="cb-top-nav__cta">
-            <Button variant="primary">Add holding</Button>
-          </Link>
+          <AddHoldingNavItem />
         </div>
       </div>
     </header>

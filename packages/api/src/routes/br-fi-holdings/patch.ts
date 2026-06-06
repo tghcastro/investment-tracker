@@ -30,6 +30,7 @@ export function registerPatchBrFiHolding(app: FastifyInstance, getRepo: () => Re
     if (!holding) {
       throw new NotFoundError('Brazilian Fixed Income holding not found');
     }
-    return reply.status(200).send(toApiBrFiHolding(holding));
+    const holdingWithConverted = await repo.getBrFiHoldingWithConverted(holding.id);
+    return reply.status(200).send(toApiBrFiHolding(holdingWithConverted!));
   });
 }

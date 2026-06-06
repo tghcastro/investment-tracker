@@ -283,6 +283,12 @@ export type BondHoldingWithDisplay = BondHolding & {
   convertedPurchasePrice?: number | null;
 };
 
+export type BrFiHoldingWithDisplay = BrFiHolding & {
+  convertedInvestedAmountCents: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
+};
+
 export type DashboardFilters = {
   displayCurrency?: string;
   accountId?: string;
@@ -876,6 +882,27 @@ export function createRepo(database: Db) {
       convertedCurrency,
       quoteMap
     );
+  }
+
+  function attachConvertedFieldsToBrFiHolding(
+    holding: BrFiHolding,
+    convertedCurrency: string,
+    quoteHistory: QuoteHistory
+  ): BrFiHoldingWithDisplay {
+    const convertedInvestedAmountCents = convertBrFiInvestedCents(
+      holding,
+      convertedCurrency,
+      quoteHistory
+    );
+    const conversionError =
+      convertedInvestedAmountCents === null ? ('EXCHANGE_RATE_REQUIRED' as const) : undefined;
+
+    return {
+      ...holding,
+      convertedInvestedAmountCents,
+      convertedCurrency,
+      ...(conversionError ? { conversionError } : {}),
+    };
   }
 
   function selectBondHoldingsWithType() {
@@ -1717,10 +1744,13 @@ export function createRepo(database: Db) {
     return true;
   }
 
-  async function listBrFiHoldingsFiltered(filters: {
-    accountId?: string;
-    holdingTypeSlug?: HoldingTypeSlug;
-  }): Promise<BrFiHolding[]> {
+  async function listBrFiHoldingsFiltered(
+    filters: {
+      accountId?: string;
+      holdingTypeSlug?: HoldingTypeSlug;
+    },
+    options?: { displayCurrency?: string }
+  ): Promise<BrFiHoldingWithDisplay[]> {
     const { accountId, holdingTypeSlug } = filters;
 
     if (holdingTypeSlug === 'bond') {
@@ -1750,7 +1780,14 @@ export function createRepo(database: Db) {
       .where(whereClause)
       .orderBy(brFiHoldings.maturityDate, brFiHoldings.id)
       .all();
-    return Promise.all(rows.map((row) => mapBrFiRowWithIndicator(row.brFi, row.holdingType)));
+    const holdings = await Promise.all(
+      rows.map((row) => mapBrFiRowWithIndicator(row.brFi, row.holdingType))
+    );
+    const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
+    const quoteHistory = await loadGroupedQuoteHistory();
+    return holdings.map((holding) =>
+      attachConvertedFieldsToBrFiHolding(holding, convertedCurrency, quoteHistory)
+    );
   }
 
   async function listBondHoldings(): Promise<BondHolding[]> {
@@ -1828,6 +1865,19 @@ export function createRepo(database: Db) {
     const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
     const quoteHistory = await loadGroupedQuoteHistory();
     return attachConvertedFieldsToHoldings(holdings, convertedCurrency, quoteHistory);
+  }
+
+  async function getBrFiHoldingWithConverted(
+    id: string,
+    options?: { displayCurrency?: string }
+  ): Promise<BrFiHoldingWithDisplay | null> {
+    const holding = await getBrFiHolding(id);
+    if (!holding) {
+      return null;
+    }
+    const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
+    const quoteHistory = await loadGroupedQuoteHistory();
+    return attachConvertedFieldsToBrFiHolding(holding, convertedCurrency, quoteHistory);
   }
 
   async function getBondHoldingWithConverted(
@@ -3012,6 +3062,7 @@ export function createRepo(database: Db) {
     listBondHoldingsFiltered,
     insertBrFiHolding,
     getBrFiHolding,
+    getBrFiHoldingWithConverted,
     updateBrFiHolding,
     deleteBrFiHolding,
     listBrFiHoldingsFiltered,

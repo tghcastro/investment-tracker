@@ -167,8 +167,19 @@
   flex-shrink: 0;
 }
 
-.cb-top-nav__cta {
-  text-decoration: none;
+.cb-top-nav__item--cta {
+  display: inline-block;
+}
+
+.cb-top-nav__submenu--cta {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.cb-top-nav__cta-trigger {
+  border: none;
+  cursor: pointer;
 }
 
 .cb-top-nav__menu-toggle {

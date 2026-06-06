@@ -19,6 +19,13 @@ export interface BrFiHoldingsTableProps {
   onDelete: (id: string) => void;
 }
 
+function formatConvertedInvested(holding: ApiBrFiHolding): string {
+  if (holding.convertedInvestedAmountCents === null) {
+    return '—';
+  }
+  return formatCurrency(holding.convertedInvestedAmountCents, holding.convertedCurrency);
+}
+
 function formatAccountLabel(info: AccountInfo | undefined): string {
   if (!info) {
     return 'Unknown account';
@@ -65,12 +72,20 @@ export function BrFiHoldingsTable({ holdings, accountInfo, onDelete }: BrFiHoldi
               >
                 {formatDate(holding.maturityDate)}
               </span>
-              <span
-                className="cb-brfi-holdings-table__amount cb-number-display"
-                title="Invested Amount"
-              >
-                {formatCurrency(holding.investedAmountCents, holding.currencyCode)}
-              </span>
+              <div className="cb-brfi-holdings-table__amounts">
+                <span
+                  className="cb-brfi-holdings-table__amount cb-number-display"
+                  title="Converted Invested Amount"
+                >
+                  {formatConvertedInvested(holding)}
+                </span>
+                <span
+                  className="cb-brfi-holdings-table__amount-native cb-body-sm"
+                  title="Invested Amount"
+                >
+                  {formatCurrency(holding.investedAmountCents, holding.currencyCode)}
+                </span>
+              </div>
             </div>
             <div className="cb-brfi-holdings-table__actions">
               <Link

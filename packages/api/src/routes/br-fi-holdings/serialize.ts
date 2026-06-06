@@ -1,5 +1,7 @@
 import type { BrFiHolding } from 'bonds-domain';
 
+import type { BrFiHoldingWithDisplay } from '../../repo.js';
+
 function toIsoDateString(date: Date): string {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -23,10 +25,13 @@ export type ApiBrFiHoldingResponse = {
   purchaseDate: string;
   maturityDate: string;
   investedAmountCents: number;
+  convertedInvestedAmountCents: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
   updatedAt: string;
 };
 
-export function toApiBrFiHolding(holding: BrFiHolding): ApiBrFiHoldingResponse {
+export function toApiBrFiHolding(holding: BrFiHoldingWithDisplay): ApiBrFiHoldingResponse {
   return {
     id: holding.id,
     holdingType: holding.holdingType,
@@ -51,10 +56,13 @@ export function toApiBrFiHolding(holding: BrFiHolding): ApiBrFiHoldingResponse {
     purchaseDate: toIsoDateString(holding.purchaseDate),
     maturityDate: toIsoDateString(holding.maturityDate),
     investedAmountCents: holding.investedAmountCents,
+    convertedInvestedAmountCents: holding.convertedInvestedAmountCents,
+    convertedCurrency: holding.convertedCurrency,
+    ...(holding.conversionError ? { conversionError: holding.conversionError } : {}),
     updatedAt: holding.updatedAt.toISOString(),
   };
 }
 
-export function toApiBrFiHoldings(holdings: BrFiHolding[]): ApiBrFiHoldingResponse[] {
+export function toApiBrFiHoldings(holdings: BrFiHoldingWithDisplay[]): ApiBrFiHoldingResponse[] {
   return holdings.map(toApiBrFiHolding);
 }
