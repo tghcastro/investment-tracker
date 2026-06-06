@@ -1,7 +1,7 @@
 # Architecture
 
 **Analyzed:** 2026-06-05  
-**Status:** Implemented — modular monorepo (domain / API / web); **v2 (M5–M9) shipped in code** — v2.0.0 tag pending user validation.
+**Status:** Implemented — modular monorepo (domain / API / web); **v1.1.0** released 2026-06-06 (M5–M9).
 
 ## High-level diagram
 

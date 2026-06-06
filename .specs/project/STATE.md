@@ -1,7 +1,7 @@
 # State
 
-**Last Updated:** 2026-06-05
-**Current Work:** **M9** shipped on `m9-p1-api` — manual UAT → **v2.0.0** release (AD-009).
+**Last Updated:** 2026-06-06
+**Current Work:** **v1.1.0** released (2026-06-06) — M5–M9 features shipped since v1.0.0.
 
 ### AD-010: API-first business rules — web UI only (2026-05-31)
 
@@ -121,7 +121,7 @@ _None yet._
 - [x] Execute M9 P1 — domain + API [tasks](../features/completed/m9-dashboard/tasks.md) (2026-06-05)
 - [x] Execute M9 P2 — web UI (2026-06-05)
 - [x] Execute M9 P3 — docs + archive (2026-06-05)
-- [ ] v2.0.0 release after manual UAT (AD-009)
+- [x] v1.1.0 release — M5–M9 bundle (2026-06-06); supersedes planned v2.0.0 tag name (AD-009 scope unchanged)
 - [x] Approve M5 spec → Execute P1 [tasks](../features/completed/m5-holdings-framework/tasks.md)
 - [x] Implement M5 — holdings framework on `m5-holdings-framework` (2026-05-29)
 - [x] Execute M6 — multi-currency on `m6-multi-currency` (2026-05-29)
