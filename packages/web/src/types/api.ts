@@ -144,6 +144,18 @@ export type ApiCouponPayment = {
   conversionError?: string;
 };
 
+export type ApiBrFiInterestPayment = {
+  id: string;
+  brFiHoldingId: string;
+  paymentDate: string;
+  amount: number;
+  recordedAt: string;
+  currencyCode: string;
+  convertedAmount: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
+};
+
 export type ApiIncomeSummaryByHolding = {
   holdingId: string;
   issuer: string;
@@ -172,6 +184,83 @@ export type ApiUpcomingCoupon = {
   estimatedDate: string;
   estimatedAmount: number;
 };
+
+/** JSON shape returned by GET /api/dashboard — summary block */
+export interface ApiDashboardSummary {
+  totalPortfolioValueCents: number;
+  convertedTotalPortfolioValueCents: number | null;
+  convertedCurrency: string;
+  conversionError: string | null;
+  positionCount: number;
+  accountCount: number;
+  currencyCount: number;
+  totalFaceValueCents: number;
+  totalInvestedCents: number;
+  convertedTotalFaceValueCents: number | null;
+  convertedTotalInvestedCents: number | null;
+}
+
+/** JSON shape returned by GET /api/dashboard — allocation by holding type */
+export interface ApiDashboardAllocationByType {
+  slug: string;
+  name: string;
+  valueCents: number;
+  convertedValueCents: number | null;
+  percentage: number;
+}
+
+/** JSON shape returned by GET /api/dashboard — allocation by account */
+export interface ApiDashboardAllocationByAccount {
+  accountId: string;
+  name: string;
+  valueCents: number;
+  convertedValueCents: number | null;
+  percentage: number;
+}
+
+/** JSON shape returned by GET /api/dashboard — projected income year row */
+export interface ApiDashboardProjectedIncomeYear {
+  year: number;
+  couponCents: number;
+  interestCents: number;
+  totalCents: number;
+  convertedCouponCents: number | null;
+  convertedInterestCents: number | null;
+  convertedTotalCents: number | null;
+}
+
+/** JSON shape returned by GET /api/dashboard — principal forecast year row */
+export interface ApiDashboardPrincipalForecastYear {
+  year: number;
+  principalCents: number;
+  convertedPrincipalCents: number | null;
+}
+
+/** JSON shape returned by GET /api/dashboard — upcoming event row */
+export interface ApiDashboardUpcomingEvent {
+  date: string;
+  type: 'COUPON' | 'INTEREST' | 'MATURITY';
+  holdingKind: 'bond' | 'br-fi';
+  holdingId: string;
+  label: string;
+  amountCents: number;
+  currencyCode: string;
+  convertedAmountCents: number | null;
+  convertedCurrency: string;
+}
+
+/** JSON shape returned by GET /api/dashboard */
+export interface ApiDashboard {
+  summary: ApiDashboardSummary;
+  allocationByType: ApiDashboardAllocationByType[];
+  allocationByAccount: ApiDashboardAllocationByAccount[];
+  projectedIncomeByYear: ApiDashboardProjectedIncomeYear[];
+  principalForecastByYear: ApiDashboardPrincipalForecastYear[];
+  upcomingEvents: ApiDashboardUpcomingEvent[];
+  warnings: {
+    holdingsMissingIndicator: number;
+  };
+}
 
 /** JSON shape returned by GET /api/system/info */
 export interface ApiSystemInfo {

@@ -2,7 +2,7 @@
 
 Short index for coding agents. Read only what your task needs — do not load the whole repo docs tree.
 
-**Product:** Personal portfolio tracker (React SPA + Fastify API + SQLite). v2 (M5–M9): M5–M8 shipped in code; M9 spec draft — **v2.0.0** tag when M9 ships.
+**Product:** Personal portfolio tracker (React SPA + Fastify API + SQLite). **v2 (M5–M9) shipped in code** — v2.0.0 tag pending manual UAT.
 
 ## Start here
 
@@ -11,7 +11,7 @@ Short index for coding agents. Read only what your task needs — do not load th
 | Any change | [`.specs/project/STATE.md`](.specs/project/STATE.md) — current work, AD decisions, blockers |
 | Scope / what not to build | [`.specs/project/PROJECT.md`](.specs/project/PROJECT.md) |
 | Milestones / future work | [`.specs/project/ROADMAP.md`](.specs/project/ROADMAP.md) |
-| New feature (post-v1) | **Next:** [M9](../.specs/features/active/m9-dashboard/spec.md). Part of **v2.0.0** (M5–M9). M5–M8 shipped — [completed](../.specs/features/completed/). **API-first:** web requests + params only — [API-FIRST.md](../.specs/codebase/API-FIRST.md). |
+| New feature (post-v2) | M5–M9 shipped — see [`features/completed/`](../.specs/features/completed/) and [ROADMAP](../.specs/project/ROADMAP.md). **v2.0.0** tag pending UAT. |
 
 ## Codebase (source of truth for implementation)
 

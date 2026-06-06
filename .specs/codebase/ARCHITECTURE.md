@@ -1,7 +1,7 @@
 # Architecture
 
 **Analyzed:** 2026-06-05  
-**Status:** Implemented — modular monorepo (domain / API / web); v2 (M5–M9): M5–M8 shipped in code, M9 in spec; v2.0.0 tag when M9 ships.
+**Status:** Implemented — modular monorepo (domain / API / web); **v2 (M5–M9) shipped in code** — v2.0.0 tag pending user validation.
 
 ## High-level diagram
 
@@ -25,7 +25,7 @@
 
 ### `bonds-domain`
 
-- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers, BRFI validators (`brFi.ts`), market indicator validators (`marketIndicator.ts`), FX conversion (`currency.ts`: native → USD → display).
+- **Owns:** Domain types, validation rules (Zod), coupon schedule helpers, dashboard forecasts (`dashboardForecast.ts`), BRFI validators (`brFi.ts`), market indicator validators (`marketIndicator.ts`), FX conversion (`currency.ts`: native → USD → display).
 - **Must not:** Import Fastify, React, Drizzle, or filesystem APIs.
 - **Consumers:** API (`repo`, routes) applies all business rules. Web must **not** import domain runtime functions — see [API-FIRST.md](./API-FIRST.md).
 
@@ -64,10 +64,12 @@
 | Currency quotes | CRUD `/api/currency-quotes` (manual USD-base rates) |
 | Bond holdings | CRUD `/api/holdings`; `currencyCode`; `expectedCouponAmountCents` on responses; list/detail include `converted*` (M6.1); `?displayCurrency=` (default USD) |
 | BRFI holdings | CRUD `/api/br-fi-holdings`; product/indexing enums; `investedAmountCents`; optional `marketIndicatorId` for index-linked types; embedded `marketIndicator` + `latestValue`; same FX validation as bonds |
+| BRFI interest payments | CRUD `/api/br-fi-interest-payments`; FK → BRFI holding; payment date + amount; delete holding blocked when payments exist; optional `?displayCurrency=` on list/detail |
 | Market indicators | CRUD `/api/market-indicators`; nested `/api/market-indicators/:id/values`; `GET .../latest`; list embeds `latestValue` + `valueCount` |
 | FX preview | `GET /api/fx/convert` (M6.1) — form preview |
 | Coupon payments | CRUD linked to bond holdings |
-| Portfolio | `summary` (bonds + BRFI totals), `income-summary`, `upcoming-coupons` — **all forecasts/aggregates server-side** |
+| Portfolio | `summary`, `income-summary`, `upcoming-coupons` — legacy endpoints; Income page still uses income-summary |
+| Dashboard | `GET /api/dashboard` — summary, allocations, yearly income/principal forecasts, upcoming events; filters + `displayCurrency` |
 | System | `GET /api/system/info`, backup download, restore multipart upload |
 
 Exact paths live in `packages/api/src/server.ts` and route modules.
@@ -86,6 +88,7 @@ Tables (Drizzle in `schema.ts`):
 - `market_indicators` — slug, name, category, `is_system` (seed catalog)
 - `market_indicator_values` — FK → indicator; dated percentage values (unique per indicator + date)
 - `coupon_payments` — FK → bond holding; payment date, amount
+- `br_fi_interest_payments` — FK → BRFI holding; payment date, amount (recorded interest received)
 
 **API convention:** `couponRate` in JSON is **percent** (0–100); stored as decimal fraction in SQLite (see route serializers).
 

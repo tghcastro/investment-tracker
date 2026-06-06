@@ -44,6 +44,14 @@ export interface CouponPayment {
   recordedAt: Date;
 }
 
+export interface BrFiInterestPayment {
+  id: string;
+  brFiHoldingId: string;
+  paymentDate: Date;
+  amount: number; // in cents
+  recordedAt: Date;
+}
+
 export interface MarketIndicatorLatestValue {
   valueDate: string;
   value: number;

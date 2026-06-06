@@ -90,7 +90,7 @@ describe('MarketIndicators page', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Market indicators' })).toBeInTheDocument();
-    expect(screen.getByText('Manual benchmark rates and indexes — no live feeds')).toBeInTheDocument();
+    expect(screen.getByText('Benchmark rates and indexes')).toBeInTheDocument();
     expect(screen.getAllByText('CDI').length).toBeGreaterThan(0);
     expect(screen.getAllByText('IPCA').length).toBeGreaterThan(0);
     expect(screen.getByText('14.75%')).toBeInTheDocument();

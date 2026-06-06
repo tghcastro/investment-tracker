@@ -20,6 +20,7 @@ import {
 } from './routes/currency-quotes/crud.js';
 import { registerListHoldingTypes } from './routes/holding-types/list.js';
 import { registerBrFiHoldingsRoutes } from './routes/br-fi-holdings/index.js';
+import { registerBrFiInterestPaymentsRoutes } from './routes/br-fi-interest-payments/index.js';
 import { registerMarketIndicatorsRoutes } from './routes/market-indicators/index.js';
 import { registerDeleteHolding } from './routes/holdings/delete.js';
 import { registerGetHoldingById } from './routes/holdings/get-by-id.js';
@@ -34,6 +35,7 @@ import { registerPostCouponPayment } from './routes/coupon-payments/post.js';
 import { registerPortfolioIncomeSummary } from './routes/portfolio/income-summary.js';
 import { registerPortfolioSummary } from './routes/portfolio/summary.js';
 import { registerPortfolioUpcomingCoupons } from './routes/portfolio/upcoming-coupons.js';
+import { registerDashboardRoute } from './routes/dashboard/get.js';
 import { registerFxConvert } from './routes/fx/convert.js';
 import { registerSystemBackup } from './routes/system/backup.js';
 import { registerSystemInfo } from './routes/system/info.js';
@@ -124,8 +126,10 @@ export async function createServer(
   registerPatchHolding(app, getRepo);
   registerDeleteHolding(app, getRepo);
   registerBrFiHoldingsRoutes(app, getRepo);
+  registerBrFiInterestPaymentsRoutes(app, getRepo);
   registerMarketIndicatorsRoutes(app, getRepo);
   registerPortfolioSummary(app, getRepo);
+  registerDashboardRoute(app, getRepo);
   registerPortfolioIncomeSummary(app, getRepo);
   registerPortfolioUpcomingCoupons(app, getRepo);
   registerPostCouponPayment(app, getRepo);

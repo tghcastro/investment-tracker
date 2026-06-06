@@ -119,8 +119,6 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-.cb-top-nav__item--submenu:hover .cb-top-nav__submenu,
-.cb-top-nav__item--submenu:focus-within .cb-top-nav__submenu,
 .cb-top-nav__item--submenu.cb-top-nav__item--open .cb-top-nav__submenu {
   display: block;
 }
@@ -268,12 +266,10 @@
     display: block;
   }
 
-  .cb-top-nav__item--submenu:hover .cb-top-nav__submenu,
   .cb-top-nav__item--submenu:focus-within .cb-top-nav__submenu {
     display: none;
   }
 
-  .cb-top-nav__item--submenu.cb-top-nav__item--open:hover .cb-top-nav__submenu,
   .cb-top-nav__item--submenu.cb-top-nav__item--open:focus-within .cb-top-nav__submenu {
     display: block;
   }

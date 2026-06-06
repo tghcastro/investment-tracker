@@ -37,7 +37,7 @@ Examples — not exhaustive:
 | **Validation** | Maturity after purchase, quote required for non-USD | POST/PATCH 400 + `code` |
 | **Shipped (M7)** | BRFI CRUD, indexing validation, portfolio totals | `/api/br-fi-holdings`, summary in `/api/portfolio/summary` |
 | **Shipped (M8)** | Market indicators, latest value, BRFI indicator link | `/api/market-indicators`, embedded on BRFI responses |
-| **Planned (M9)** | Dashboard allocations, forecasts, upcoming events | `GET /api/dashboard` — web passes filters/displayCurrency only |
+| **Shipped (M9)** | Dashboard allocations, forecasts, upcoming events | `GET /api/dashboard` — web passes filters/displayCurrency only |
 | **Future** | YTM, daily BRFI accrual | New `/api/...` routes — not web math |
 
 ## Response contract pattern

@@ -1,8 +1,12 @@
 .cb-income__filters {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--cb-space-lg);
+  align-items: flex-end;
+  gap: var(--cb-space-base);
   margin-bottom: var(--cb-space-xl);
+  padding: var(--cb-space-lg);
+  background-color: var(--cb-surface-soft);
+  border-radius: var(--cb-radius-xl);
 }
 
 .cb-income__filter-field {

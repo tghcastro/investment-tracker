@@ -4,17 +4,27 @@
   gap: 24px;
 }
 
-.cb-currency-quotes-form {
-  border: 1px solid var(--cb-border-hairline);
-  border-radius: var(--cb-radius-xl);
-  padding: 20px;
-  background: var(--cb-surface);
+.cb-currency-quotes-page__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 
-.cb-currency-quotes-form__title {
-  margin: 0 0 16px;
-  font-size: var(--cb-font-size-lg);
-  font-weight: 400;
+.cb-currency-quotes-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--cb-space-base);
+  padding: var(--cb-space-lg);
+  background-color: var(--cb-surface-soft);
+  border-radius: var(--cb-radius-xl);
+}
+
+.cb-currency-quotes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .cb-currency-quotes-form__grid {

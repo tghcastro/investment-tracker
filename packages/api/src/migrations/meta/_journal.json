@@ -50,6 +50,13 @@
       "when": 1748908800000,
       "tag": "007_market_indicators",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1748995200000,
+      "tag": "008_br_fi_interest_payments",
+      "breakpoints": true
     }
   ]
 }

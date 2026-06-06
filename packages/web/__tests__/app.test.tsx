@@ -5,22 +5,30 @@ import App from '../src/App';
 
 vi.mock('../src/hooks/useApi', () => ({
   useApi: vi.fn((url: string) => {
-    if (url === '/api/portfolio/summary') {
+    if (url.startsWith('/api/dashboard')) {
       return {
         data: {
-          totalFaceValue: 0,
-          positionCount: 0,
-          nextMaturityDate: null,
-          totalCostBasis: 0,
-          holdingsWithCostBasis: 0,
-          holdingsMissingCostBasis: 0,
-          totalInvestedCents: 0,
-          convertedCurrency: 'USD',
-          convertedTotalFaceValue: 0,
-          convertedTotalCostBasis: 0,
-          convertedTotalInvestedCents: 0,
-          byHoldingType: [],
-          maturityLadder: [],
+          summary: {
+            totalPortfolioValueCents: 0,
+            convertedTotalPortfolioValueCents: 0,
+            convertedCurrency: 'USD',
+            conversionError: null,
+            positionCount: 0,
+            accountCount: 0,
+            currencyCount: 0,
+            totalFaceValueCents: 0,
+            totalInvestedCents: 0,
+            convertedTotalFaceValueCents: 0,
+            convertedTotalInvestedCents: 0,
+          },
+          allocationByType: [],
+          allocationByAccount: [],
+          projectedIncomeByYear: [],
+          principalForecastByYear: [],
+          upcomingEvents: [],
+          warnings: {
+            holdingsMissingIndicator: 0,
+          },
         },
         loading: false,
         error: undefined,
@@ -37,9 +45,6 @@ vi.mock('../src/hooks/useApi', () => ({
         loading: false,
         error: undefined,
       };
-    }
-    if (url.startsWith('/api/portfolio/upcoming-coupons')) {
-      return { data: [], loading: false, error: undefined };
     }
     if (url.startsWith('/api/system/info')) {
       return {
@@ -99,13 +104,17 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Holdings' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Bond' })).toHaveAttribute('href', '/holdings');
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
-    expect(screen.getByRole('link', { name: 'Currencies' })).toHaveAttribute('href', '/currencies');
-    expect(screen.getByRole('link', { name: 'Market Indicators' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Reference' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Currencies' })).toHaveAttribute(
+      'href',
+      '/currencies'
+    );
+    expect(screen.getByRole('menuitem', { name: 'Market Indicators' })).toHaveAttribute(
       'href',
       '/market-indicators'
     );
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
-    expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
+    expect(screen.getByRole('menuitem', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
     expect(screen.getByRole('heading', { name: 'Portfolio' })).toBeInTheDocument();
   });
 

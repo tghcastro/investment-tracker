@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ConfirmDialog, FormField, TextInput } from '../components/forms';
+import { ConfirmDialog, FormDialog, FormField, TextInput } from '../components/forms';
 import { Button, EmptyState, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi, useApiMutation } from '../hooks';
 import type { ApiIndicatorValue, ApiMarketIndicator } from '../types/api';
@@ -19,6 +19,8 @@ type ValueFilterValues = {
   fromDate: string;
   toDate: string;
 };
+
+type FormMode = 'list' | 'add' | 'edit';
 
 const EMPTY_FORM: ValueFormValues = {
   valueDate: '',
@@ -64,6 +66,7 @@ export default function MarketIndicatorDetail() {
   const [formValues, setFormValues] = useState<ValueFormValues>(EMPTY_FORM);
   const [filterValues, setFilterValues] = useState<ValueFilterValues>(EMPTY_FILTERS);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [mode, setMode] = useState<FormMode>('list');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -102,6 +105,7 @@ export default function MarketIndicatorDetail() {
   const activeMutation = editingId ? updateMutation : createMutation;
   const loading = indicatorLoading || valuesLoading;
   const error = indicatorError ?? valuesError;
+  const activeError = mode === 'add' ? createMutation.error : mode === 'edit' ? updateMutation.error : null;
 
   const latestLabel = useMemo(() => {
     if (!indicator?.latestValue) {
@@ -114,6 +118,7 @@ export default function MarketIndicatorDetail() {
     setFormValues(EMPTY_FORM);
     setFormErrors({});
     setEditingId(null);
+    setMode('list');
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -146,6 +151,7 @@ export default function MarketIndicatorDetail() {
       value: String(row.value),
     });
     setFormErrors({});
+    setMode('edit');
   };
 
   const handleDeleteConfirm = async () => {
@@ -158,6 +164,52 @@ export default function MarketIndicatorDetail() {
       setRefreshKey((value) => value + 1);
     }
   };
+
+  const valueForm = (
+    <form
+      className="cb-market-indicator-detail-form"
+      onSubmit={(event) => void handleSubmit(event)}
+      noValidate
+    >
+      <div className="cb-market-indicator-detail-form__grid">
+        <FormField label="Value date" htmlFor="value-date" error={formErrors.valueDate}>
+          <TextInput
+            id="value-date"
+            type="date"
+            value={formValues.valueDate}
+            error={Boolean(formErrors.valueDate)}
+            onChange={(event) =>
+              setFormValues((current) => ({ ...current, valueDate: event.target.value }))
+            }
+          />
+        </FormField>
+        <FormField
+          label="Value (annualized %)"
+          htmlFor="indicator-value"
+          error={formErrors.value}
+        >
+          <TextInput
+            id="indicator-value"
+            inputMode="decimal"
+            placeholder="e.g. 14.75"
+            value={formValues.value}
+            error={Boolean(formErrors.value)}
+            onChange={(event) =>
+              setFormValues((current) => ({ ...current, value: event.target.value }))
+            }
+          />
+        </FormField>
+      </div>
+      <div className="cb-market-indicator-detail-form__actions">
+        <Button type="button" variant="secondary-light" onClick={resetForm}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="primary" disabled={activeMutation.loading}>
+          {editingId ? 'Save value' : 'Record value'}
+        </Button>
+      </div>
+    </form>
+  );
 
   if (!indicatorId) {
     return (
@@ -193,14 +245,21 @@ export default function MarketIndicatorDetail() {
         title={indicator?.name ?? 'Market indicator'}
         subtitle={indicator ? `${indicator.slug} · ${formatIndicatorCategory(indicator.category)}` : ''}
         action={
-          <Link to="/market-indicators" className="cb-button cb-button--tertiary-text">
-            All indicators
-          </Link>
+          <div className="cb-market-indicator-detail-page__header-actions">
+            {mode === 'list' ? (
+              <Button type="button" variant="primary" onClick={() => setMode('add')}>
+                Record value
+              </Button>
+            ) : null}
+            <Link to="/market-indicators" className="cb-button cb-button--tertiary-text">
+              All indicators
+            </Link>
+          </div>
         }
       />
 
       {error ? <ErrorBanner message={error} /> : null}
-      {activeMutation.error ? <ErrorBanner message={activeMutation.error} /> : null}
+      {activeMutation.error && mode === 'list' ? <ErrorBanner message={activeMutation.error} /> : null}
       {deleteMutation.error ? <ErrorBanner message={deleteMutation.error} /> : null}
 
       {indicator ? (
@@ -244,55 +303,6 @@ export default function MarketIndicatorDetail() {
         </div>
       </section>
 
-      <form
-        className="cb-market-indicator-detail-form"
-        onSubmit={(event) => void handleSubmit(event)}
-        noValidate
-      >
-        <h2 className="cb-market-indicator-detail-form__title">
-          {editingId ? 'Edit value' : 'Add value'}
-        </h2>
-        <div className="cb-market-indicator-detail-form__grid">
-          <FormField label="Value date" htmlFor="value-date" error={formErrors.valueDate}>
-            <TextInput
-              id="value-date"
-              type="date"
-              value={formValues.valueDate}
-              error={Boolean(formErrors.valueDate)}
-              onChange={(event) =>
-                setFormValues((current) => ({ ...current, valueDate: event.target.value }))
-              }
-            />
-          </FormField>
-          <FormField
-            label="Value (annualized %)"
-            htmlFor="indicator-value"
-            error={formErrors.value}
-          >
-            <TextInput
-              id="indicator-value"
-              inputMode="decimal"
-              placeholder="e.g. 14.75"
-              value={formValues.value}
-              error={Boolean(formErrors.value)}
-              onChange={(event) =>
-                setFormValues((current) => ({ ...current, value: event.target.value }))
-              }
-            />
-          </FormField>
-        </div>
-        <div className="cb-market-indicator-detail-form__actions">
-          {editingId ? (
-            <Button type="button" variant="secondary-light" onClick={resetForm}>
-              Cancel edit
-            </Button>
-          ) : null}
-          <Button type="submit" variant="primary" disabled={activeMutation.loading}>
-            {editingId ? 'Save value' : 'Add value'}
-          </Button>
-        </div>
-      </form>
-
       {loading ? (
         <div
           className="cb-market-indicator-detail-table cb-market-indicator-detail-table--loading"
@@ -335,6 +345,26 @@ export default function MarketIndicatorDetail() {
           ))}
         </div>
       ) : null}
+
+      <FormDialog
+        open={mode === 'add'}
+        title="Record value"
+        titleId="indicator-value-add-title"
+        onClose={resetForm}
+      >
+        {activeError ? <ErrorBanner message={activeError} /> : null}
+        {valueForm}
+      </FormDialog>
+
+      <FormDialog
+        open={mode === 'edit'}
+        title="Edit value"
+        titleId="indicator-value-edit-title"
+        onClose={resetForm}
+      >
+        {activeError ? <ErrorBanner message={activeError} /> : null}
+        {valueForm}
+      </FormDialog>
 
       <ConfirmDialog
         open={deleteId !== null}

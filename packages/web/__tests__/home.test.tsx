@@ -3,8 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import Home from '../src/pages/Home';
-import type { ApiIncomeSummary, ApiPortfolioSummary, ApiUpcomingCoupon } from '../src/types/api';
-import { currentUtcCalendarYearRangeStrings } from '../src/utils/incomePeriod';
+import type { ApiDashboard } from '../src/types/api';
 
 const mockUseApi = vi.fn();
 
@@ -24,87 +23,129 @@ vi.mock('../src/contexts/DisplayCurrencyContext', () => ({
   DisplayCurrencyProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-const sampleSummary: ApiPortfolioSummary = {
-  totalFaceValue: 150_000,
-  positionCount: 2,
-  nextMaturityDate: '2027-05-01',
-  totalCostBasis: 145_000,
-  holdingsWithCostBasis: 1,
-  holdingsMissingCostBasis: 1,
-  totalInvestedCents: 175_000,
-  convertedCurrency: 'USD',
-  convertedTotalFaceValue: 150_000,
-  convertedTotalCostBasis: 145_000,
-  convertedTotalInvestedCents: 175_000,
-  byHoldingType: [
+const sampleDashboard: ApiDashboard = {
+  summary: {
+    totalPortfolioValueCents: 250_000,
+    convertedTotalPortfolioValueCents: 250_000,
+    convertedCurrency: 'USD',
+    conversionError: null,
+    positionCount: 3,
+    accountCount: 2,
+    currencyCount: 1,
+    totalFaceValueCents: 200_000,
+    totalInvestedCents: 250_000,
+    convertedTotalFaceValueCents: 200_000,
+    convertedTotalInvestedCents: 250_000,
+  },
+  allocationByType: [
     {
       slug: 'bond',
       name: 'Bond',
-      positionCount: 2,
-      totalNativeCents: 150_000,
-      convertedTotalCents: 150_000,
+      valueCents: 150_000,
+      convertedValueCents: 150_000,
+      percentage: 60,
+    },
+    {
+      slug: 'brazilian-fixed-income',
+      name: 'Brazilian Fixed Income',
+      valueCents: 100_000,
+      convertedValueCents: 100_000,
+      percentage: 40,
     },
   ],
-  maturityLadder: [
+  allocationByAccount: [
     {
-      holdingId: '2',
-      issuer: 'Apple Inc',
-      maturityDate: '2027-05-01',
-      faceValue: 50_000,
-      convertedFaceValue: 50_000,
-      convertedCurrency: 'USD',
+      accountId: '1',
+      name: 'Broker A',
+      valueCents: 150_000,
+      convertedValueCents: 150_000,
+      percentage: 60,
     },
     {
+      accountId: '2',
+      name: 'Broker B',
+      valueCents: 100_000,
+      convertedValueCents: 100_000,
+      percentage: 40,
+    },
+  ],
+  projectedIncomeByYear: [
+    {
+      year: 2026,
+      couponCents: 12_000,
+      interestCents: 8_000,
+      totalCents: 20_000,
+      convertedCouponCents: 12_000,
+      convertedInterestCents: 8_000,
+      convertedTotalCents: 20_000,
+    },
+  ],
+  principalForecastByYear: [
+    {
+      year: 2027,
+      principalCents: 50_000,
+      convertedPrincipalCents: 50_000,
+    },
+  ],
+  upcomingEvents: [
+    {
+      date: '2026-09-15',
+      type: 'COUPON',
+      holdingKind: 'bond',
       holdingId: '1',
-      issuer: 'US Treasury',
-      maturityDate: '2030-08-15',
-      faceValue: 100_000,
-      convertedFaceValue: 100_000,
+      label: 'US Treasury',
+      amountCents: 5_000,
+      currencyCode: 'USD',
+      convertedAmountCents: 5_000,
       convertedCurrency: 'USD',
     },
   ],
-};
-
-const sampleIncome: ApiIncomeSummary = {
-  totalReceived: 42500,
-  paymentCount: 2,
-  byHolding: [],
-  payments: [],
-};
-
-const sampleUpcoming: ApiUpcomingCoupon[] = [
-  {
-    holdingId: '1',
-    issuer: 'US Treasury',
-    estimatedDate: '2026-06-15',
-    estimatedAmount: 21250,
+  warnings: {
+    holdingsMissingIndicator: 0,
   },
-];
+};
 
-function mockPortfolioApis(options?: {
-  summary?: ApiPortfolioSummary;
-  income?: ApiIncomeSummary;
-  upcoming?: ApiUpcomingCoupon[];
-}) {
-  const { from, to } = currentUtcCalendarYearRangeStrings();
+function emptyDashboard(): ApiDashboard {
+  return {
+    summary: {
+      totalPortfolioValueCents: 0,
+      convertedTotalPortfolioValueCents: 0,
+      convertedCurrency: 'USD',
+      conversionError: null,
+      positionCount: 0,
+      accountCount: 0,
+      currencyCount: 0,
+      totalFaceValueCents: 0,
+      totalInvestedCents: 0,
+      convertedTotalFaceValueCents: 0,
+      convertedTotalInvestedCents: 0,
+    },
+    allocationByType: [],
+    allocationByAccount: [],
+    projectedIncomeByYear: [],
+    principalForecastByYear: [],
+    upcomingEvents: [],
+    warnings: {
+      holdingsMissingIndicator: 0,
+    },
+  };
+}
+
+function mockDashboardApis(options?: { dashboard?: ApiDashboard }) {
   mockUseApi.mockImplementation((url: string) => {
-    if (url === '/api/portfolio/summary') {
+    if (url.startsWith('/api/dashboard')) {
       return {
-        data: options?.summary ?? sampleSummary,
+        data: options?.dashboard ?? sampleDashboard,
         loading: false,
         error: undefined,
       };
     }
-    if (url === `/api/portfolio/income-summary?from=${from}&to=${to}`) {
+    if (url === '/api/accounts?includeArchived=true') {
       return {
-        data: options?.income ?? sampleIncome,
-        loading: false,
-        error: undefined,
-      };
-    }
-    if (url === '/api/portfolio/upcoming-coupons?limit=5') {
-      return {
-        data: options?.upcoming ?? sampleUpcoming,
+        data: [
+          { id: '1', name: 'Broker A', currencyCodes: ['USD'], createdAt: '', updatedAt: '' },
+          { id: '2', name: 'Broker B', currencyCodes: ['USD'], createdAt: '', updatedAt: '' },
+        ],
         loading: false,
         error: undefined,
       };
@@ -114,8 +155,8 @@ function mockPortfolioApis(options?: {
 }
 
 describe('Home', () => {
-  it('renders portfolio summary cards from mocked API data', () => {
-    mockPortfolioApis();
+  it('renders portfolio summary cards from mocked dashboard API', () => {
+    mockDashboardApis();
 
     render(
       <MemoryRouter>
@@ -125,16 +166,17 @@ describe('Home', () => {
 
     expect(screen.getByRole('heading', { name: 'Portfolio' })).toBeInTheDocument();
     expect(screen.getByLabelText('Portfolio summary')).toBeInTheDocument();
-    expect(screen.getByText('Total invested')).toBeInTheDocument();
-    expect(screen.getByText('$1,750.00')).toBeInTheDocument();
-    expect(screen.getByText('$1,500.00')).toBeInTheDocument();
+    expect(screen.getByText('Total portfolio value')).toBeInTheDocument();
+    expect(screen.getByText('$2,500.00')).toBeInTheDocument();
+    expect(screen.getByText('Positions')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Accounts')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getAllByText('May 1, 2027').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('$1,450.00')).toBeInTheDocument();
+    expect(screen.getByText('Currencies')).toBeInTheDocument();
   });
 
-  it('shows YTD coupon income card including zero', () => {
-    mockPortfolioApis({ income: { totalReceived: 0, paymentCount: 0, byHolding: [], payments: [] } });
+  it('renders allocation, forecast, and events sections', () => {
+    mockDashboardApis();
 
     render(
       <MemoryRouter>
@@ -142,86 +184,28 @@ describe('Home', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Coupon income (YTD)')).toBeInTheDocument();
-    expect(screen.getByText('$0.00')).toBeInTheDocument();
-  });
+    expect(screen.getByRole('heading', { name: 'Allocation by holding type' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Allocation by account' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Projected income by year' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Principal forecast by year' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Upcoming events' })).toBeInTheDocument();
 
-  it('shows cost basis footnote when holdings are missing purchase price', () => {
-    mockPortfolioApis();
+    const allocationByType = screen.getByLabelText('Allocation by holding type');
+    expect(within(allocationByType).getByText('Bond')).toBeInTheDocument();
+    expect(within(allocationByType).getByText('60.00%')).toBeInTheDocument();
 
-    render(
-      <MemoryRouter>
-        <Home />
-      </MemoryRouter>
-    );
+    const income = screen.getByLabelText('Projected income by year');
+    expect(within(income).getByText('2026')).toBeInTheDocument();
+    expect(within(income).getByText('$200.00')).toBeInTheDocument();
 
-    expect(
-      screen.getByText(/1 holding is missing purchase price; cost basis may be incomplete/)
-    ).toBeInTheDocument();
-  });
-
-  it('renders maturity ladder section with upcoming maturities', () => {
-    mockPortfolioApis();
-
-    render(
-      <MemoryRouter>
-        <Home />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByRole('heading', { name: 'Upcoming maturities' })).toBeInTheDocument();
-    const ladder = screen.getByLabelText('Upcoming maturities');
-    expect(within(ladder).getByText('Apple Inc')).toBeInTheDocument();
-    expect(within(ladder).getByText('US Treasury')).toBeInTheDocument();
-    expect(within(ladder).getByText('$500.00')).toBeInTheDocument();
-  });
-
-  it('renders upcoming coupon estimates when available', () => {
-    mockPortfolioApis();
-
-    render(
-      <MemoryRouter>
-        <Home />
-      </MemoryRouter>
-    );
-
-    expect(screen.getByRole('heading', { name: 'Upcoming coupons' })).toBeInTheDocument();
-    const upcoming = screen.getByLabelText('Upcoming coupon estimates');
-    expect(within(upcoming).getByText(/Estimated from holding terms/)).toBeInTheDocument();
-    expect(within(upcoming).getByText('Jun 15, 2026')).toBeInTheDocument();
-  });
-
-  it('hides upcoming coupons section when none are scheduled', () => {
-    mockPortfolioApis({ upcoming: [] });
-
-    render(
-      <MemoryRouter>
-        <Home />
-      </MemoryRouter>
-    );
-
-    expect(screen.queryByRole('heading', { name: 'Upcoming coupons' })).not.toBeInTheDocument();
+    const events = screen.getByLabelText('Upcoming events');
+    expect(within(events).getByText('US Treasury')).toBeInTheDocument();
+    expect(within(events).getByText('Coupon')).toBeInTheDocument();
+    expect(within(events).getByText('Sep 15, 2026')).toBeInTheDocument();
   });
 
   it('shows empty state when portfolio has no positions', () => {
-    mockPortfolioApis({
-      summary: {
-        totalFaceValue: 0,
-        positionCount: 0,
-        nextMaturityDate: null,
-        totalCostBasis: 0,
-        holdingsWithCostBasis: 0,
-        holdingsMissingCostBasis: 0,
-        totalInvestedCents: 0,
-        convertedCurrency: 'USD',
-        convertedTotalFaceValue: 0,
-        convertedTotalCostBasis: 0,
-        convertedTotalInvestedCents: 0,
-        byHoldingType: [],
-        maturityLadder: [],
-      },
-      upcoming: [],
-    });
+    mockDashboardApis({ dashboard: emptyDashboard() });
 
     render(
       <MemoryRouter>
@@ -231,6 +215,35 @@ describe('Home', () => {
 
     expect(screen.getByRole('heading', { name: 'No holdings yet' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Add holding' })).toHaveAttribute('href', '/holdings/new');
-    expect(screen.queryByText('Coupon income (YTD)')).not.toBeInTheDocument();
+    expect(screen.queryByText('Total portfolio value')).not.toBeInTheDocument();
+  });
+
+  it('shows filtered empty state when filters match no positions', () => {
+    mockDashboardApis({ dashboard: emptyDashboard() });
+
+    render(
+      <MemoryRouter initialEntries={['/?accountId=99']}>
+        <Home />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { name: 'No matching positions' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'No holdings yet' })).not.toBeInTheDocument();
+  });
+
+  it('renders dashboard filter controls', () => {
+    mockDashboardApis();
+
+    render(
+      <MemoryRouter>
+        <Home />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByLabelText('Dashboard filters')).toBeInTheDocument();
+    expect(screen.getByLabelText('Account')).toBeInTheDocument();
+    expect(screen.getByLabelText('Holding type')).toBeInTheDocument();
+    expect(screen.getByLabelText('From')).toBeInTheDocument();
+    expect(screen.getByLabelText('To')).toBeInTheDocument();
   });
 });

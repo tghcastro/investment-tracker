@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useHoldingTypes } from '../../hooks';
 import { showDevBadge } from '../../showDevBadge';
@@ -8,10 +8,13 @@ import './TopNav.css';
 const NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
   { to: '/income', label: 'Income', end: false },
-  { to: '/currencies', label: 'Currencies', end: false },
-  { to: '/market-indicators', label: 'Market Indicators', end: false },
   { to: '/settings', label: 'Settings', end: false },
-  { to: '/accounts', label: 'Accounts', end: false },
+] as const;
+
+const REFERENCE_NAV_ITEMS = [
+  { to: '/market-indicators', label: 'Market Indicators' },
+  { to: '/currencies', label: 'Currencies' },
+  { to: '/accounts', label: 'Accounts' },
 ] as const;
 
 const HOLDINGS_ROUTE_BY_SLUG: Record<string, string | null> = {
@@ -19,19 +22,57 @@ const HOLDINGS_ROUTE_BY_SLUG: Record<string, string | null> = {
   'brazilian-fixed-income': '/holdings/brazilian-fixed-income',
 };
 
+function isReferenceActive(pathname: string): boolean {
+  return REFERENCE_NAV_ITEMS.some(({ to }) => pathname.startsWith(to));
+}
+
+function useSubmenuOpenState() {
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') {
+      setIsMobile(false);
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const syncMobile = () => setIsMobile(mediaQuery.matches);
+    syncMobile();
+    mediaQuery.addEventListener('change', syncMobile);
+    return () => mediaQuery.removeEventListener('change', syncMobile);
+  }, []);
+
+  const closeSubmenu = () => {
+    setOpen(false);
+  };
+
+  const handleMouseLeave = (event: MouseEvent<HTMLLIElement>) => {
+    setOpen(false);
+    event.currentTarget.querySelector('button')?.blur();
+  };
+
+  return { open, setOpen, isMobile, closeSubmenu, handleMouseLeave };
+}
+
 function HoldingsNavItem({ onNavigate }: { onNavigate: () => void }) {
   const { data: types, loading } = useHoldingTypes();
   const location = useLocation();
-  const [open, setOpen] = useState(false);
+  const { open, setOpen, isMobile, closeSubmenu, handleMouseLeave } = useSubmenuOpenState();
   const isHoldingsActive = location.pathname.startsWith('/holdings');
-
-  const handleToggle = () => setOpen((value) => !value);
 
   return (
     <li
       className={`cb-top-nav__item cb-top-nav__item--submenu${
         open ? ' cb-top-nav__item--open' : ''
       }`}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={handleMouseLeave}
     >
       <button
         type="button"
@@ -41,7 +82,7 @@ function HoldingsNavItem({ onNavigate }: { onNavigate: () => void }) {
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls="holdings-submenu"
-        onClick={handleToggle}
+        onClick={isMobile ? () => setOpen((value) => !value) : undefined}
       >
         Holdings
       </button>
@@ -65,7 +106,7 @@ function HoldingsNavItem({ onNavigate }: { onNavigate: () => void }) {
                         : 'cb-top-nav__submenu-link'
                     }
                     onClick={() => {
-                      setOpen(false);
+                      closeSubmenu();
                       onNavigate();
                     }}
                   >
@@ -89,6 +130,56 @@ function HoldingsNavItem({ onNavigate }: { onNavigate: () => void }) {
             );
           })
         )}
+      </ul>
+    </li>
+  );
+}
+
+function ReferenceNavItem({ onNavigate }: { onNavigate: () => void }) {
+  const location = useLocation();
+  const { open, setOpen, isMobile, closeSubmenu, handleMouseLeave } = useSubmenuOpenState();
+  const isReferenceNavActive = isReferenceActive(location.pathname);
+
+  return (
+    <li
+      className={`cb-top-nav__item cb-top-nav__item--submenu${
+        open ? ' cb-top-nav__item--open' : ''
+      }`}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={handleMouseLeave}
+    >
+      <button
+        type="button"
+        className={`cb-top-nav__link cb-top-nav__link--submenu${
+          isReferenceNavActive ? ' cb-top-nav__link--active' : ''
+        }`}
+        aria-expanded={open}
+        aria-haspopup="true"
+        aria-controls="reference-submenu"
+        onClick={isMobile ? () => setOpen((value) => !value) : undefined}
+      >
+        Reference
+      </button>
+      <ul id="reference-submenu" className="cb-top-nav__submenu" role="menu">
+        {REFERENCE_NAV_ITEMS.map(({ to, label }) => (
+          <li key={to} role="none">
+            <NavLink
+              to={to}
+              role="menuitem"
+              className={({ isActive }) =>
+                isActive
+                  ? 'cb-top-nav__submenu-link cb-top-nav__submenu-link--active'
+                  : 'cb-top-nav__submenu-link'
+              }
+              onClick={() => {
+                closeSubmenu();
+                onNavigate();
+              }}
+            >
+              {label}
+            </NavLink>
+          </li>
+        ))}
       </ul>
     </li>
   );
@@ -145,7 +236,22 @@ export function TopNav() {
               </li>
             ))}
             <HoldingsNavItem onNavigate={closeMenu} />
-            {NAV_ITEMS.slice(1).map(({ to, label, end }) => (
+            {NAV_ITEMS.slice(1, 2).map(({ to, label, end }) => (
+              <li key={to}>
+                <NavLink
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    isActive ? 'cb-top-nav__link cb-top-nav__link--active' : 'cb-top-nav__link'
+                  }
+                  onClick={closeMenu}
+                >
+                  {label}
+                </NavLink>
+              </li>
+            ))}
+            <ReferenceNavItem onNavigate={closeMenu} />
+            {NAV_ITEMS.slice(2).map(({ to, label, end }) => (
               <li key={to}>
                 <NavLink
                   to={to}

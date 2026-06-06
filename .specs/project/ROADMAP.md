@@ -1,9 +1,9 @@
 # Roadmap
 
-**Current Milestone:** M9 — Dashboard (spec draft)  
-**Status:** M5–M8 shipped in code (2026-06-05); M9 completes **v2.0.0** scope — tag when M9 ships  
-**Latest shipped:** [m8-market-indicators](../features/completed/m8-market-indicators/spec.md)  
-**Next:** [m9-dashboard](../features/active/m9-dashboard/spec.md) → **v2.0.0**
+**Current Milestone:** v2.0.0 release (pending validation)  
+**Status:** M5–M9 shipped in code (2026-06-05) — tag **v2.0.0** after manual UAT  
+**Latest shipped:** [m9-dashboard](../features/completed/m9-dashboard/spec.md)  
+**Next:** Manual validation → v2.0.0 release
 
 ---
 
@@ -238,20 +238,20 @@
 
 **Goal:** Consolidated portfolio dashboard with allocation, yearly income/principal forecasts, and unified upcoming events — replacing the minimal Home summary.  
 **Target:** `GET /api/dashboard` with filters; Home UI shows all sections; BRFI index-linked interest uses M8 latest indicator values.  
-**Status:** Spec draft (2026-06-05) — [spec](../features/active/m9-dashboard/spec.md)  
-**Depends on:** M5, M6, M7, **M8**  
+**Status:** Complete (2026-06-05) — [spec](../features/completed/m9-dashboard/spec.md) · [design](../features/completed/m9-dashboard/design.md) · [tasks](../features/completed/m9-dashboard/tasks.md)  
+**Depends on:** M5, M6, M7, M8  
 **Release:** **v2.0.0** (with M5–M8)
 
 ### Features
 
-**Dashboard API** — PLANNED
+**Dashboard API** — DONE
 
 - Portfolio summary, allocation by type and account, projected income by year, principal forecast by year, upcoming events timeline
 - Filters: account, holding type, date range; display currency (M6)
 
-**Dashboard UI** — PLANNED
+**Dashboard UI** — DONE
 
-- Evolve Home (`/`) into full dashboard; URL-persisted filters
+- Home (`/`) full dashboard; URL-persisted filters
 - API-first — no client-side forecast math; web requests and passes query params only (AD-010)
 
 **Out of scope (M9):** Daily BRFI accrual ledger, live bond pricing, chart library requirement, PDF export

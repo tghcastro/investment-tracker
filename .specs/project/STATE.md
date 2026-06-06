@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-06-05
-**Current Work:** **M9** Dashboard — spec draft in [m9-dashboard](../features/active/m9-dashboard/spec.md); approve → design + tasks. M8 shipped (2026-06-05). **v2.0.0** after M9.
+**Current Work:** **M9** shipped on `m9-p1-api` — manual UAT → **v2.0.0** release (AD-009).
 
 ### AD-010: API-first business rules — web UI only (2026-05-31)
 
@@ -65,7 +65,7 @@
 
 ### AD-009: v2 scope — M5–M9, single release at v2.0.0 (2026-05-29, expanded 2026-06-05)
 
-**Decision:** Post-v1 work is milestones M5–M9 in order: holdings framework, multi-currency, Brazilian fixed income, market indicators, dashboard. **v2.0.0** is declared only after **M9** completes (not per-milestone tags). M5–M8 shipped in code (2026-06-05); M9 in progress.
+**Decision:** Post-v1 work is milestones M5–M9 in order: holdings framework, multi-currency, Brazilian fixed income, market indicators, dashboard. **v2.0.0** is declared only after **M9** completes (not per-milestone tags). M5–M9 shipped in code (2026-06-05); release tag pending manual validation.
 **Reason:** Features form one cohesive v2 (multi-type + FX + BRFI + benchmarks + dashboard); user confirmed bundled release including M8/M9.
 **Trade-off:** No v2 tag until dashboard ships; larger release gate.
 **Impact:** Active specs M8/M9 in `.specs/features/active/`; ROADMAP M5–M9; release + archive when M9 gate passes.
@@ -116,9 +116,12 @@ _None yet._
 - [x] Execute M8 P2 — web UI (2026-06-05)
 - [x] Execute M8 P3 — docs + archive (2026-06-05)
 - [x] Specify M8 — `.specs/features/completed/m8-market-indicators/spec.md` (2026-06-05)
-- [ ] Approve M9 spec → Design + tasks (after M8 design)
-- [ ] Specify M9 — `.specs/features/active/m9-dashboard/spec.md` (2026-06-05)
-- [ ] v2.0.0 release after M9 ships (AD-009)
+- [x] Approve M9 spec → Design + tasks (2026-06-05)
+- [x] Specify M9 — `.specs/features/completed/m9-dashboard/spec.md` (2026-06-05)
+- [x] Execute M9 P1 — domain + API [tasks](../features/completed/m9-dashboard/tasks.md) (2026-06-05)
+- [x] Execute M9 P2 — web UI (2026-06-05)
+- [x] Execute M9 P3 — docs + archive (2026-06-05)
+- [ ] v2.0.0 release after manual UAT (AD-009)
 - [x] Approve M5 spec → Execute P1 [tasks](../features/completed/m5-holdings-framework/tasks.md)
 - [x] Implement M5 — holdings framework on `m5-holdings-framework` (2026-05-29)
 - [x] Execute M6 — multi-currency on `m6-multi-currency` (2026-05-29)

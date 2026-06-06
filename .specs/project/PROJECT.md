@@ -7,7 +7,7 @@
 ## Goals
 
 - **v1:** Replace spreadsheet-based bond tracking with a reliable web app for recording holdings, key bond terms, and coupon income.
-- **v2 (M5–M9):** Holdings framework, multi-currency, Brazilian fixed income, market indicators, and portfolio dashboard — M5–M8 **shipped in code** (2026-06-05); M9 spec draft; **v2.0.0** tag when M9 ships. Specs: [ROADMAP.md](ROADMAP.md).
+- **v2 (M5–M9):** Holdings framework, multi-currency, Brazilian fixed income, market indicators, and portfolio dashboard — **shipped in code** (2026-06-05); **v2.0.0** tag pending manual UAT. Specs: [ROADMAP.md](ROADMAP.md).
 - **Long term:** Additional asset classes, multi-account aggregation, performance analytics, and net-worth history in one modular platform.
 - **Quality bar:** A user can see all bond positions and upcoming/matured cash flows without maintaining parallel spreadsheets.
 

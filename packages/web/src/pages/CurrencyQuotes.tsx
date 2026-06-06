@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ConfirmDialog, FormField, Select, TextInput } from '../components/forms';
+import { ConfirmDialog, FormDialog, FormField, Select, TextInput } from '../components/forms';
 import { Button, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi, useApiMutation } from '../hooks';
 import type { ApiCurrency, ApiCurrencyQuote } from '../types/api';
@@ -18,6 +18,8 @@ type QuoteFilterValues = {
   toDate: string;
   targetCurrency: string;
 };
+
+type FormMode = 'list' | 'add' | 'edit';
 
 const EMPTY_FORM: QuoteFormValues = {
   quoteDate: '',
@@ -73,6 +75,7 @@ export default function CurrencyQuotes() {
   const [formValues, setFormValues] = useState<QuoteFormValues>(EMPTY_FORM);
   const [filterValues, setFilterValues] = useState<QuoteFilterValues>(EMPTY_FILTERS);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [mode, setMode] = useState<FormMode>('list');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -103,10 +106,7 @@ export default function CurrencyQuotes() {
   );
 
   const filterCurrencyOptions = useMemo(
-    () => [
-      { value: '', label: 'All currencies' },
-      ...quoteCurrencyOptions,
-    ],
+    () => [{ value: '', label: 'All currencies' }, ...quoteCurrencyOptions],
     [quoteCurrencyOptions]
   );
 
@@ -114,6 +114,7 @@ export default function CurrencyQuotes() {
     setFormValues(EMPTY_FORM);
     setFormErrors({});
     setEditingId(null);
+    setMode('list');
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -150,6 +151,7 @@ export default function CurrencyQuotes() {
       rateDirection: 'usd-to-target',
     });
     setFormErrors({});
+    setMode('edit');
   };
 
   const handleDeleteConfirm = async () => {
@@ -164,6 +166,79 @@ export default function CurrencyQuotes() {
   };
 
   const activeMutation = editingId ? updateMutation : createMutation;
+  const activeError = mode === 'add' ? createMutation.error : mode === 'edit' ? updateMutation.error : null;
+
+  const quoteForm = (
+    <form className="cb-currency-quotes-form" onSubmit={(event) => void handleSubmit(event)} noValidate>
+      <div className="cb-currency-quotes-form__grid">
+        <FormField label="Quote date" htmlFor="quote-date" error={formErrors.quoteDate}>
+          <TextInput
+            id="quote-date"
+            type="date"
+            value={formValues.quoteDate}
+            error={Boolean(formErrors.quoteDate)}
+            onChange={(event) =>
+              setFormValues((current) => ({ ...current, quoteDate: event.target.value }))
+            }
+          />
+        </FormField>
+        <FormField
+          label="Target currency"
+          htmlFor="quote-currency"
+          error={formErrors.targetCurrencyCode}
+        >
+          <Select
+            id="quote-currency"
+            value={formValues.targetCurrencyCode}
+            options={[{ value: '', label: 'Select currency' }, ...quoteCurrencyOptions]}
+            error={Boolean(formErrors.targetCurrencyCode)}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                targetCurrencyCode: event.target.value,
+              }))
+            }
+          />
+        </FormField>
+        <FormField label="Rate" htmlFor="quote-rate" error={formErrors.rate}>
+          <TextInput
+            id="quote-rate"
+            inputMode="decimal"
+            placeholder="e.g. 5.25"
+            value={formValues.rate}
+            error={Boolean(formErrors.rate)}
+            onChange={(event) =>
+              setFormValues((current) => ({ ...current, rate: event.target.value }))
+            }
+          />
+        </FormField>
+        <FormField label="Rate direction" htmlFor="quote-direction">
+          <Select
+            id="quote-direction"
+            value={formValues.rateDirection}
+            options={[
+              { value: 'usd-to-target', label: 'USD → currency' },
+              { value: 'target-to-usd', label: 'Currency → USD' },
+            ]}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                rateDirection: event.target.value as QuoteFormValues['rateDirection'],
+              }))
+            }
+          />
+        </FormField>
+      </div>
+      <div className="cb-currency-quotes-form__actions">
+        <Button type="button" variant="secondary-light" onClick={resetForm}>
+          Cancel
+        </Button>
+        <Button type="submit" variant="primary" disabled={activeMutation.loading}>
+          {editingId ? 'Save quote' : 'Record quote'}
+        </Button>
+      </div>
+    </form>
+  );
 
   return (
     <div className="cb-currency-quotes-page">
@@ -171,14 +246,21 @@ export default function CurrencyQuotes() {
         title="Currency quotes"
         subtitle="Manual USD exchange rates (1 USD = rate × target)"
         action={
-          <Link to="/currencies" className="cb-button cb-button--tertiary-text">
-            View currencies
-          </Link>
+          <div className="cb-currency-quotes-page__header-actions">
+            {mode === 'list' ? (
+              <Button type="button" variant="primary" onClick={() => setMode('add')}>
+                Record quote
+              </Button>
+            ) : null}
+            <Link to="/currencies" className="cb-button cb-button--tertiary-text">
+              View currencies
+            </Link>
+          </div>
         }
       />
 
       {error ? <ErrorBanner message={error} /> : null}
-      {activeMutation.error ? <ErrorBanner message={activeMutation.error} /> : null}
+      {activeMutation.error && mode === 'list' ? <ErrorBanner message={activeMutation.error} /> : null}
       {deleteMutation.error ? <ErrorBanner message={deleteMutation.error} /> : null}
 
       <section className="cb-currency-quotes-filters" aria-label="Quote filters">
@@ -216,81 +298,6 @@ export default function CurrencyQuotes() {
         </div>
       </section>
 
-      <form className="cb-currency-quotes-form" onSubmit={(event) => void handleSubmit(event)} noValidate>
-        <h2 className="cb-currency-quotes-form__title">
-          {editingId ? 'Edit quote' : 'Add quote'}
-        </h2>
-        <div className="cb-currency-quotes-form__grid">
-          <FormField label="Quote date" htmlFor="quote-date" error={formErrors.quoteDate}>
-            <TextInput
-              id="quote-date"
-              type="date"
-              value={formValues.quoteDate}
-              error={Boolean(formErrors.quoteDate)}
-              onChange={(event) =>
-                setFormValues((current) => ({ ...current, quoteDate: event.target.value }))
-              }
-            />
-          </FormField>
-          <FormField
-            label="Target currency"
-            htmlFor="quote-currency"
-            error={formErrors.targetCurrencyCode}
-          >
-            <Select
-              id="quote-currency"
-              value={formValues.targetCurrencyCode}
-              options={[{ value: '', label: 'Select currency' }, ...quoteCurrencyOptions]}
-              error={Boolean(formErrors.targetCurrencyCode)}
-              onChange={(event) =>
-                setFormValues((current) => ({
-                  ...current,
-                  targetCurrencyCode: event.target.value,
-                }))
-              }
-            />
-          </FormField>
-          <FormField label="Rate" htmlFor="quote-rate" error={formErrors.rate}>
-            <TextInput
-              id="quote-rate"
-              inputMode="decimal"
-              placeholder="e.g. 5.25"
-              value={formValues.rate}
-              error={Boolean(formErrors.rate)}
-              onChange={(event) =>
-                setFormValues((current) => ({ ...current, rate: event.target.value }))
-              }
-            />
-          </FormField>
-          <FormField label="Rate direction" htmlFor="quote-direction">
-            <Select
-              id="quote-direction"
-              value={formValues.rateDirection}
-              options={[
-                { value: 'usd-to-target', label: 'USD → currency' },
-                { value: 'target-to-usd', label: 'Currency → USD' },
-              ]}
-              onChange={(event) =>
-                setFormValues((current) => ({
-                  ...current,
-                  rateDirection: event.target.value as QuoteFormValues['rateDirection'],
-                }))
-              }
-            />
-          </FormField>
-        </div>
-        <div className="cb-currency-quotes-form__actions">
-          {editingId ? (
-            <Button type="button" variant="secondary-light" onClick={resetForm}>
-              Cancel edit
-            </Button>
-          ) : null}
-          <Button type="submit" variant="primary" disabled={activeMutation.loading}>
-            {editingId ? 'Save quote' : 'Add quote'}
-          </Button>
-        </div>
-      </form>
-
       {loading ? (
         <div className="cb-currency-quotes-table cb-currency-quotes-table--loading" aria-busy="true">
           {Array.from({ length: 3 }, (_, index) => (
@@ -300,7 +307,7 @@ export default function CurrencyQuotes() {
       ) : null}
 
       {!loading && !error && quotes?.length === 0 ? (
-        <p className="cb-body-md-muted">No quotes yet. Add a rate to enable display conversion.</p>
+        <p className="cb-body-md-muted">No quotes yet. Record a rate to enable display conversion.</p>
       ) : null}
 
       {!loading && !error && quotes && quotes.length > 0 ? (
@@ -332,6 +339,26 @@ export default function CurrencyQuotes() {
           ))}
         </div>
       ) : null}
+
+      <FormDialog
+        open={mode === 'add'}
+        title="Record quote"
+        titleId="currency-quote-add-title"
+        onClose={resetForm}
+      >
+        {activeError ? <ErrorBanner message={activeError} /> : null}
+        {quoteForm}
+      </FormDialog>
+
+      <FormDialog
+        open={mode === 'edit'}
+        title="Edit quote"
+        titleId="currency-quote-edit-title"
+        onClose={resetForm}
+      >
+        {activeError ? <ErrorBanner message={activeError} /> : null}
+        {quoteForm}
+      </FormDialog>
 
       <ConfirmDialog
         open={deleteId !== null}

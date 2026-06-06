@@ -92,6 +92,12 @@ export const createCouponPaymentSchema = z.object({
   amount: z.number().int().positive('Amount must be positive'),
 });
 
+export const createBrFiInterestPaymentSchema = z.object({
+  brFiHoldingId: positiveIntegerId('Holding ID'),
+  paymentDate: z.coerce.date(),
+  amount: z.number().int().positive('Amount must be positive'),
+});
+
 export const updateAccountSchema = z.object({
   name: z.string().min(1, 'Account name required').max(255).optional(),
   description: z.string().max(1000).optional(),
@@ -107,6 +113,8 @@ export const updateCouponPaymentSchema = z
     message: 'At least one field is required',
     path: ['_root'],
   });
+
+export const updateBrFiInterestPaymentSchema = updateCouponPaymentSchema;
 
 export const updateBondHoldingSchema = bondHoldingFieldsSchema.partial().refine(
   (data) => {
@@ -126,6 +134,8 @@ export type CreateCurrencyQuoteInput = z.infer<typeof createCurrencyQuoteSchema>
 export type UpdateCurrencyQuoteInput = z.infer<typeof updateCurrencyQuoteSchema>;
 export type CreateBondHoldingInput = z.infer<typeof createBondHoldingSchema>;
 export type CreateCouponPaymentInput = z.infer<typeof createCouponPaymentSchema>;
+export type CreateBrFiInterestPaymentInput = z.infer<typeof createBrFiInterestPaymentSchema>;
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
 export type UpdateBondHoldingInput = z.infer<typeof updateBondHoldingSchema>;
 export type UpdateCouponPaymentInput = z.infer<typeof updateCouponPaymentSchema>;
+export type UpdateBrFiInterestPaymentInput = z.infer<typeof updateBrFiInterestPaymentSchema>;

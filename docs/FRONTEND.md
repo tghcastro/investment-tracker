@@ -29,7 +29,9 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 | Pass `?displayCurrency=` and refetch | Apply purchase-date FX |
 | Disable submit when API returns `conversionError` | Validate writes, return error codes |
 | `parseDollarsToCents` for form POST payloads | Face value business meaning |
-| `formatCurrency`, tooltips, skeletons | Schedule generation, upcoming coupons |
+| `formatCurrency`, tooltips, skeletons | Schedule generation, dashboard forecasts |
+
+**Home dashboard (M9):** Single `GET /api/dashboard` with URL-persisted filters (`accountId`, `holdingTypeSlug`, `from`, `to`, `limit`) + `displayCurrency`. Render `allocationByType`, `projectedIncomeByYear`, `upcomingEvents`, etc. from JSON — no local forecast math.
 
 **Coupon estimate:** `expectedCouponAmountCents` on holding JSON from API — `CouponPaymentsSection` renders it; do not recompute.
 
@@ -47,24 +49,29 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 
 ## App shell
 
-- `TopNav` 64px, canvas background, hairline bottom border; **Holdings** opens a type submenu from `GET /api/holding-types` (Bond → `/holdings`; Brazilian Fixed Income → `/holdings/brazilian-fixed-income`); **Market Indicators** → `/market-indicators`.
+- `TopNav` 64px, canvas background, hairline bottom border; **Holdings** hover submenu from `GET /api/holding-types` (Bond → `/holdings`; Brazilian Fixed Income → `/holdings/brazilian-fixed-income`); **Reference** submenu groups Market Indicators, Currencies, and Accounts (click-toggle on mobile only; closes on pointer leave / route change).
 - Main: `.cb-app__main`, max-width ~1200px, padding 32px / 24px.
 - Routes: `/`, `/holdings`, `/holdings/new`, `/holdings/:id`, `/holdings/brazilian-fixed-income`, `/holdings/brazilian-fixed-income/new`, `/holdings/brazilian-fixed-income/:id`, `/accounts`, `/accounts/new`, `/accounts/:id`, `/income`, `/currencies`, `/currencies/quotes`, `/market-indicators`, `/market-indicators/:id`, `/settings`.
-- **Display currency:** `DisplayCurrencyProvider` (`contexts/DisplayCurrencyContext.tsx`) loads `GET /api/currencies/available`; preference in `localStorage` key `displayCurrency`. Append `?displayCurrency=` via `appendDisplayCurrencyParam` on Home/Holdings summary and list fetches.
+- **Display currency:** `DisplayCurrencyProvider` loads `GET /api/currencies/available`; preference in `localStorage` key `displayCurrency`. Home dashboard passes `displayCurrency` via `buildDashboardUrl` (`utils/dashboardUrl.ts`); Holdings lists use `appendDisplayCurrencyParam`. `buildDashboardUrl` defaults `from`/`to` when omitted (Accounts page uses `defaultDashboardDateRange()`).
+- **Home (`/`):** Portfolio dashboard — summary cards, allocation tables, yearly income/principal forecasts, upcoming events; filter bar (account, holding type, date range) synced to URL search params; scroll-limited tables except allocation-by-type.
+- **Accounts (`/accounts`):** Card grid with holding count + converted total from `GET /api/dashboard` (`allocationByAccount`); native-currency breakdown in value tooltip.
+- **Currencies (`/currencies`):** Catalog table with separate **Latest (USD)** and **Date** columns (right-aligned); latest rate from `GET /api/currency-quotes`.
 
 ## Components to reuse
 
 | Component | Use |
 | --- | --- |
 | `Button` | `primary`, `secondary`, `tertiary`, `disabled` |
-| `TopNav` | Global nav; Holdings submenu by holding type |
+| `TopNav` | Global nav; Holdings + Reference submenus |
+| `BrFiInterestPaymentsSection` | BRFI edit page — interest payments CRUD (mirror `CouponPaymentsSection`) |
 | `PageHeader` | Title + subtitle + optional action |
 | `EmptyState` | Zero-data lists |
 | `ErrorBanner` | Fetch/validation errors (text on soft surface) |
 | `TextInput` / `FormField` / `Select` | All CRUD forms |
 | `HoldingsTable`, `BrFiHoldingsTable`, `CouponPaymentsTable` | Data tables |
 | `BrFiForm`, `IndexingFields` | BRFI create/edit (product + indexing params; indicator picker via `GET /api/market-indicators?category=`) |
-| `MarketIndicators`, `MarketIndicatorDetail` | Indicator list + dated values CRUD (mirror CurrencyQuotes patterns) |
+| `MarketIndicators`, `MarketIndicatorDetail` | Indicator list + dated values CRUD; **Record value** opens `FormDialog` (mirror CurrencyQuotes) |
+| `CurrencyQuotes` | Quote list + filters; **Record quote** opens `FormDialog` |
 | `CurrencySelector` | Display-currency dropdown (Home, Holdings toolbar) |
 
 ## Forms

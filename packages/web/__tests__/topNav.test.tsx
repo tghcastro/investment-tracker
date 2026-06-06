@@ -134,8 +134,9 @@ describe('TopNav responsive behavior', () => {
     expect(window.matchMedia(MOBILE_QUERY).matches).toBe(false);
     expect(mainNav).not.toHaveClass('cb-top-nav__center--open');
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Accounts' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Reference' })).toBeInTheDocument();
     });
+    expect(screen.getByRole('menuitem', { name: 'Accounts' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Close menu' })).not.toBeInTheDocument();
   });
 
@@ -187,7 +188,7 @@ describe('TopNav responsive behavior', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('link', { name: 'Market Indicators' })).toHaveAttribute(
+    expect(screen.getByRole('menuitem', { name: 'Market Indicators' })).toHaveAttribute(
       'href',
       '/market-indicators'
     );
@@ -205,6 +206,26 @@ describe('TopNav responsive behavior', () => {
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
   });
 
+  it('closes holdings submenu after pointer leaves on wide viewports', async () => {
+    mockMatchMedia(false);
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter>
+        <TopNav />
+      </MemoryRouter>
+    );
+
+    const holdingsItem = screen.getByRole('button', { name: 'Holdings' }).closest('li');
+    expect(holdingsItem).not.toBeNull();
+
+    await user.hover(holdingsItem!);
+    expect(holdingsItem).toHaveClass('cb-top-nav__item--open');
+
+    await user.unhover(holdingsItem!);
+    expect(holdingsItem).not.toHaveClass('cb-top-nav__item--open');
+  });
+
   it('renders holdings submenu from API with Bond and BRFI links', async () => {
     mockMatchMedia(false);
     const user = userEvent.setup();
@@ -215,11 +236,14 @@ describe('TopNav responsive behavior', () => {
       </MemoryRouter>
     );
 
+    const holdingsItem = screen.getByRole('button', { name: 'Holdings' }).closest('li');
+    expect(holdingsItem).not.toBeNull();
+
+    await user.hover(holdingsItem!);
+
     await waitFor(() => {
       expect(screen.getByRole('menuitem', { name: 'Bond' })).toBeInTheDocument();
     });
-
-    await user.click(screen.getByRole('button', { name: 'Holdings' }));
 
     expect(screen.getByRole('menuitem', { name: 'Bond' })).toHaveAttribute('href', '/holdings');
     expect(screen.getByRole('menuitem', { name: 'Brazilian Fixed Income' })).toHaveAttribute(
