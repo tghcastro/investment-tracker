@@ -36,6 +36,11 @@ function useSubmenuOpenState() {
   }, [location.pathname]);
 
   useEffect(() => {
+    if (typeof window.matchMedia !== 'function') {
+      setIsMobile(false);
+      return;
+    }
+
     const mediaQuery = window.matchMedia('(max-width: 767px)');
     const syncMobile = () => setIsMobile(mediaQuery.matches);
     syncMobile();
