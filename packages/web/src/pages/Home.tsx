@@ -149,10 +149,7 @@ export default function Home() {
   return (
     <div className="cb-home">
       <section className="cb-home__hero">
-        <PageHeader title="Portfolio" subtitle="Bonds and Brazilian fixed income" />
-        <p className="cb-home__subcopy cb-body-md-muted">
-          Track invested amounts, bond face value, coupons, and maturity dates across your accounts.
-        </p>
+        <PageHeader title="Portfolio" subtitle="Overview across accounts and holding types" />
       </section>
 
       {error ? <ErrorBanner message={error} /> : null}
@@ -306,7 +303,7 @@ export default function Home() {
           <section className="cb-home__section" aria-label="Allocation by account">
             <h2 className="cb-home__section-title">Allocation by account</h2>
             {dashboard.allocationByAccount.length > 0 ? (
-              <div className="cb-home__table-scroll">
+              <div className="cb-home__table-scroll cb-home__table-scroll--limited">
               <div className="cb-home__table" role="table">
                 <div className="cb-home__table-header" role="row">
                   <span role="columnheader">Account</span>
@@ -334,7 +331,7 @@ export default function Home() {
           <section className="cb-home__section" aria-label="Projected income by year">
             <h2 className="cb-home__section-title">Projected income by year</h2>
             {dashboard.projectedIncomeByYear.length > 0 ? (
-              <div className="cb-home__table-scroll">
+              <div className="cb-home__table-scroll cb-home__table-scroll--limited">
               <div className="cb-home__table cb-home__table--income" role="table">
                 <div className="cb-home__table-header" role="row">
                   <span role="columnheader">Year</span>
@@ -366,7 +363,7 @@ export default function Home() {
           <section className="cb-home__section" aria-label="Principal forecast by year">
             <h2 className="cb-home__section-title">Principal forecast by year</h2>
             {dashboard.principalForecastByYear.length > 0 ? (
-              <div className="cb-home__table-scroll">
+              <div className="cb-home__table-scroll cb-home__table-scroll--limited">
               <div className="cb-home__table cb-home__table--principal" role="table">
                 <div className="cb-home__table-header" role="row">
                   <span role="columnheader">Year</span>
@@ -390,7 +387,7 @@ export default function Home() {
           <section className="cb-home__section" aria-label="Upcoming events">
             <h2 className="cb-home__section-title">Upcoming events</h2>
             {dashboard.upcomingEvents.length > 0 ? (
-              <div className="cb-home__table-scroll">
+              <div className="cb-home__table-scroll cb-home__table-scroll--limited">
               <div className="cb-home__table cb-home__table--events" role="table">
                 <div className="cb-home__table-header" role="row">
                   <span role="columnheader">Date</span>

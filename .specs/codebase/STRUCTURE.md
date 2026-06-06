@@ -80,6 +80,7 @@ api/
 │   │   ├── holding-types/
 │   │   ├── holdings/
 │   │   ├── br-fi-holdings/
+│   │   ├── br-fi-interest-payments/ # CRUD linked to BRFI holdings
 │   │   ├── market-indicators/ # CRUD + nested values + latest
 │   │   ├── dashboard/        # GET /api/dashboard aggregate
 │   │   ├── coupon-payments/

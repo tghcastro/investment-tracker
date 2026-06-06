@@ -17,7 +17,7 @@ export default function MarketIndicators() {
     <div className="cb-market-indicators-page">
       <PageHeader
         title="Market indicators"
-        subtitle="Manual benchmark rates and indexes — no live feeds"
+        subtitle="Benchmark rates and indexes"
       />
 
       {error ? <ErrorBanner message={error} /> : null}

@@ -5,6 +5,7 @@ import {
   brFiHoldingToFormValues,
   type BrFiFormSubmitPayload,
 } from '../components/BrFiForm';
+import { BrFiInterestPaymentsSection } from '../components/BrFiInterestPaymentsSection';
 import { ConfirmDialog } from '../components/forms';
 import { EmptyState, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi, useApiMutation } from '../hooks';
@@ -149,19 +150,43 @@ export default function BrFiFormPage({ mode }: BrFiFormPageProps) {
       {activeMutation.error ? <ErrorBanner message={activeMutation.error} /> : null}
       {deleteMutation.error ? <ErrorBanner message={deleteMutation.error} /> : null}
 
-      <BrFiForm
-        accounts={accounts ?? []}
-        initialValues={initialValues}
-        serverFieldErrors={activeMutation.fieldErrors}
-        submitLabel={mode === 'create' ? 'Create holding' : 'Save changes'}
-        loading={activeMutation.loading || deleteMutation.loading}
-        showDelete={mode === 'edit'}
-        onSubmit={(payload) => {
-          void handleSubmit(payload);
-        }}
-        onDelete={() => setDeleteOpen(true)}
-        onCancel={() => navigate('/holdings/brazilian-fixed-income')}
-      />
+      {mode === 'edit' && holding ? (
+        <div className="cb-holding-form-page__layout">
+          <div className="cb-holding-form-page__panel">
+            <h2 className="cb-holding-form-page__panel-title">Holding details</h2>
+            <BrFiForm
+              accounts={accounts ?? []}
+              initialValues={initialValues}
+              serverFieldErrors={activeMutation.fieldErrors}
+              submitLabel="Save changes"
+              loading={activeMutation.loading || deleteMutation.loading}
+              showDelete
+              onSubmit={(payload) => {
+                void handleSubmit(payload);
+              }}
+              onDelete={() => setDeleteOpen(true)}
+              onCancel={() => navigate('/holdings/brazilian-fixed-income')}
+            />
+          </div>
+          <div className="cb-holding-form-page__panel cb-holding-form-page__panel--aside">
+            <BrFiInterestPaymentsSection holding={holding} />
+          </div>
+        </div>
+      ) : (
+        <BrFiForm
+          accounts={accounts ?? []}
+          initialValues={initialValues}
+          serverFieldErrors={activeMutation.fieldErrors}
+          submitLabel={mode === 'create' ? 'Create holding' : 'Save changes'}
+          loading={activeMutation.loading || deleteMutation.loading}
+          showDelete={mode === 'edit'}
+          onSubmit={(payload) => {
+            void handleSubmit(payload);
+          }}
+          onDelete={() => setDeleteOpen(true)}
+          onCancel={() => navigate('/holdings/brazilian-fixed-income')}
+        />
+      )}
 
       <ConfirmDialog
         open={deleteOpen}

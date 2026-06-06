@@ -214,3 +214,22 @@ export const couponPayments = sqliteTable(
     }),
   })
 );
+
+export const brFiInterestPayments = sqliteTable(
+  'br_fi_interest_payments',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    brFiHoldingId: integer('br_fi_holding_id').notNull(),
+    paymentDate: integer('payment_date', { mode: 'timestamp_ms' }).notNull(),
+    amount: real('amount').notNull(),
+    recordedAt: integer('recorded_at', { mode: 'timestamp_ms' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => ({
+    brFiHoldingIdRef: foreignKey({
+      columns: [table.brFiHoldingId],
+      foreignColumns: [brFiHoldings.id],
+    }),
+  })
+);

@@ -144,6 +144,18 @@ export type ApiCouponPayment = {
   conversionError?: string;
 };
 
+export type ApiBrFiInterestPayment = {
+  id: string;
+  brFiHoldingId: string;
+  paymentDate: string;
+  amount: number;
+  recordedAt: string;
+  currencyCode: string;
+  convertedAmount: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
+};
+
 export type ApiIncomeSummaryByHolding = {
   holdingId: string;
   issuer: string;

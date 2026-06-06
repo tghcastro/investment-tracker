@@ -3,6 +3,7 @@ import type {
   Account,
   BondHolding,
   BrFiHolding,
+  BrFiInterestPayment,
   CouponFrequency,
   CouponPayment,
   Currency,
@@ -46,6 +47,7 @@ import {
   accounts,
   bondHoldings,
   brFiHoldings,
+  brFiInterestPayments,
   couponPayments,
   currencies,
   currencyQuotes,
@@ -115,6 +117,17 @@ export type InsertCouponPaymentData = {
 };
 
 export type UpdateCouponPaymentData = {
+  paymentDate?: Date;
+  amount?: number;
+};
+
+export type InsertBrFiInterestPaymentData = {
+  brFiHoldingId: string;
+  paymentDate: Date;
+  amount: number;
+};
+
+export type UpdateBrFiInterestPaymentData = {
   paymentDate?: Date;
   amount?: number;
 };
@@ -607,6 +620,18 @@ function mapCouponPayment(row: typeof couponPayments.$inferSelect): CouponPaymen
   return {
     id: String(row.id),
     bondHoldingId: String(row.bondHoldingId),
+    paymentDate: row.paymentDate,
+    amount: row.amount,
+    recordedAt: row.recordedAt,
+  };
+}
+
+function mapBrFiInterestPayment(
+  row: typeof brFiInterestPayments.$inferSelect
+): BrFiInterestPayment {
+  return {
+    id: String(row.id),
+    brFiHoldingId: String(row.brFiHoldingId),
     paymentDate: row.paymentDate,
     amount: row.amount,
     recordedAt: row.recordedAt,
@@ -1677,6 +1702,14 @@ export function createRepo(database: Db) {
     const existing = await getBrFiHolding(id);
     if (!existing) {
       return false;
+    }
+
+    const payments = await listBrFiInterestPaymentsByHolding(id);
+    if (payments.length > 0) {
+      throw new RepoError(
+        'HOLDING_HAS_PAYMENTS',
+        'Cannot delete holding with linked interest payments.'
+      );
     }
 
     const numericId = parseId(id, 'holding id');
@@ -2756,6 +2789,87 @@ export function createRepo(database: Db) {
     return true;
   }
 
+  async function insertBrFiInterestPayment(
+    data: InsertBrFiInterestPaymentData
+  ): Promise<BrFiInterestPayment> {
+    const brFiHoldingId = parseId(data.brFiHoldingId, 'holding id');
+    try {
+      const [row] = database
+        .insert(brFiInterestPayments)
+        .values({
+          brFiHoldingId,
+          paymentDate: data.paymentDate,
+          amount: data.amount,
+        })
+        .returning()
+        .all();
+      return mapBrFiInterestPayment(row);
+    } catch (error) {
+      wrapDbError(error);
+    }
+  }
+
+  async function listBrFiInterestPaymentsByHolding(
+    holdingId: string
+  ): Promise<BrFiInterestPayment[]> {
+    const numericHoldingId = parseId(holdingId, 'holding id');
+    const rows = database
+      .select()
+      .from(brFiInterestPayments)
+      .where(eq(brFiInterestPayments.brFiHoldingId, numericHoldingId))
+      .orderBy(desc(brFiInterestPayments.paymentDate))
+      .all();
+    return rows.map(mapBrFiInterestPayment);
+  }
+
+  async function getBrFiInterestPayment(id: string): Promise<BrFiInterestPayment | null> {
+    const numericId = parseId(id, 'payment id');
+    const [row] = database
+      .select()
+      .from(brFiInterestPayments)
+      .where(eq(brFiInterestPayments.id, numericId))
+      .all();
+    return row ? mapBrFiInterestPayment(row) : null;
+  }
+
+  async function updateBrFiInterestPayment(
+    id: string,
+    data: UpdateBrFiInterestPaymentData
+  ): Promise<BrFiInterestPayment | null> {
+    const numericId = parseId(id, 'payment id');
+    const existing = await getBrFiInterestPayment(id);
+    if (!existing) {
+      return null;
+    }
+
+    const updates: Partial<typeof brFiInterestPayments.$inferInsert> = {};
+    if (data.paymentDate !== undefined) {
+      updates.paymentDate = data.paymentDate;
+    }
+    if (data.amount !== undefined) {
+      updates.amount = data.amount;
+    }
+
+    const [row] = database
+      .update(brFiInterestPayments)
+      .set(updates)
+      .where(eq(brFiInterestPayments.id, numericId))
+      .returning()
+      .all();
+    return mapBrFiInterestPayment(row);
+  }
+
+  async function deleteBrFiInterestPayment(id: string): Promise<boolean> {
+    const existing = await getBrFiInterestPayment(id);
+    if (!existing) {
+      return false;
+    }
+
+    const numericId = parseId(id, 'payment id');
+    database.delete(brFiInterestPayments).where(eq(brFiInterestPayments.id, numericId)).run();
+    return true;
+  }
+
   async function getIncomeSummary(from: Date, to: Date): Promise<IncomeSummary> {
     const rangeStart = startOfUtcDay(from);
     const rangeEnd = endOfUtcDay(to);
@@ -2908,6 +3022,11 @@ export function createRepo(database: Db) {
     getCouponPayment,
     updateCouponPayment,
     deleteCouponPayment,
+    insertBrFiInterestPayment,
+    listBrFiInterestPaymentsByHolding,
+    getBrFiInterestPayment,
+    updateBrFiInterestPayment,
+    deleteBrFiInterestPayment,
     getIncomeSummary,
     getUpcomingCoupons,
     getQuoteHistory,

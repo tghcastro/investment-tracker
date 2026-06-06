@@ -138,6 +138,13 @@ describe('buildDashboardUrl', () => {
     expect(url).toBe('/api/dashboard?from=2026-06-05&to=2029-06-05');
   });
 
+  it('defaults missing date params to the standard dashboard range', () => {
+    const url = buildDashboardUrl('USD', {});
+    const params = new URLSearchParams(url.split('?')[1]);
+    expect(params.get('from')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(params.get('to')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
   it('includes optional filters and display currency', () => {
     const url = buildDashboardUrl('BRL', {
       from: '2026-01-01',

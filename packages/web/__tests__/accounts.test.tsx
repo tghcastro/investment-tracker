@@ -3,12 +3,24 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import Accounts from '../src/pages/Accounts';
-import type { ApiAccount, ApiBondHolding, ApiBrFiHolding } from '../src/types/api';
+import type { ApiAccount, ApiBondHolding, ApiBrFiHolding, ApiDashboard } from '../src/types/api';
 
 const mockUseApi = vi.fn();
 
 vi.mock('../src/hooks/useApi', () => ({
   useApi: (url: string) => mockUseApi(url),
+}));
+
+vi.mock('../src/contexts/DisplayCurrencyContext', () => ({
+  useDisplayCurrency: () => ({
+    displayCurrency: 'USD',
+    displaySymbol: '$',
+    availableCurrencies: [],
+    loading: false,
+    setDisplayCurrency: vi.fn(),
+  }),
+  appendDisplayCurrencyParam: (url: string) => url,
+  DisplayCurrencyProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 const sampleAccounts: ApiAccount[] = [
@@ -75,6 +87,45 @@ const sampleHoldings: ApiBondHolding[] = [
   },
 ];
 
+const sampleDashboard: ApiDashboard = {
+  summary: {
+    totalPortfolioValueCents: 2_250_000,
+    convertedTotalPortfolioValueCents: 2_250_000,
+    convertedCurrency: 'USD',
+    conversionError: null,
+    positionCount: 4,
+    accountCount: 2,
+    currencyCount: 2,
+    totalFaceValueCents: 225_000,
+    totalInvestedCents: 1_000_000,
+    convertedTotalFaceValueCents: 225_000,
+    convertedTotalInvestedCents: 1_000_000,
+  },
+  allocationByType: [],
+  allocationByAccount: [
+    {
+      accountId: '10',
+      name: 'Vanguard',
+      valueCents: 1_500_000,
+      convertedValueCents: 1_500_000,
+      percentage: 67,
+    },
+    {
+      accountId: '11',
+      name: 'Interactive Brokers',
+      valueCents: 750_000,
+      convertedValueCents: 750_000,
+      percentage: 33,
+    },
+  ],
+  projectedIncomeByYear: [],
+  principalForecastByYear: [],
+  upcomingEvents: [],
+  warnings: {
+    holdingsMissingIndicator: 0,
+  },
+};
+
 const sampleBrFiHoldings: ApiBrFiHolding[] = [
   {
     id: '4',
@@ -97,11 +148,14 @@ describe('Accounts', () => {
       if (url === '/api/accounts') {
         return { data: sampleAccounts, loading: false, error: undefined };
       }
-      if (url === '/api/holdings') {
+      if (url.startsWith('/api/holdings')) {
         return { data: sampleHoldings, loading: false, error: undefined };
       }
       if (url === '/api/br-fi-holdings') {
         return { data: sampleBrFiHoldings, loading: false, error: undefined };
+      }
+      if (url.startsWith('/api/dashboard')) {
+        return { data: sampleDashboard, loading: false, error: undefined };
       }
       return { data: undefined, loading: false, error: undefined };
     });
@@ -128,11 +182,14 @@ describe('Accounts', () => {
       if (url === '/api/accounts') {
         return { data: sampleAccounts, loading: false, error: undefined };
       }
-      if (url === '/api/holdings') {
+      if (url.startsWith('/api/holdings')) {
         return { data: undefined, loading: false, error: 'Network error' };
       }
       if (url === '/api/br-fi-holdings') {
         return { data: [], loading: false, error: undefined };
+      }
+      if (url.startsWith('/api/dashboard')) {
+        return { data: sampleDashboard, loading: false, error: undefined };
       }
       return { data: undefined, loading: false, error: undefined };
     });

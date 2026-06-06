@@ -25,7 +25,7 @@ export default function Income() {
 
   return (
     <div className="cb-income">
-      <PageHeader title="Coupon income" subtitle="Interest received across your bond holdings" />
+      <PageHeader title="Coupon income" subtitle="Cash received across your holdings" />
 
       <section className="cb-income__filters" aria-label="Income period">
         <div className="cb-income__filter-field">

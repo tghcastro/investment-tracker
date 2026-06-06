@@ -104,13 +104,17 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Holdings' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Bond' })).toHaveAttribute('href', '/holdings');
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
-    expect(screen.getByRole('link', { name: 'Currencies' })).toHaveAttribute('href', '/currencies');
-    expect(screen.getByRole('link', { name: 'Market Indicators' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Reference' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Currencies' })).toHaveAttribute(
+      'href',
+      '/currencies'
+    );
+    expect(screen.getByRole('menuitem', { name: 'Market Indicators' })).toHaveAttribute(
       'href',
       '/market-indicators'
     );
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
-    expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
+    expect(screen.getByRole('menuitem', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
     expect(screen.getByRole('heading', { name: 'Portfolio' })).toBeInTheDocument();
   });
 

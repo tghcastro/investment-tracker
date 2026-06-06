@@ -1,23 +1,33 @@
-import type { ApiCouponPayment } from '../types/api';
 import { formatCurrency, formatDate } from '../utils/format';
 import { Button } from './ui/Button';
 import './CouponPaymentsTable.css';
 
-export interface CouponPaymentsTableProps {
-  payments: ApiCouponPayment[];
-  loading?: boolean;
-  onEdit: (payment: ApiCouponPayment) => void;
-  onDelete: (payment: ApiCouponPayment) => void;
+export interface PaymentDisplayRow {
+  id: string;
+  paymentDate: string;
+  amount: number;
+  currencyCode: string;
+  convertedAmount: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
 }
 
-function formatConvertedAmount(payment: ApiCouponPayment): string {
+export interface CouponPaymentsTableProps<T extends PaymentDisplayRow = PaymentDisplayRow> {
+  payments: T[];
+  loading?: boolean;
+  ariaLabel?: string;
+  onEdit: (payment: T) => void;
+  onDelete: (payment: T) => void;
+}
+
+function formatConvertedAmount(payment: PaymentDisplayRow): string {
   if (payment.convertedAmount === null) {
     return '—';
   }
   return formatCurrency(payment.convertedAmount, payment.convertedCurrency);
 }
 
-function showNativeAmountLine(payment: ApiCouponPayment): boolean {
+function showNativeAmountLine(payment: PaymentDisplayRow): boolean {
   return (
     payment.currencyCode !== payment.convertedCurrency ||
     payment.convertedAmount === null ||
@@ -25,14 +35,15 @@ function showNativeAmountLine(payment: ApiCouponPayment): boolean {
   );
 }
 
-export function CouponPaymentsTable({
+export function CouponPaymentsTable<T extends PaymentDisplayRow>({
   payments,
   loading = false,
+  ariaLabel = 'Coupon payments',
   onEdit,
   onDelete,
-}: CouponPaymentsTableProps) {
+}: CouponPaymentsTableProps<T>) {
   return (
-    <div className="cb-coupon-payments-table" role="table" aria-label="Coupon payments">
+    <div className="cb-coupon-payments-table" role="table" aria-label={ariaLabel}>
       <div className="cb-coupon-payments-table__header" role="row">
         <span role="columnheader">Date</span>
         <span role="columnheader">Amount</span>

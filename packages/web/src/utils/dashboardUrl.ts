@@ -90,11 +90,12 @@ export function hasActiveDashboardFilters(filters: DashboardFilterState): boolea
 
 export function buildDashboardUrl(
   displayCurrency: string,
-  filters: DashboardFilterState
+  filters: Partial<DashboardFilterState> = {}
 ): string {
+  const defaults = defaultDashboardDateRange();
   const params = new URLSearchParams();
-  params.set('from', filters.from);
-  params.set('to', filters.to);
+  params.set('from', filters.from ?? defaults.from);
+  params.set('to', filters.to ?? defaults.to);
 
   if (filters.accountId) {
     params.set('accountId', filters.accountId);

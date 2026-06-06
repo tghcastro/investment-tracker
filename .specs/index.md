@@ -8,16 +8,16 @@ Catalog for agents and humans. **Default agent entry:** [`AGENTS.md`](../AGENTS.
 | `.specs/project/PROJECT.md` | Agent + human | Active | 2026-06-05 |
 | `.specs/project/ROADMAP.md` | Agent + human | Active | 2026-06-05 |
 | `.specs/project/STATE.md` | Agent + human | Active | 2026-06-05 |
-| `.specs/codebase/ARCHITECTURE.md` | Agent | Active | 2026-06-05 (M9 dashboard) |
+| `.specs/codebase/ARCHITECTURE.md` | Agent | Active | 2026-06-06 (BRFI interest payments) |
 | `.specs/codebase/API-FIRST.md` | Agent | Active | 2026-06-05 (M9 shipped) |
-| `.specs/codebase/STRUCTURE.md` | Agent | Active | 2026-06-05 |
+| `.specs/codebase/STRUCTURE.md` | Agent | Active | 2026-06-06 |
 | `.specs/codebase/STACK.md` | Agent | Active | 2026-05-29 |
 | `.specs/codebase/CONVENTIONS.md` | Agent | Active | 2026-05-29 |
 | `.specs/codebase/CONCERNS.md` | Agent | Active | 2026-05-29 |
 | `.specs/codebase/TESTING.md` | Agent | Active | 2026-05-28 |
 | `.specs/codebase/INTEGRATIONS.md` | Agent | Active | 2026-05-29 |
 | `docs/harness.md` | Agent + human | Active | 2026-05-29 |
-| `docs/FRONTEND.md` | Agent (UI) | Active | 2026-06-05 (M9 Home dashboard) |
+| `docs/FRONTEND.md` | Agent (UI) | Active | 2026-06-06 (v2 pre-release UX) |
 | `docs/references/node22-wsl.md` | Agent | Active | 2026-05-29 |
 | `DESIGN.md` | Agent (UI tasks) | Active | 2026-05-20 |
 | `.specs/features/completed/m5-holdings-framework/` | Archive | Shipped M5 | 2026-05-29 |

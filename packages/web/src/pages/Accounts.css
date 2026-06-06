@@ -44,6 +44,16 @@
   color: var(--cb-ink);
 }
 
+.cb-accounts-card__value {
+  margin: 0;
+  font-family: var(--cb-font-title-md-family);
+  font-size: var(--cb-font-title-md-size);
+  font-weight: var(--cb-font-title-md-weight);
+  line-height: var(--cb-font-title-md-line-height);
+  letter-spacing: var(--cb-font-title-md-letter-spacing);
+  color: var(--cb-ink);
+}
+
 .cb-accounts-card__description {
   margin: 0;
   flex: 1;
