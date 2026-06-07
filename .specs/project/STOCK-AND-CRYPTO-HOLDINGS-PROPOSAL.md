@@ -10,7 +10,7 @@
 
 You already hold stocks and crypto. The product today tracks **bonds** and **Brazilian fixed income** only. The M5 holdings framework was built for this expansion: each asset class gets its own table, API routes, and web pages, linked by `holding_types` and included in dashboard aggregation.
 
-This proposal follows established patterns (M7 BRFI as the template) and **API-first** rules (AD-010): domain + API own valuation, forecasts, and transaction math; web renders results.
+This proposal follows established patterns (M7 BRFI as the template) and **API-first** rules (AD-010): domain + API own valuation, forecasts, average cost, yield, and transaction math; web renders results.
 
 ---
 
@@ -19,72 +19,102 @@ This proposal follows established patterns (M7 BRFI as the template) and **API-f
 | Existing piece | Reuse for stocks/crypto |
 | --- | --- |
 | `holding_types` seed + `GET /api/holding-types` | Add `crypto` and `stock` rows via migration |
-| Per-type tables (`bond_holdings`, `br_fi_holdings`) | New `crypto_holdings`, `stock_holdings` (+ company catalog — see below) |
+| Per-type tables (`bond_holdings`, `br_fi_holdings`) | New `crypto_holdings`, `stock_holdings` + asset catalogs |
 | Account + `account_currencies` | Holdings inherit allowed account currency at create (same as BRFI) |
 | M6 FX + purchase-date quotes | Cost basis and display currency conversion on list/detail |
-| M9 dashboard | Extend allocation, totals, upcoming events (dividends for stocks) |
-| Manual data entry (AD-005) | User-entered positions and transactions; no broker/exchange sync |
+| M9 dashboard | Extend allocation, totals, upcoming events (dividend **forecast** for stocks) |
+| Manual data entry (AD-005) | User-entered positions, transactions, and dividend payments |
 
-**Package rename (start of implementation):** Rename `bonds-domain` → **`investment-domain`** as the **first task** when crypto/stock work begins (package.json, imports, docs). The module already covers BRFI, FX, and dashboard — the old name no longer fits.
+**Package rename (start of implementation):** Rename `bonds-domain` → **`investment-domain`** as the **first task** when crypto/stock work begins (package.json, imports, docs).
 
 ---
 
 ## Shared design principles (both types)
 
-1. **Manual entry first** — positions and buy/sell events entered by the user. No live market feeds at launch.
-2. **Buy and sell transactions** — both asset types support recording **sells** as well as buys (see [Transactions & sells](#transactions--sells-stock-and-crypto)).
-3. **Optional manual mark price** — user can set/update “current price” for unrealized P&L. Dashboard uses latest mark when present; otherwise cost basis.
-4. **Separate milestones** — Crypto and stock differ enough (dividends vs staking, company catalog, networks) → **two milestones**, crypto first.
-5. **Dashboard inclusion** — Both types count toward portfolio total and allocation-by-type.
-6. **Additive migrations only** — Same retrocompatibility rule as M10–M16 (AD-012).
+1. **Manual entry** — positions, buy/sell transactions, and cash receipts entered by the user. No broker/exchange sync.
+2. **Asset catalogs** — stocks and crypto each have a **register** under Configurations (like currencies / indicators).
+3. **Buy and sell transactions** — explicit ledger; holdings reflect **current open quantity** (see [Transactions & average price](#transactions-average-price--closed-positions)).
+4. **List page shows average unit price** — API-derived column on stock and crypto list pages (open positions).
+5. **Optional manual mark price** — not required at launch; improves unrealized P&L when set.
+6. **Separate milestones** — crypto first (M17), then stock (M18).
+7. **Closed positions archived** — not deleted; excluded from default list; future “past portfolio” dashboard can include them.
+8. **Additive migrations only** — AD-012 retrocompatibility.
 
 ---
 
-## Stock companies (catalog)
+## Stock register (`stock_companies`)
 
-Stocks reference a **company register**, not a free-text ticker on each holding.
+Stocks reference a **company register**. The user does not type a ticker on each holding.
 
-### Domain model (`stock_companies`)
+### Domain model
 
 | Field | Notes |
 | --- | --- |
-| `name` | e.g. Coca-Cola Company |
-| `sector` | e.g. Consumer Staples — free text or enum (decide in spec) |
 | `ticker` | e.g. `KO` — unique in catalog |
-| `country` | e.g. `US`, `BR` — ISO country or display string (decide in spec) |
+| `name` | e.g. Coca-Cola Company |
+| `sector` | e.g. Consumer Staples — free text (enum optional in spec) |
+| `country` | e.g. `US`, `BR` — ISO alpha-2 preferred |
 
 ### UX & navigation
 
-- **Configurations** menu (post-M10 rename from Reference): new item **Stock Companies**
-- Routes: `/configurations/stock-companies` (list), `/new`, `/:id` (or equivalent under current Configurations paths)
-- Full CRUD: create, edit, delete (delete blocked when holdings reference the company — same pattern as bond payments)
+- **Configurations** menu: **Stock Companies**
+- Routes: list, create, edit (under Configurations paths)
+- Full CRUD; delete blocked when any holding (open or archived) references the company
 
-### Holdings display
+### Picking a company on the holding form
 
-List and detail show company as:
+**Autocomplete or searchable dropdown** — each option displays:
 
 **`{ticker} - {name}`** — e.g. `KO - Coca-Cola Company`
 
-Ticker comes from the company row; holding links via `companyId` FK.
+User selects the company row; holding stores `companyId` only.
+
+### List / detail display
+
+Same label format: **`KO - Coca-Cola Company`**
 
 ### API
 
 - `GET/POST /api/stock-companies`, `GET/PATCH/DELETE /api/stock-companies/:id`
-- List holdings embed `company: { id, ticker, name, sector, country }`
+- Search/list endpoint supports query for autocomplete (ticker or name prefix)
 
-**Ships with the stock milestone** (not a separate release).
+**Ships with M18 (stock milestone).**
 
 ---
 
-## Stock holdings — suggested scope
+## Crypto register (`crypto_assets`)
 
-### Problem
+Mirror of stock companies — holdings reference catalog rows, not free-text symbols.
 
-Equity positions need company identity, share quantity, cost basis, dividend forecast settings, and buy/sell history — not bond or BRFI fields.
+### Domain model
 
-### Suggested domain model (`stock_holdings`)
+| Field | Notes |
+| --- | --- |
+| `code` | e.g. `BTC`, `ETH` — unique (ticker-like) |
+| `name` | e.g. Bitcoin, Ethereum |
+| `quantityPrecision` | Optional — max decimal places for UI validation (e.g. 8 for BTC, 18 for ETH); avoids float surprises |
 
-One row per **open position** (company + account). Quantity and cost basis maintained from transactions (see below).
+**Intentionally omitted from catalog:** `network` and `venue` stay on the **holding** (same asset code can exist on Binance vs Ledger vs Polygon). Optional `notes` on catalog row if you want a short description later.
+
+### UX & navigation
+
+- **Configurations** menu: **Crypto Assets**
+- Autocomplete / dropdown on holding form: **`{code} - {name}`** — e.g. `BTC - Bitcoin`
+- List/detail: same format
+
+### API
+
+- `GET/POST /api/crypto-assets`, CRUD by id; search for autocomplete
+
+**Ships with M17 (crypto milestone).**
+
+---
+
+## Stock holdings — scope (M18)
+
+### Domain model (`stock_holdings`)
+
+One row per **position** (company + account). May be **open** or **archived** (see transactions section).
 
 | Field | Notes |
 | --- | --- |
@@ -92,153 +122,193 @@ One row per **open position** (company + account). Quantity and cost basis maint
 | `holdingTypeId` | → `stock` |
 | `companyId` | FK → `stock_companies` (required) |
 | `currencyCode` | From account allowed currencies at create |
-| `quantity` | Current shares (decimal); updated by buy/sell transactions |
-| `costBasisCents` | Total cost of **current** position (API recalculates on sells — e.g. average cost) |
+| `quantity` | Current shares (0 when archived) |
+| `costBasisCents` | Total cost of **current open** quantity |
 | `dividendForecastFrequency` | `none` \| `monthly` \| `quarterly` \| `semi_annual` \| `annual` |
-| `expectedDividendAmountCents` | Per-payment expected amount for dashboard forecast (required when frequency ≠ `none`) |
+| `expectedDividendAmountCents` | Gross per payment — drives **dashboard forecast only** (required when frequency ≠ `none`) |
+| `archivedAt` | Set when quantity reaches 0 after a sell; cleared on reactivation |
 | `notes` | Optional |
 
-Display label: **`{company.ticker} - {company.name}`** (not stored redundantly on holding).
+**Out of scope at launch:** ISIN required, FIFO/LIFO tax lots, wash sales, options, broker import.
 
-**Out of scope at launch:** ISIN as required field, multi-lot tax accounting, wash sales, options, DRIP automation, broker import.
-
-### Dividends — shipped with stocks
-
-Dividends are **one milestone with stocks**, not a follow-up.
+### Dividends
 
 | Concern | Approach |
 | --- | --- |
-| **Forecast** | Holding fields `dividendForecastFrequency` + `expectedDividendAmountCents` → API projects payment dates and amounts on dashboard / upcoming events (same API-first pattern as bond coupons) |
-| **Frequency UI** | Stock form/table: **None / Monthly / Quarterly / Semester / Annual** |
-| **Actual receipts** | When cash hits the account, user records **`stock_dividend_payments`**: `stockHoldingId`, `paymentDate`, `amountCents` |
-| **Income page** | Section or filter alongside bond coupons / BRFI interest |
+| **Forecast (dashboard / upcoming events)** | API uses `dividendForecastFrequency` + `expectedDividendAmountCents` on the holding only — no inference from past payments |
+| **Updating forecast** | User edits holding when expectations change (more or less) |
+| **Actual receipts** | **Fully manual** — user adds `stock_dividend_payments` when cash arrives: `stockHoldingId`, `paymentDate`, `amountCents` |
+| **Income page** | Recorded payments only (plus other asset income types) |
+| **Frequency UI** | None / Monthly / Quarterly / Semester / Annual |
 
-Forecast uses configured frequency + expected amount until real payments exist; recorded payments appear in income history and can inform future forecast tuning (manual edit only — no auto-learning in v1).
+Forecast and payments are **independent**: payments do not auto-update forecast fields.
 
-### API surface (pattern)
+### Dividend yield (display only — calculated)
 
-- `GET/POST /api/stock-companies`, CRUD by id
-- `GET/POST /api/stock-holdings`, `GET/PATCH/DELETE /api/stock-holdings/:id`
-- `GET/POST /api/stock-transactions` (buy/sell — see below)
-- `GET/POST /api/stock-dividend-payments`
-- List/detail embed `convertedCostBasisCents`, `convertedCurrency`, `company`, unrealized P&L when mark price set
-- Optional: price marks endpoint (manual mark price)
+Shown on **stock list** (and optionally detail). **Not stored** — API computes per request (AD-010).
 
-### Web
+```
+paymentsPerYear = map(frequency)   // e.g. quarterly → 4
+annualDividendCents = expectedDividendAmountCents × paymentsPerYear
+positionValueCents = quantity × avgUnitPriceCents
+dividendYieldPercent = (annualDividendCents / positionValueCents) × 100
+```
 
-- Routes: `/holdings/stocks`, `/holdings/stocks/new`, `/holdings/stocks/:id`
-- Holdings submenu from API (M5 pattern)
-- Form: company picker (from catalog), qty/cost via transactions or initial buy, dividend forecast fields, account
-- Transaction UI: add **Buy** / **Sell** on holding detail (mirror payment sections on bonds)
+- When `dividendForecastFrequency = none` → yield displays `—`
+- `avgUnitPriceCents` = `costBasisCents / quantity` (see average price section)
+- If optional mark price exists later, spec may use mark for yield denominator instead of avg — default at launch: **average unit price**
 
-### Dashboard extensions
+### Stock list page columns (open positions)
 
-- **Allocation:** `stock` slice in by-type breakdown
-- **Portfolio value:** `quantity × latestMarkPrice` if mark exists, else cost basis
-- **Income:** forecast dividends from frequency + expected amount; recorded dividends in yearly buckets
-- **Upcoming events:** projected dividend dates from forecast rules
+| Column | Source |
+| --- | --- |
+| Company | `TICKER - Name` from catalog |
+| Account | holding account |
+| Quantity | current quantity |
+| **Average unit price** | API: `avgUnitPriceCents` |
+| **Dividend yield** | API: calculated field |
+| Cost basis (total) | `costBasisCents` (+ converted display currency) |
+
+Optional filter: **Show archived** (off by default).
+
+### API surface
+
+- Stock companies CRUD + search
+- Stock holdings CRUD; embed `company`, `avgUnitPriceCents`, `dividendYieldPercent`, converted amounts
+- Stock transactions (buy/sell)
+- Stock dividend payments CRUD
+
+### Web routes
+
+- `/holdings/stocks`, `/holdings/stocks/new`, `/holdings/stocks/:id`
+- Company autocomplete on form; dividend forecast fields on holding form/table
+- Transactions + manual dividend payment sections on detail
+
+### Dashboard
+
+- Allocation and portfolio value for open stock positions
+- **Income forecast** from forecast fields (not from payment history)
+- **Upcoming events** from forecast schedule
+- Archived positions excluded until future past-dashboard work
 
 ---
 
-## Crypto holdings — suggested scope
+## Crypto holdings — scope (M17)
 
-### Problem
-
-Crypto is not “stock with a different label”: fractional units, venues, networks, and optional staking rewards need a distinct model. **No company catalog** — asset symbol on the holding.
-
-### Suggested domain model (`crypto_holdings`)
+### Domain model (`crypto_holdings`)
 
 | Field | Notes |
 | --- | --- |
 | `accountId` | FK → accounts |
 | `holdingTypeId` | → `crypto` |
-| `currencyCode` | Fiat used for cost basis (USD, BRL, …) |
-| `assetSymbol` | e.g. `BTC`, `ETH`, `SOL` |
-| `network` | Optional — `mainnet`, `polygon`, etc. |
-| `venue` | Optional — exchange or wallet label |
+| `assetId` | FK → `crypto_assets` (required) |
+| `currencyCode` | Fiat for cost basis |
+| `network` | Optional — e.g. mainnet, polygon |
+| `venue` | Optional — Binance, Ledger, … |
 | `quantity` | Current amount (high precision) |
-| `costBasisCents` | Cost of current position (from transactions) |
+| `costBasisCents` | Total cost of current open quantity |
+| `archivedAt` | Set when quantity → 0 |
 | `notes` | Optional |
 
-**Out of scope at launch:** On-chain sync, DeFi LP, NFTs, auto exchange rates.
+### Crypto list page columns (open positions)
 
-### Cash flows — staking / rewards (optional in crypto milestone)
-
-| Table | `crypto_reward_payments` |
+| Column | Source |
 | --- | --- |
-| Fields | `cryptoHoldingId`, `paymentDate`, `amountAsset`, optional `amountFiatCents` |
-| Income | Record-only; no price oracle |
+| Asset | `CODE - Name` from catalog |
+| Account | holding account |
+| Venue / network | optional display |
+| Quantity | current |
+| **Average unit price** | API: `avgUnitPriceCents` |
+| Cost basis (total) | `costBasisCents` (+ converted) |
 
-Defer to spec if rewards ship in same milestone or fast follow.
+### Staking rewards
+
+**Out of M17** — defer to a later milestone. M17 ships positions, catalog, buy/sell, dashboard allocation. Manual reward payments can be added when needed.
 
 ### API surface
 
-- `GET/POST /api/crypto-holdings`, CRUD by id
-- `GET/POST /api/crypto-transactions` (buy/sell)
-- Optional reward payment CRUD + manual mark price
+- Crypto assets CRUD + search
+- Crypto holdings CRUD; embed `asset`, `avgUnitPriceCents`, converted amounts
+- Crypto transactions (buy/sell)
 
-### Web
+### Web routes
 
-- Routes: `/holdings/crypto`, `/holdings/crypto/new`, `/holdings/crypto/:id`
-- Buy / Sell actions on holding detail
-
-### Dashboard extensions
-
-- Allocation, total value (marks or cost), recorded rewards if implemented
+- `/holdings/crypto`, `/holdings/crypto/new`, `/holdings/crypto/:id`
+- Asset autocomplete: `BTC - Bitcoin`
 
 ---
 
-## Transactions & sells (stock and crypto)
+## Transactions, average price & closed positions
 
-**Yes — sells are in scope.** Both types use an explicit **transaction ledger**, not “delete holding when gone.”
+**Sells are in scope** for both types via `stock_transactions` / `crypto_transactions`.
 
-### Model (`stock_transactions` / `crypto_transactions`)
+### Transaction model
 
 | Field | Notes |
 | --- | --- |
-| `holdingId` | FK → respective holdings table |
+| `holdingId` | FK → holding |
 | `type` | `buy` \| `sell` |
 | `transactionDate` | Trade date |
-| `quantity` | Shares / coins moved |
-| `unitPriceCents` or `totalAmountCents` | Fiat consideration (pick one canonical shape in spec) |
+| `quantity` | Shares / coins |
+| `totalAmountCents` | Fiat paid (buy) or received (sell) for this line |
 | `currencyCode` | Same as holding |
 
-### Behaviour (API / domain)
+`unitPriceCents` may be derived in API responses as `totalAmountCents / quantity`.
 
-| Event | Effect |
-| --- | --- |
-| **Buy** | Increase `holding.quantity`; update `costBasisCents` (weighted average cost recommended) |
-| **Sell** | Decrease `holding.quantity`; reduce cost basis proportionally; API may expose **realized gain/loss** on the sell response |
-| **Quantity → 0** | Holding remains as **closed** (archived flag) or hidden from default list — prefer **archived** row for history (decide in spec) |
-| **Initial create** | First buy can be created with the holding (one transaction) or holding + transaction in one POST |
+### Weighted average cost (approved method)
+
+Industry default for simple portfolio trackers: **moving weighted average cost**. Alternative methods (FIFO, LIFO, specific lot) are out of scope.
+
+| Event | Quantity | Average unit price |
+| --- | --- | --- |
+| **Buy** | Increases | Recalculate: `(prior cost basis + buy total) / new quantity` |
+| **Sell** | Decreases | **Unchanged** on remaining shares; reduce `costBasisCents` by `soldQty × avgUnitPrice` |
+| **Sell to zero** | 0 | **Archive** holding; avg **N/A**; excluded from default list |
+| **Buy after archived** | New open cycle | **Reactivate** same holding row (same company/asset + account); **reset** average from this buy |
+
+Your example (totals in fiat for the line):
+
+| Day | Transaction | Qty | Avg unit price |
+| --- | --- | --- | --- |
+| 1 | BUY 10 for 100 | 10 | **10.00** |
+| 2 | BUY 10 for 150 | 20 | **12.50** |
+| 3 | SELL 5 for 75 | 15 | **12.50** (unchanged) |
+| 4 | SELL 15 for 200 | 0 | **N/A** → archived |
+| 10 | BUY 50 for 50 | 50 | **1.00** (new cycle) |
+
+**This is correct** for weighted average cost.
+
+### Closed positions — do they affect average price?
+
+**No.** Archived / zero-quantity positions are **not** included in the open list or in any live average. Each **open cycle** has its own average; when you fully sell and later buy again, average **starts fresh** (day 10 row). Historical transactions remain on the archived holding for a future **past portfolio / history dashboard** — not in current portfolio totals.
+
+### Realized gain/loss on sell
+
+API may return on sell: `realizedGainLossCents = sell proceeds − (soldQty × avgUnitPriceBeforeSell)`.
 
 ### UI
 
-- Holding detail: **Transactions** section with Add Buy / Add Sell (like coupon payments on bonds)
-- List page: only positions with `quantity > 0` by default; optional “show closed” filter
+- Detail: **Transactions** — Add Buy / Add Sell
+- Default list: **open positions only** (`quantity > 0`, not archived)
+- Toggle: **Show archived** (optional)
 
 ### What sells are not
 
 - Short selling / negative quantity
-- Automatic broker reconciliation
-- Per-lot FIFO/LIFO tax lots (future consideration; average cost at launch)
+- Broker auto-reconciliation
+- Per-lot FIFO/LIFO
 
 ---
 
 ## One table vs two?
 
-| Approach | Pros | Cons |
-| --- | --- | --- |
-| **Separate tables** (`stock_holdings`, `crypto_holdings`) — **approved** | Matches M7; clear validators; independent evolution | Some shared serialization helpers |
-| **Unified `market_holdings`** | One CRUD path | Awkward for company FK vs asset symbol, dividends vs staking |
-
-**Decision:** Separate tables and routes, same as bonds vs BRFI.
+**Decision (approved):** Separate `stock_holdings` and `crypto_holdings` tables and API routes — same pattern as bonds vs BRFI.
 
 ---
 
-## Release order (updated)
+## Release order
 
-M12 **Database file picker** moves to **after crypto and stock**. **Crypto before stock.**
+M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 
 | Order | Milestone | Version | Theme |
 | --- | --- | --- | --- |
@@ -248,67 +318,65 @@ M12 **Database file picker** moves to **after crypto and stock**. **Crypto befor
 | 4 | M14 | v1.5.0 | CSV market indicators |
 | 5 | M15 | v1.6.0 | Compound + simple calculators |
 | 6 | M16 | v1.7.0 | Million goal calculator |
-| 7 | **M17 — Crypto holdings** | v1.8.0 | CRUD, buy/sell transactions, dashboard, optional rewards |
-| 8 | **M18 — Stock holdings** | v1.9.0 | Stock companies catalog, holdings, buy/sell, dividends forecast + payments |
-| 9 | **M12 — Database file picker** | v1.10.0 | Session DB picker (was v1.8.0; deferred per this proposal) |
+| 7 | **M17 — Crypto** | v1.8.0 | Crypto assets catalog, holdings, buy/sell, avg price on list, dashboard |
+| 8 | **M18 — Stock** | v1.9.0 | Stock companies catalog, holdings, buy/sell, dividend forecast + manual payments, yield on list |
+| 9 | **M12 — DB file picker** | v1.10.0 | Session DB picker (deferred) |
 
-**First implementation task for M17/M18:** rename `bonds-domain` → `investment-domain`.
-
-*Note: ROADMAP.md / STATE.md should be updated when this proposal is approved — not in this PR unless you want doc sync now.*
+**First implementation task for M17:** rename `bonds-domain` → `investment-domain`.
 
 ---
 
-## Scope boundaries (for approval)
+## Scope boundaries
 
 ### Crypto (M17)
 
-- [ ] CRUD + list/filter by account
-- [ ] Buy and sell transactions; open positions only on default list
-- [ ] High-precision quantity
-- [ ] Multi-currency cost basis + display conversion
-- [ ] Dashboard allocation + portfolio total
-- [ ] Optional manual mark price
-- [ ] **Exclude:** wallet sync, chain APIs, DeFi, NFTs
+- [ ] Crypto assets catalog + Configurations CRUD
+- [ ] Holdings with asset autocomplete (`CODE - Name`)
+- [ ] Buy/sell transactions; weighted average cost
+- [ ] List: **average unit price** column
+- [ ] Archive on full exit; reactivate on new buy
+- [ ] Dashboard allocation (open positions)
+- [ ] Optional manual mark price (not required)
+- [ ] **Exclude:** staking rewards, wallet sync, DeFi, NFTs
 
 ### Stock (M18)
 
-- [ ] Stock companies CRUD under Configurations
-- [ ] Holdings linked to company; display `TICKER - Name`
-- [ ] Buy and sell transactions
-- [ ] Dividend forecast frequency + expected amount on holding; dashboard/upcoming events
-- [ ] Record dividend payments when received; income view
-- [ ] Multi-currency + dashboard
+- [ ] Stock companies catalog + Configurations CRUD
+- [ ] Holdings with company autocomplete (`TICKER - Name`)
+- [ ] Buy/sell transactions; weighted average cost
+- [ ] List: **average unit price** + **dividend yield** (calculated)
+- [ ] Dividend **forecast** fields → dashboard only
+- [ ] **Manual** dividend payment records → income page
+- [ ] Archive / reactivate same as crypto
 - [ ] **Exclude:** broker import, live quotes, tax lots, options
 
-### Shared (M17/M18 or later)
+### Later
 
-- [ ] Manual mark price + unrealized P&L (if not in M17/M18)
-- [ ] CSV import of positions (Tools — mirror M13/M14)
-- [ ] “Continue creating” on transaction/dividend modals (M10 pattern)
+- [ ] Past portfolio dashboard (archived positions + history)
+- [ ] Crypto staking reward payments
+- [ ] CSV import via Tools
+- [ ] Mark price → unrealized P&L (optional enhancement)
 
 ---
 
 ## Open questions
 
-1. **Crypto staking rewards** — Same milestone as M17 crypto, or fast follow?
-2. **Mark price** — Required for launch, or cost basis only until a small follow-up?
-3. **Sector** — Free text vs fixed enum list?
-4. **Country on company** — ISO 3166-1 alpha-2 vs free text?
-5. **`expectedDividendAmountCents`** — Confirm per-payment gross amount is the right forecast input (vs yield % on mark price).
-6. **Closed positions** — Archive flag + “show closed” vs hard-delete when qty = 0?
-7. **ROADMAP renumbering** — Keep milestone ids M17=crypto, M18=stock, M12 last; or renumber M12 → M19 for clarity?
+1. **Sector** — free text vs enum?
+2. **Country** — ISO alpha-2 only vs free text?
+3. **Mark price** — ship optional in M17/M18, or defer entirely? (Recommendation: **optional** — list works with avg price alone.)
+4. **ROADMAP ids** — keep M17=crypto, M18=stock, M12 last?
 
 ---
 
-## Dependencies on existing work
+## Dependencies
 
 | Dependency | Why |
 | --- | --- |
 | M5 holding types | Seed + nav |
-| M6 / M6.1 FX | Cost basis in display currency |
-| M9 dashboard | Allocation, income, upcoming events |
-| M10 Configurations shell | Stock Companies menu placement |
-| M11 BRFI coupon engine | Not blocking crypto/stock |
+| M6 / M6.1 FX | Display currency |
+| M9 dashboard | Forecast + allocation extensions |
+| M10 Configurations | Catalog menu placement |
+| M11 BRFI | Not blocking |
 
 ---
 
@@ -316,35 +384,34 @@ M12 **Database file picker** moves to **after crypto and stock**. **Crypto befor
 
 | Risk | Mitigation |
 | --- | --- |
-| Dashboard complexity | Per-type forecast modules in `investment-domain` |
-| Crypto float errors | Smallest-unit integers or decimal strings for quantity |
-| Sell + average cost edge cases | Domain tests for partial sells, full exit, buy-after-sell |
-| Dividend forecast without live data | User supplies expected amount; frequency drives schedule only |
-| Company delete with holdings | Block delete when FK references exist |
+| Average cost bugs on partial sell | Domain tests matching table above |
+| Crypto precision | `quantityPrecision` on catalog + string/integer math in domain |
+| Dividend forecast vs actual confusion | UI labels: “Forecast” vs “Recorded payment” |
+| Archived holding reactivation | Explicit `archivedAt` + tests for new cycle avg reset |
 
 ---
 
 ## Recommendation summary
 
-1. Rename **`bonds-domain` → `investment-domain`** when M17 implementation starts.
-2. **M17 Crypto** then **M18 Stock**; **M12 DB picker** last (v1.10.0).
-3. **Stock companies** catalog + CRUD under Configurations; holdings show `TICKER - Name`.
-4. **Dividends** ship with stocks: forecast frequency + expected amount on holding; record payments when received.
-5. **Buy and sell transactions** for both crypto and stock; holdings reflect current open position.
-6. Separate tables and routes (bonds vs BRFI pattern).
-7. After approval → write **M17 crypto spec** first, then M18 stock spec.
+1. **`investment-domain`** rename at M17 start.
+2. **Catalogs** under Configurations: Stock Companies, Crypto Assets — pickers show `CODE/TICKER - Name`.
+3. **Weighted average unit price** on list pages; sells do not change avg on remainder; full exit → archive; new buy → fresh avg.
+4. **Dividends:** forecast fields for dashboard only; payments fully manual; **yield calculated** on stock list.
+5. **M17 crypto** → **M18 stock** → **M12 DB picker**.
+6. Staking rewards and past dashboard → later milestones.
 
 ---
 
 ## Approval checklist
 
-- [x] Separate crypto + stock milestones
-- [x] Crypto before stock; DB file picker after both
-- [x] Dividends shipped with stock milestone (forecast + payments)
-- [x] Stock companies catalog under Configurations
-- [x] Separate tables (bonds vs BRFI pattern)
-- [x] Rename domain package at implementation start
-- [ ] Crypto staking rewards in M17: yes / no / later
-- [ ] Manual mark price in M17/M18: yes / no
-- [ ] Closed position behaviour: archive vs delete
-- [ ] `expectedDividendAmountCents` as forecast input: confirm or prefer yield %
+- [x] Separate crypto + stock milestones; crypto first
+- [x] DB file picker after both
+- [x] Stock + crypto asset registers with autocomplete labels
+- [x] Dividend forecast on holding; manual payments only
+- [x] Dividend yield calculated on stock list
+- [x] Average unit price on stock and crypto lists
+- [x] Weighted average cost method (example table approved)
+- [x] Closed positions → archive; future past dashboard
+- [x] Staking rewards deferred past M17
+- [ ] Mark price optional in M17/M18 vs defer
+- [ ] Sector / country field rules
