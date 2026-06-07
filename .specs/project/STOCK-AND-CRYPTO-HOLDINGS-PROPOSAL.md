@@ -35,7 +35,7 @@ This proposal follows established patterns (M7 BRFI as the template) and **API-f
 2. **Asset catalogs** — stocks and crypto each have a **register** under Configurations (like currencies / indicators).
 3. **Buy and sell transactions** — explicit ledger; holdings reflect **current open quantity** (see [Transactions & average price](#transactions-average-price--closed-positions)).
 4. **List page shows average unit price** — API-derived column on stock and crypto list pages (open positions).
-5. **Optional manual mark price** — not required at launch; improves unrealized P&L when set.
+5. **Manual unit quotes (mark price)** — deferred past M17/M18 (see [Mark price vs other quotes](#mark-price-manual-unit-quotes-vs-fx--indicators)).
 6. **Separate milestones** — crypto first (M17), then stock (M18).
 7. **Closed positions archived** — not deleted; excluded from default list; future “past portfolio” dashboard can include them.
 8. **Additive migrations only** — AD-012 retrocompatibility.
@@ -52,8 +52,10 @@ Stocks reference a **company register**. The user does not type a ticker on each
 | --- | --- |
 | `ticker` | e.g. `KO` — unique in catalog |
 | `name` | e.g. Coca-Cola Company |
-| `sector` | e.g. Consumer Staples — free text (enum optional in spec) |
-| `country` | e.g. `US`, `BR` — ISO alpha-2 preferred |
+| `sector` | Enum — **US GICS market sectors** (11 values, see below) |
+| `country` | **ISO 3166-1 alpha-2 only** — e.g. `US`, `BR`; validated in API |
+
+**Sector enum (GICS — US market):** `energy`, `materials`, `industrials`, `consumer_discretionary`, `consumer_staples`, `health_care`, `financials`, `information_technology`, `communication_services`, `utilities`, `real_estate`. Display labels in UI (e.g. “Consumer Staples”); API stores slug.
 
 ### UX & navigation
 
@@ -156,7 +158,7 @@ dividendYieldPercent = (annualDividendCents / positionValueCents) × 100
 
 - When `dividendForecastFrequency = none` → yield displays `—`
 - `avgUnitPriceCents` = `costBasisCents / quantity` (see average price section)
-- If optional mark price exists later, spec may use mark for yield denominator instead of avg — default at launch: **average unit price**
+- Denominator at launch: **average unit price** (`costBasisCents / quantity`). Manual unit quotes (mark price) deferred — see below.
 
 ### Stock list page columns (open positions)
 
@@ -235,6 +237,47 @@ Optional filter: **Show archived** (off by default).
 
 - `/holdings/crypto`, `/holdings/crypto/new`, `/holdings/crypto/:id`
 - Asset autocomplete: `BTC - Bitcoin`
+
+---
+
+## Mark price (manual unit quotes) vs FX & indicators
+
+This is what the open question referred to — **yes, it is the stock/crypto “quote”**, but **not** the same tables you already have.
+
+| Data | What it is | Example in app today |
+| --- | --- | --- |
+| **Currency quotes** | FX: USD → BRL, EUR, … | `/currencies/quotes` |
+| **Market indicators** | Benchmarks: CDI, SELIC, IPCA, IBOV | `/market-indicators` |
+| **Mark price / unit quote** | **Price of 1 share or 1 coin** in holding currency | *Not built yet* |
+
+**Mark price** = “What is one unit worth **today**?” — e.g. KO = $62.50, BTC = $98,000. You type or import it manually (no live broker/exchange feed in this proposal).
+
+### What it is used for (when we build it)
+
+| With mark price | Without (M17/M18 at launch) |
+| --- | --- |
+| Portfolio **market value** = qty × mark | Portfolio value from **cost basis** (what you paid) |
+| **Unrealized gain/loss** = market value − cost basis | No unrealized P&L column |
+| Dashboard allocation at “current” value | Dashboard allocation at cost |
+| Dividend yield could use mark instead of avg buy price | Yield uses **average buy price** (already in proposal) |
+
+### What you still have without mark price
+
+- **Average unit price** on list (from your buys/sells) — **not** the market quote
+- **Cost basis**, quantity, buy/sell history
+- **Dividend yield** calculated from forecast + avg price
+- FX conversion via **currency quotes** (unchanged)
+
+### Implementation options (when prioritized)
+
+| Option | Description |
+| --- | --- |
+| **A — Catalog unit quotes** (recommended later) | Dated price per company/asset — like `currency_quotes`: `date`, `stockCompanyId` or `cryptoAssetId`, `unitPriceCents`. One KO price applies to all KO holdings. |
+| **B — Field on holding** | `markUnitPriceCents` on each holding row — simpler, duplicated if you hold same ticker in two accounts |
+
+### Decision for this proposal
+
+**Defer mark price / unit quotes past M17 and M18.** Launch with average price + cost basis only. Add manual stock/crypto unit quotes in a **later milestone** (likely catalog-level, Option A) when you want market-value portfolio and unrealized P&L.
 
 ---
 
@@ -336,8 +379,7 @@ M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 - [ ] List: **average unit price** column
 - [ ] Archive on full exit; reactivate on new buy
 - [ ] Dashboard allocation (open positions)
-- [ ] Optional manual mark price (not required)
-- [ ] **Exclude:** staking rewards, wallet sync, DeFi, NFTs
+- [ ] **Exclude:** mark price / unit quotes, staking rewards, wallet sync, DeFi, NFTs
 
 ### Stock (M18)
 
@@ -352,19 +394,16 @@ M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 
 ### Later
 
+- [ ] **Manual unit quotes (mark price)** — catalog-level prices for market value + unrealized P&L
 - [ ] Past portfolio dashboard (archived positions + history)
 - [ ] Crypto staking reward payments
 - [ ] CSV import via Tools
-- [ ] Mark price → unrealized P&L (optional enhancement)
 
 ---
 
 ## Open questions
 
-1. **Sector** — free text vs enum?
-2. **Country** — ISO alpha-2 only vs free text?
-3. **Mark price** — ship optional in M17/M18, or defer entirely? (Recommendation: **optional** — list works with avg price alone.)
-4. **ROADMAP ids** — keep M17=crypto, M18=stock, M12 last?
+1. **ROADMAP ids** — keep M17=crypto, M18=stock, M12 last?
 
 ---
 
@@ -413,5 +452,6 @@ M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 - [x] Weighted average cost method (example table approved)
 - [x] Closed positions → archive; future past dashboard
 - [x] Staking rewards deferred past M17
-- [ ] Mark price optional in M17/M18 vs defer
-- [ ] Sector / country field rules
+- [x] Mark price / unit quotes deferred past M17/M18
+- [x] Sector: US GICS enum (11 sectors)
+- [x] Country: ISO 3166-1 alpha-2 only
