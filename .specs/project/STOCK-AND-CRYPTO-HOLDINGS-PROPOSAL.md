@@ -2,7 +2,7 @@
 
 **Status:** Draft for approval (updated 2026-06-07)  
 **Author:** Planning note — not a milestone spec yet  
-**Context:** v1.1.0 shipped (M1–M9). Roadmap M10–M16 planned through v1.7.0 (M12 DB picker deferred). This document defines how **crypto** and **stocks** fit the architecture and the updated release order.
+**Context:** v1.1.0 shipped (M1–M9). Roadmap M10–M16 through v1.7.0; then M17–M19 (crypto, stock, market price); M12 DB picker last (v1.11.0).
 
 ---
 
@@ -35,7 +35,7 @@ This proposal follows established patterns (M7 BRFI as the template) and **API-f
 2. **Asset catalogs** — stocks and crypto each have a **register** under Configurations (like currencies / indicators).
 3. **Buy and sell transactions** — explicit ledger; holdings reflect **current open quantity** (see [Transactions & average price](#transactions-average-price--closed-positions)).
 4. **List page shows average unit price** — API-derived column on stock and crypto list pages (open positions).
-5. **Manual unit quotes (mark price)** — deferred past M17/M18 (see [Mark price vs other quotes](#mark-price-manual-unit-quotes-vs-fx--indicators)).
+5. **Manual market price** — **M19**, after crypto/stock transaction registers (M17/M18), before DB file picker (see [Market price milestone](#m19--stock--crypto-market-price-manual-unit-quotes)).
 6. **Separate milestones** — crypto first (M17), then stock (M18).
 7. **Closed positions archived** — not deleted; excluded from default list; future “past portfolio” dashboard can include them.
 8. **Additive migrations only** — AD-012 retrocompatibility.
@@ -240,44 +240,82 @@ Optional filter: **Show archived** (off by default).
 
 ---
 
-## Mark price (manual unit quotes) vs FX & indicators
+## Market price vs FX & indicators
 
-This is what the open question referred to — **yes, it is the stock/crypto “quote”**, but **not** the same tables you already have.
+**Yes — this is the stock/crypto “quote”** — separate from FX and benchmark indicators.
 
 | Data | What it is | Example in app today |
 | --- | --- | --- |
 | **Currency quotes** | FX: USD → BRL, EUR, … | `/currencies/quotes` |
 | **Market indicators** | Benchmarks: CDI, SELIC, IPCA, IBOV | `/market-indicators` |
-| **Mark price / unit quote** | **Price of 1 share or 1 coin** in holding currency | *Not built yet* |
+| **Market price (unit quote)** | **Price of 1 share or 1 coin** | **M19** — after M17/M18 transactions |
 
-**Mark price** = “What is one unit worth **today**?” — e.g. KO = $62.50, BTC = $98,000. You type or import it manually (no live broker/exchange feed in this proposal).
+**Market price** = “What is one unit worth on date *D*?” — e.g. KO = $62.50, BTC = $98,000. Fully manual entry (no live feed).
 
-### What it is used for (when we build it)
+### M17/M18 without market price
 
-| With mark price | Without (M17/M18 at launch) |
+- List shows **average buy price** + cost basis (from transactions)
+- Dividend **yield** uses average buy price
+- Dashboard portfolio total uses **cost basis** for stock/crypto slices
+
+### M19 adds
+
+| Feature | Behaviour |
 | --- | --- |
-| Portfolio **market value** = qty × mark | Portfolio value from **cost basis** (what you paid) |
-| **Unrealized gain/loss** = market value − cost basis | No unrealized P&L column |
-| Dashboard allocation at “current” value | Dashboard allocation at cost |
-| Dividend yield could use mark instead of avg buy price | Yield uses **average buy price** (already in proposal) |
+| **Catalog unit quotes** | Dated price per `stock_company` / `crypto_asset` — one KO price applies to all KO holdings (like `currency_quotes`) |
+| **List columns** | Latest **market price**, **market value** (qty × price), **unrealized P&L** |
+| **Dashboard** | Allocation and totals at **market value** when a quote exists; fallback to cost basis |
+| **Dividend yield** | Uses **market price** when latest quote exists; else average buy price |
 
-### What you still have without mark price
+**Not chosen:** per-holding mark field (duplicated across accounts) — catalog-level quotes only.
 
-- **Average unit price** on list (from your buys/sells) — **not** the market quote
-- **Cost basis**, quantity, buy/sell history
-- **Dividend yield** calculated from forecast + avg price
-- FX conversion via **currency quotes** (unchanged)
+---
 
-### Implementation options (when prioritized)
+## M19 — Stock & crypto market price (manual unit quotes)
 
-| Option | Description |
+**Goal:** Manual market prices for registered companies and crypto assets — market-value portfolio and unrealized P&L.  
+**Target:** **v1.10.0**  
+**Depends on:** M17 (crypto catalog + transactions), M18 (stock catalog + transactions)  
+**Ships:** After M18, **before** M12 database file picker
+
+### Data model
+
+| Table | Fields |
 | --- | --- |
-| **A — Catalog unit quotes** (recommended later) | Dated price per company/asset — like `currency_quotes`: `date`, `stockCompanyId` or `cryptoAssetId`, `unitPriceCents`. One KO price applies to all KO holdings. |
-| **B — Field on holding** | `markUnitPriceCents` on each holding row — simpler, duplicated if you hold same ticker in two accounts |
+| `stock_unit_quotes` | `date`, `stockCompanyId`, `unitPriceCents`, `currencyCode` — unique per company + date |
+| `crypto_unit_quotes` | `date`, `cryptoAssetId`, `unitPriceCents`, `currencyCode` — unique per asset + date |
 
-### Decision for this proposal
+Company/asset must exist in catalog. Currency validated against seeded currencies (same as holdings).
 
-**Defer mark price / unit quotes past M17 and M18.** Launch with average price + cost basis only. Add manual stock/crypto unit quotes in a **later milestone** (likely catalog-level, Option A) when you want market-value portfolio and unrealized P&L.
+### API
+
+- CRUD `/api/stock-unit-quotes` (list supports date range + company filter — mirror currency quotes)
+- CRUD `/api/crypto-unit-quotes` (date range + asset filter)
+- `GET .../latest` per company/asset (or embed on holdings list responses)
+- Holdings list/detail embed when quote exists: `marketUnitPriceCents`, `marketValueCents`, `unrealizedGainLossCents`, `converted*`
+- Dashboard uses market value for stock/crypto when latest quote in holding currency (API-first)
+
+### Web — Configurations
+
+- **Stock Market Prices** — CRUD UI (pattern: Currency Quotes)
+- **Crypto Market Prices** — CRUD UI
+- Optional “continue creating” on add modal (M10 pattern)
+
+### Web — Holdings lists (M17/M18 pages updated)
+
+New/updated columns when M19 ships:
+
+| Column | Source |
+| --- | --- |
+| Market price | latest `*_unit_quotes` for catalog row |
+| Market value | `quantity × market price` |
+| Unrealized P&L | `market value − cost basis` |
+
+### Out of scope (M19)
+
+- Live broker/exchange price feeds
+- CSV import of prices (can follow via Tools like M13/M14)
+- Historical charting
 
 ---
 
@@ -351,7 +389,7 @@ API may return on sell: `realizedGainLossCents = sell proceeds − (soldQty × a
 
 ## Release order
 
-M12 **Database file picker** after crypto and stock. **Crypto before stock.**
+**Crypto before stock.** **Market price (M19) after both transaction registers.** **DB file picker (M12) last.**
 
 | Order | Milestone | Version | Theme |
 | --- | --- | --- | --- |
@@ -361,9 +399,10 @@ M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 | 4 | M14 | v1.5.0 | CSV market indicators |
 | 5 | M15 | v1.6.0 | Compound + simple calculators |
 | 6 | M16 | v1.7.0 | Million goal calculator |
-| 7 | **M17 — Crypto** | v1.8.0 | Crypto assets catalog, holdings, buy/sell, avg price on list, dashboard |
-| 8 | **M18 — Stock** | v1.9.0 | Stock companies catalog, holdings, buy/sell, dividend forecast + manual payments, yield on list |
-| 9 | **M12 — DB file picker** | v1.10.0 | Session DB picker (deferred) |
+| 7 | **M17 — Crypto** | v1.8.0 | Crypto assets catalog, holdings, buy/sell transactions, avg price on list |
+| 8 | **M18 — Stock** | v1.9.0 | Stock companies catalog, holdings, buy/sell, dividend forecast + manual payments |
+| 9 | **M19 — Market price** | v1.10.0 | Manual stock + crypto unit quotes; market value + unrealized P&L |
+| 10 | **M12 — DB file picker** | v1.11.0 | Session DB picker |
 
 **First implementation task for M17:** rename `bonds-domain` → `investment-domain`.
 
@@ -378,8 +417,8 @@ M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 - [ ] Buy/sell transactions; weighted average cost
 - [ ] List: **average unit price** column
 - [ ] Archive on full exit; reactivate on new buy
-- [ ] Dashboard allocation (open positions)
-- [ ] **Exclude:** mark price / unit quotes, staking rewards, wallet sync, DeFi, NFTs
+- [ ] Dashboard allocation at **cost basis** (open positions)
+- [ ] **Exclude:** market price quotes (M19), staking rewards, wallet sync, DeFi, NFTs
 
 ### Stock (M18)
 
@@ -390,20 +429,21 @@ M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 - [ ] Dividend **forecast** fields → dashboard only
 - [ ] **Manual** dividend payment records → income page
 - [ ] Archive / reactivate same as crypto
-- [ ] **Exclude:** broker import, live quotes, tax lots, options
+- [ ] Dashboard at **cost basis** until M19
+- [ ] **Exclude:** broker import, live feeds, tax lots, options
+
+### Market price (M19)
+
+- [ ] `stock_unit_quotes` + `crypto_unit_quotes` CRUD (Configurations)
+- [ ] Latest price on holdings lists; market value + unrealized P&L
+- [ ] Dashboard at market value when quote exists
+- [ ] Dividend yield uses market price when quote exists
 
 ### Later
 
-- [ ] **Manual unit quotes (mark price)** — catalog-level prices for market value + unrealized P&L
 - [ ] Past portfolio dashboard (archived positions + history)
 - [ ] Crypto staking reward payments
 - [ ] CSV import via Tools
-
----
-
-## Open questions
-
-1. **ROADMAP ids** — keep M17=crypto, M18=stock, M12 last?
 
 ---
 
@@ -414,8 +454,9 @@ M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 | M5 holding types | Seed + nav |
 | M6 / M6.1 FX | Display currency |
 | M9 dashboard | Forecast + allocation extensions |
-| M10 Configurations | Catalog menu placement |
+| M10 Configurations | Catalog + market price menu placement |
 | M11 BRFI | Not blocking |
+| M17 + M18 | M19 requires company/asset catalogs and holdings |
 
 ---
 
@@ -436,7 +477,7 @@ M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 2. **Catalogs** under Configurations: Stock Companies, Crypto Assets — pickers show `CODE/TICKER - Name`.
 3. **Weighted average unit price** on list pages; sells do not change avg on remainder; full exit → archive; new buy → fresh avg.
 4. **Dividends:** forecast fields for dashboard only; payments fully manual; **yield calculated** on stock list.
-5. **M17 crypto** → **M18 stock** → **M12 DB picker**.
+5. **M17 crypto** → **M18 stock** → **M19 market price** → **M12 DB picker**.
 6. Staking rewards and past dashboard → later milestones.
 
 ---
@@ -444,7 +485,7 @@ M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 ## Approval checklist
 
 - [x] Separate crypto + stock milestones; crypto first
-- [x] DB file picker after both
+- [x] DB file picker last (after M19 market price)
 - [x] Stock + crypto asset registers with autocomplete labels
 - [x] Dividend forecast on holding; manual payments only
 - [x] Dividend yield calculated on stock list
@@ -452,6 +493,6 @@ M12 **Database file picker** after crypto and stock. **Crypto before stock.**
 - [x] Weighted average cost method (example table approved)
 - [x] Closed positions → archive; future past dashboard
 - [x] Staking rewards deferred past M17
-- [x] Mark price / unit quotes deferred past M17/M18
+- [x] Market price as M19 (after M17/M18 transactions, before DB picker)
 - [x] Sector: US GICS enum (11 sectors)
 - [x] Country: ISO 3166-1 alpha-2 only
