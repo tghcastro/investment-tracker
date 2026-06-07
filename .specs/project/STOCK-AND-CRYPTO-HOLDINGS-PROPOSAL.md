@@ -82,6 +82,37 @@ Same label format: **`KO - Coca-Cola Company`**
 
 **Ships with M18 (stock milestone).**
 
+### Seed data (M18 migration)
+
+Ship a SQL seed in the **same migration** that creates `stock_companies` (same pattern as `007_market_indicators.sql`). Reference copy: [seeds/stock-companies.seed.sql](seeds/stock-companies.seed.sql).
+
+Pre-populates **20 US companies** (your watchlist) with ticker, name, GICS sector slug, and `country = US`:
+
+| Ticker | Name | Sector |
+| --- | --- | --- |
+| ABT | Abbott Laboratories | health_care |
+| ABBV | AbbVie | health_care |
+| ABM | ABM Industries | industrials |
+| OZK | Bank OZK | financials |
+| CSCO | Cisco Systems | information_technology |
+| KO | The Coca-Cola Company | consumer_staples |
+| CMCSA | Comcast | communication_services |
+| ES | Eversource Energy | utilities |
+| FUL | H.B. Fuller | materials |
+| HRL | Hormel Foods | consumer_staples |
+| JNJ | Johnson & Johnson | health_care |
+| MDLZ | Mondelez International | consumer_staples |
+| PNR | Pentair | industrials |
+| POR | Portland General Electric | utilities |
+| PPG | PPG Industries | materials |
+| HTO | H2O America | utilities |
+| SBUX | Starbucks | consumer_discretionary |
+| TGT | Target | consumer_discretionary |
+| UGI | UGI Corporation | utilities |
+| UNM | Unum Group | financials |
+
+Uses `INSERT OR IGNORE` (or equivalent) so re-running migrations on existing DBs does not fail. User can still add/edit/delete via Configurations CRUD.
+
 ---
 
 ## Crypto register (`crypto_assets`)
@@ -109,6 +140,24 @@ Mirror of stock companies — holdings reference catalog rows, not free-text sym
 - `GET/POST /api/crypto-assets`, CRUD by id; search for autocomplete
 
 **Ships with M17 (crypto milestone).**
+
+### Seed data (M17 migration)
+
+Ship a SQL seed in the **same migration** that creates `crypto_assets`. Reference copy: [seeds/crypto-assets.seed.sql](seeds/crypto-assets.seed.sql).
+
+Pre-populates **7 assets** with code, name, and `quantity_precision`:
+
+| Code | Name | Precision |
+| --- | --- | --- |
+| BTC | Bitcoin | 8 |
+| ETH | Ethereum | 18 |
+| ADA | Cardano | 6 |
+| XRP | XRP | 6 |
+| USDC | USD Coin | 6 |
+| USDT | Tether | 6 |
+| BNC | Binance Coin | 8 |
+
+**Note:** You listed `BNC` — market ticker is usually **BNB**. Seed uses `BNC` as requested; change to `BNB` in migration if you prefer the standard code.
 
 ---
 
@@ -158,7 +207,7 @@ dividendYieldPercent = (annualDividendCents / positionValueCents) × 100
 
 - When `dividendForecastFrequency = none` → yield displays `—`
 - `avgUnitPriceCents` = `costBasisCents / quantity` (see average price section)
-- Denominator at launch: **average unit price** (`costBasisCents / quantity`). Manual unit quotes (mark price) deferred — see below.
+- **M18:** yield denominator = **average unit price**. **M19:** uses **market price** when latest unit quote exists; else average.
 
 ### Stock list page columns (open positions)
 
@@ -412,7 +461,7 @@ API may return on sell: `realizedGainLossCents = sell proceeds − (soldQty × a
 
 ### Crypto (M17)
 
-- [ ] Crypto assets catalog + Configurations CRUD
+- [ ] Crypto assets catalog + Configurations CRUD + **SQL seed** (7 assets — see table above)
 - [ ] Holdings with asset autocomplete (`CODE - Name`)
 - [ ] Buy/sell transactions; weighted average cost
 - [ ] List: **average unit price** column
@@ -422,7 +471,7 @@ API may return on sell: `realizedGainLossCents = sell proceeds − (soldQty × a
 
 ### Stock (M18)
 
-- [ ] Stock companies catalog + Configurations CRUD
+- [ ] Stock companies catalog + Configurations CRUD + **SQL seed** (20 companies — see table above)
 - [ ] Holdings with company autocomplete (`TICKER - Name`)
 - [ ] Buy/sell transactions; weighted average cost
 - [ ] List: **average unit price** + **dividend yield** (calculated)
