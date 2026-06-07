@@ -2,8 +2,6 @@
 -- Copy into packages/api/src/migrations/00X_*.sql after CREATE TABLE.
 -- Uses INSERT OR IGNORE for idempotent upgrades.
 --
--- BNC: listed as requested; market ticker for Binance Coin is usually BNB — confirm at implementation.
-
 INSERT OR IGNORE INTO `crypto_assets` (`code`, `name`, `quantity_precision`) VALUES
   ('BTC', 'Bitcoin', 8),
   ('ETH', 'Ethereum', 18),
@@ -11,4 +9,4 @@ INSERT OR IGNORE INTO `crypto_assets` (`code`, `name`, `quantity_precision`) VAL
   ('XRP', 'XRP', 6),
   ('USDC', 'USD Coin', 6),
   ('USDT', 'Tether', 6),
-  ('BNC', 'Binance Coin', 8);
+  ('BNB', 'Binance Coin', 8);

@@ -105,7 +105,7 @@ Pre-populates **20 US companies** (your watchlist) with ticker, name, GICS secto
 | PNR | Pentair | industrials |
 | POR | Portland General Electric | utilities |
 | PPG | PPG Industries | materials |
-| HTO | H2O America | utilities |
+| HTO | H2O America (recent rename) | utilities |
 | SBUX | Starbucks | consumer_discretionary |
 | TGT | Target | consumer_discretionary |
 | UGI | UGI Corporation | utilities |
@@ -155,9 +155,7 @@ Pre-populates **7 assets** with code, name, and `quantity_precision`:
 | XRP | XRP | 6 |
 | USDC | USD Coin | 6 |
 | USDT | Tether | 6 |
-| BNC | Binance Coin | 8 |
-
-**Note:** You listed `BNC` — market ticker is usually **BNB**. Seed uses `BNC` as requested; change to `BNB` in migration if you prefer the standard code.
+| BNB | Binance Coin | 8 |
 
 ---
 
