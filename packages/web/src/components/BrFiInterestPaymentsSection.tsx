@@ -13,6 +13,7 @@ import {
   useDisplayCurrency,
 } from '../contexts/DisplayCurrencyContext';
 import type { ApiBrFiHolding, ApiBrFiInterestPayment } from '../types/api';
+import { formatCurrency } from '../utils/format';
 import './CouponPaymentsSection.css';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
@@ -77,6 +78,7 @@ export function BrFiInterestPaymentsSection({ holding }: BrFiInterestPaymentsSec
     'DELETE',
     deleteTarget ? `/api/br-fi-interest-payments/${deleteTarget.id}` : '/api/br-fi-interest-payments/0'
   );
+  const expectedCents = holding.expectedInterestAmountCents;
 
   const loadPayments = useCallback(async () => {
     setListLoading(true);
@@ -147,9 +149,16 @@ export function BrFiInterestPaymentsSection({ holding }: BrFiInterestPaymentsSec
           <h2 id="brfi-payments-heading" className="cb-coupon-payments-section__title">
             Interest payments
           </h2>
-          <p className="cb-coupon-payments-section__estimate cb-body-sm">
-            Record interest received for this Brazilian fixed income position.
-          </p>
+          {expectedCents !== null ? (
+            <p className="cb-coupon-payments-section__estimate cb-body-sm">
+              Estimate: {formatCurrency(expectedCents, holding.currencyCode)} for next payment based
+              on holding terms
+            </p>
+          ) : (
+            <p className="cb-coupon-payments-section__estimate cb-body-sm">
+              Record interest received for this Brazilian fixed income position.
+            </p>
+          )}
         </div>
         {mode === 'list' && payments.length > 0 ? (
           <Button

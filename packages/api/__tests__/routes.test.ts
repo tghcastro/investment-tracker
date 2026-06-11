@@ -1783,6 +1783,7 @@ describe('M6 multi-currency routes', () => {
       name: 'LCI Banco X',
       productType: 'LCI',
       indexingType: 'CDI_PERCENTAGE',
+      couponFrequency: 'annual',
       marketIndicatorId: await getIndicatorId('CDI'),
       cdiPercentage: 105,
       purchaseDate: '2025-01-15',
@@ -1805,12 +1806,14 @@ describe('M6 multi-currency routes', () => {
         name: 'LCI Banco X',
         productType: 'LCI',
         indexingType: 'CDI_PERCENTAGE',
+        couponFrequency: 'annual',
         cdiPercentage: 105,
         purchaseDate: '2025-01-15',
         maturityDate: '2027-01-15',
         investedAmountCents: 10_000_000,
         currencyCode: 'BRL',
         accountId,
+        expectedInterestAmountCents: null,
       });
       expect(body.holdingType).toMatchObject({
         slug: 'brazilian-fixed-income',
@@ -1879,6 +1882,7 @@ describe('M6 multi-currency routes', () => {
       expect(getResponse.json()).toMatchObject({
         id: posted.id,
         name: 'LCI Banco X',
+        couponFrequency: 'annual',
       });
     });
 
@@ -1902,6 +1906,34 @@ describe('M6 multi-currency routes', () => {
         name: 'Renamed LCI',
         investedAmountCents: 11_000_000,
       });
+    });
+
+    it('GET /api/br-fi-holdings returns expectedInterestAmountCents from API math', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+      const postResponse = await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: {
+          accountId,
+          currencyCode: 'BRL',
+          name: 'Pre-fixed Example A',
+          productType: 'LCI',
+          indexingType: 'PRE_FIXED',
+          couponFrequency: 'semi-annual',
+          preFixedRatePercent: 12,
+          purchaseDate: '2025-07-01',
+          maturityDate: '2027-07-01',
+          investedAmountCents: 1_000_000,
+        },
+      });
+      expect(postResponse.statusCode).toBe(201);
+
+      const listResponse = await app.inject({ method: 'GET', url: '/api/br-fi-holdings' });
+      expect(listResponse.statusCode).toBe(200);
+      const row = (listResponse.json() as Array<{ name: string; expectedInterestAmountCents: number }>).find(
+        (entry) => entry.name === 'Pre-fixed Example A'
+      );
+      expect(row?.expectedInterestAmountCents).toBe(60_000);
     });
 
     it('DELETE /api/br-fi-holdings/:id returns 204', async () => {

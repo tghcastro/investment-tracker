@@ -129,15 +129,18 @@ const sampleDashboard: ApiDashboard = {
 const sampleBrFiHoldings: ApiBrFiHolding[] = [
   {
     id: '4',
+    holdingType: { id: '2', slug: 'brazilian-fixed-income', name: 'Brazilian Fixed Income' },
     accountId: '10',
     currencyCode: 'BRL',
     name: 'LCI Banco X',
     productType: 'LCI',
     indexingType: 'CDI_PERCENTAGE',
+    couponFrequency: 'annual',
     cdiPercentage: 100,
     purchaseDate: '2025-01-15',
     maturityDate: '2027-01-15',
     investedAmountCents: 1_000_000,
+    expectedInterestAmountCents: null,
     convertedInvestedAmountCents: 200_000,
     convertedCurrency: 'USD',
     updatedAt: '2025-01-15T00:00:00.000Z',

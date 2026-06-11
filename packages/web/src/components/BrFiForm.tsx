@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import type { ApiAccount, ApiBrFiHolding, IndexingType, ProductType } from '../types/api';
+import type {
+  ApiAccount,
+  ApiBrFiHolding,
+  CouponFrequency,
+  IndexingType,
+  ProductType,
+} from '../types/api';
 import {
+  COUPON_FREQUENCY_OPTIONS,
   INDEXING_TYPE_OPTIONS,
   PRODUCT_TYPE_OPTIONS,
 } from '../utils/brFiLabels';
@@ -18,6 +25,7 @@ const BRFI_FORM_FIELD_FOCUS_ORDER = [
   { id: 'brfi-name', errorKey: 'name' },
   { id: 'brfi-product-type', errorKey: 'productType' },
   { id: 'brfi-indexing-type', errorKey: 'indexingType' },
+  { id: 'brfi-coupon-frequency', errorKey: 'couponFrequency' },
   { id: 'brfi-market-indicator', errorKey: 'marketIndicatorId' },
   { id: 'brfi-cdi-percentage', errorKey: 'cdiPercentage' },
   { id: 'brfi-ipca-spread', errorKey: 'ipcaSpreadPercent' },
@@ -33,6 +41,7 @@ export interface BrFiFormValues {
   name: string;
   productType: ProductType | '';
   indexingType: IndexingType | '';
+  couponFrequency: CouponFrequency;
   cdiPercentage: string;
   ipcaSpreadPercent: string;
   preFixedRatePercent: string;
@@ -48,6 +57,7 @@ export interface BrFiFormSubmitPayload {
   name: string;
   productType: ProductType;
   indexingType: IndexingType;
+  couponFrequency: CouponFrequency;
   cdiPercentage?: number;
   ipcaSpreadPercent?: number;
   preFixedRatePercent?: number;
@@ -75,6 +85,7 @@ export const EMPTY_BRFI_FORM_VALUES: BrFiFormValues = {
   name: '',
   productType: '',
   indexingType: '',
+  couponFrequency: 'annual',
   cdiPercentage: '',
   ipcaSpreadPercent: '',
   preFixedRatePercent: '',
@@ -141,6 +152,9 @@ function validate(values: BrFiFormValues): Record<string, string> {
   if (!values.indexingType) {
     errors.indexingType = 'Indexing type required';
   }
+  if (!values.couponFrequency) {
+    errors.couponFrequency = 'Coupon frequency required';
+  }
 
   if (values.indexingType === 'CDI_PERCENTAGE') {
     if (!values.marketIndicatorId) {
@@ -198,6 +212,7 @@ function buildPayload(values: BrFiFormValues): BrFiFormSubmitPayload {
     name: values.name.trim(),
     productType: values.productType as ProductType,
     indexingType: values.indexingType as IndexingType,
+    couponFrequency: values.couponFrequency,
     purchaseDate: values.purchaseDate,
     maturityDate: values.maturityDate,
     investedAmountCents: parseDollarsToCents(values.investedAmount)!,
@@ -394,6 +409,23 @@ export function BrFiForm({
             disabled={loading}
           />
         </FormField>
+
+        <FormField
+          label="Coupon frequency"
+          htmlFor="brfi-coupon-frequency"
+          error={fieldErrors.couponFrequency}
+        >
+          <Select
+            id="brfi-coupon-frequency"
+            value={values.couponFrequency}
+            options={COUPON_FREQUENCY_OPTIONS}
+            error={Boolean(fieldErrors.couponFrequency)}
+            onChange={(event) =>
+              handleChange('couponFrequency', event.target.value as CouponFrequency)
+            }
+            disabled={loading}
+          />
+        </FormField>
       </div>
 
       {values.indexingType ? (
@@ -502,6 +534,7 @@ export function brFiHoldingToFormValues(holding: ApiBrFiHolding): BrFiFormValues
     name: holding.name,
     productType: holding.productType,
     indexingType: holding.indexingType,
+    couponFrequency: holding.couponFrequency,
     cdiPercentage: holding.cdiPercentage !== undefined ? String(holding.cdiPercentage) : '',
     ipcaSpreadPercent:
       holding.ipcaSpreadPercent !== undefined ? String(holding.ipcaSpreadPercent) : '',

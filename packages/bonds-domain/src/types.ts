@@ -99,6 +99,7 @@ export interface BrFiHolding {
   cdiPercentage?: number;
   ipcaSpreadPercent?: number;
   preFixedRatePercent?: number;
+  couponFrequency: CouponFrequency;
   purchaseDate: Date;
   maturityDate: Date;
   investedAmountCents: number;

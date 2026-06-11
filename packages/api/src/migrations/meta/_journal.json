@@ -57,6 +57,13 @@
       "when": 1748995200000,
       "tag": "008_br_fi_interest_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781132400000,
+      "tag": "009_br_fi_coupon_frequency",
+      "breakpoints": true
     }
   ]
 }

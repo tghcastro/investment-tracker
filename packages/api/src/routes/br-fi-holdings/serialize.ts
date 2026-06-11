@@ -22,9 +22,11 @@ export type ApiBrFiHoldingResponse = {
   cdiPercentage?: number;
   ipcaSpreadPercent?: number;
   preFixedRatePercent?: number;
+  couponFrequency: BrFiHolding['couponFrequency'];
   purchaseDate: string;
   maturityDate: string;
   investedAmountCents: number;
+  expectedInterestAmountCents: number | null;
   convertedInvestedAmountCents: number | null;
   convertedCurrency: string;
   conversionError?: string;
@@ -53,9 +55,11 @@ export function toApiBrFiHolding(holding: BrFiHoldingWithDisplay): ApiBrFiHoldin
     ...(holding.preFixedRatePercent !== undefined
       ? { preFixedRatePercent: holding.preFixedRatePercent }
       : {}),
+    couponFrequency: holding.couponFrequency,
     purchaseDate: toIsoDateString(holding.purchaseDate),
     maturityDate: toIsoDateString(holding.maturityDate),
     investedAmountCents: holding.investedAmountCents,
+    expectedInterestAmountCents: holding.expectedInterestAmountCents,
     convertedInvestedAmountCents: holding.convertedInvestedAmountCents,
     convertedCurrency: holding.convertedCurrency,
     ...(holding.conversionError ? { conversionError: holding.conversionError } : {}),

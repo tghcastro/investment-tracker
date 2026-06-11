@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-06-11
-**Current Work:** **M10** specified — approve spec → design/tasks → implement → **v1.2.0**. See [m10 spec](../features/active/m10-navigation-tools/spec.md).
+**Current Work:** **M10** specified — approve spec → design/tasks → **v1.2.0**. **M11** design + tasks drafted — approve → **v1.3.0**. See [m10 spec](../features/active/m10-navigation-tools/spec.md), [m11 spec](../features/active/m11-brfi-coupon-engine/spec.md), [m11 design](../features/active/m11-brfi-coupon-engine/design.md), [m11 tasks](../features/active/m11-brfi-coupon-engine/tasks.md).
 
 ### AD-010: API-first business rules — web UI only (2026-05-31)
 
@@ -127,7 +127,8 @@ _None yet._
 
 - [ ] Approve M10 spec → design + tasks (2026-06-11)
 - [x] Specify M10 — `.specs/features/active/m10-navigation-tools/spec.md` (2026-06-11)
-- [ ] Specify M11 — BRFI coupon engine
+- [x] Specify M11 — `.specs/features/active/m11-brfi-coupon-engine/spec.md` (2026-06-11)
+- [ ] Approve M11 spec → design + tasks — [design](../features/active/m11-brfi-coupon-engine/design.md), [tasks](../features/active/m11-brfi-coupon-engine/tasks.md) (2026-06-11)
 - [ ] Specify M12 — database file picker
 - [ ] Specify M13 — CSV currency quotes import
 - [ ] Specify M14 — CSV market indicators import

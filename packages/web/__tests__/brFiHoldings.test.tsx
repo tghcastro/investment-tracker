@@ -84,11 +84,13 @@ const sampleHoldings: ApiBrFiHolding[] = [
     name: 'XP LCI 2027',
     productType: 'LCI',
     indexingType: 'CDI_PERCENTAGE',
+    couponFrequency: 'annual',
     marketIndicatorId: '1',
     cdiPercentage: 105,
     purchaseDate: '2024-03-01',
     maturityDate: '2027-03-01',
     investedAmountCents: 50_000_00,
+    expectedInterestAmountCents: 60_000,
     convertedInvestedAmountCents: 10_000_00,
     convertedCurrency: 'USD',
     updatedAt: '2024-03-01T00:00:00.000Z',
@@ -101,11 +103,13 @@ const sampleHoldings: ApiBrFiHolding[] = [
     name: 'Tesouro IPCA+ 2030',
     productType: 'TESOURO_DIRETO',
     indexingType: 'IPCA_SPREAD',
+    couponFrequency: 'semi-annual',
     marketIndicatorId: '2',
     ipcaSpreadPercent: 6.5,
     purchaseDate: '2023-06-15',
     maturityDate: '2030-08-15',
     investedAmountCents: 10_000_00,
+    expectedInterestAmountCents: null,
     convertedInvestedAmountCents: 2_000_00,
     convertedCurrency: 'USD',
     updatedAt: '2023-06-15T00:00:00.000Z',
@@ -275,6 +279,20 @@ describe('BrFiForm indexing fields', () => {
 
     expect(screen.getByLabelText('Pre-fixed rate (%)')).toBeInTheDocument();
     expect(screen.queryByLabelText('Market indicator')).not.toBeInTheDocument();
+  });
+
+  it('shows coupon frequency options in Portuguese', () => {
+    mockIndicatorApi('INTEREST_RATE');
+
+    render(
+      <BrFiForm accounts={sampleAccountsForm} onSubmit={vi.fn()} onCancel={vi.fn()} />
+    );
+
+    expect(screen.getByLabelText('Coupon frequency')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Mensal' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Trimestral' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Semestral' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Anual' })).toBeInTheDocument();
   });
 
   it('pre-selects default indicator slug from API list', async () => {

@@ -879,6 +879,7 @@ describe('Repo integration', () => {
       name: 'LCI Test',
       productType: 'LCI',
       indexingType: 'CDI_PERCENTAGE',
+      couponFrequency: 'annual',
       marketIndicatorId: cdiId,
       cdiPercentage: 105,
       investedAmountCents: 10_000_000,
@@ -972,6 +973,35 @@ describe('Repo integration', () => {
     const filtered = await repo.listBrFiHoldingsFiltered({ accountId: accountA.id });
     expect(filtered).toHaveLength(1);
     expect(filtered[0].name).toBe('Account A LCI');
+    expect(filtered[0]?.expectedInterestAmountCents).toBeNull();
+  });
+
+  it('computes expected BRFI interest amount for next coupon (Example A)', async () => {
+    const account = await repo.insertAccount({
+      name: 'BRFI Expected',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-07-01',
+      targetCurrencyCode: 'BRL',
+      rate: 5,
+    });
+
+    const inserted = await repo.insertBrFiHolding({
+      accountId: account.id,
+      currencyCode: 'BRL',
+      name: 'PRE_FIXED A',
+      productType: 'LCI',
+      indexingType: 'PRE_FIXED',
+      couponFrequency: 'semi-annual',
+      preFixedRatePercent: 12,
+      purchaseDate: new Date('2025-07-01'),
+      maturityDate: new Date('2027-07-01'),
+      investedAmountCents: 1_000_000,
+    });
+
+    const fetched = await repo.getBrFiHoldingWithConverted(inserted.id);
+    expect(fetched?.expectedInterestAmountCents).toBe(60_000);
   });
 
   it('blocks removing account currency used by BRFI holdings', async () => {
@@ -1289,6 +1319,48 @@ describe('Repo integration', () => {
       expect(
         dashboard.projectedIncomeByYear.every((row) => row.interestCents === 0)
       ).toBe(true);
+    });
+
+    it('projects semi-annual PRE_FIXED BRFI events at per-period amount', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(Date.UTC(2025, 11, 31)));
+
+      const account = await repo.insertAccount({
+        name: 'BRFI Dashboard Semi',
+        currencyCodes: ['USD', 'BRL'],
+      });
+      await repo.insertCurrencyQuote({
+        quoteDate: '2025-07-01',
+        targetCurrencyCode: 'BRL',
+        rate: 5,
+      });
+      await repo.insertBrFiHolding({
+        accountId: account.id,
+        currencyCode: 'BRL',
+        name: 'Semi PRE_FIXED',
+        productType: 'LCI',
+        indexingType: 'PRE_FIXED',
+        couponFrequency: 'semi-annual',
+        preFixedRatePercent: 12,
+        purchaseDate: new Date('2025-07-01'),
+        maturityDate: new Date('2027-07-01'),
+        investedAmountCents: 1_000_000,
+      });
+
+      const dashboard = await repo.getDashboard({
+        from: '2026-01-01',
+        to: '2026-12-31',
+      });
+
+      const interestRows = dashboard.upcomingEvents.filter((event) => event.type === 'INTEREST');
+      expect(interestRows).toHaveLength(2);
+      expect(interestRows[0]?.amountCents).toBe(60_000);
+      expect(interestRows[1]?.amountCents).toBe(60_000);
+      expect(
+        dashboard.projectedIncomeByYear.find((row) => row.year === 2026)?.interestCents
+      ).toBe(120_000);
+
+      vi.useRealTimers();
     });
   });
 });

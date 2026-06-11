@@ -78,6 +78,7 @@ export type ApiAccount = SerializeDates<Account>;
 
 /** JSON shape returned by GET /api/br-fi-holdings */
 export type ApiBrFiHolding = SerializeDates<BrFiHolding> & {
+  expectedInterestAmountCents: number | null;
   convertedInvestedAmountCents: number | null;
   convertedCurrency: string;
   conversionError?: string;
