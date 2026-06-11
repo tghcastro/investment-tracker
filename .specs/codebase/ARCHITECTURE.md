@@ -68,7 +68,7 @@
 | Market indicators | CRUD `/api/market-indicators`; nested `/api/market-indicators/:id/values`; `GET .../latest`; list embeds `latestValue` + `valueCount` |
 | FX preview | `GET /api/fx/convert` (M6.1) — form preview |
 | Coupon payments | CRUD linked to bond holdings |
-| Portfolio | `summary`, `income-summary`, `upcoming-coupons` — legacy endpoints; Income page still uses income-summary |
+| Portfolio | `summary`, `income-summary`, `upcoming-coupons` — legacy endpoints; Income page uses `income-summary` (bond coupon + BRFI interest payments; optional `displayCurrency` for payment-date FX) |
 | Dashboard | `GET /api/dashboard` — summary, allocations, yearly income/principal forecasts, upcoming events; filters + `displayCurrency` |
 | System | `GET /api/system/info`, backup download, restore multipart upload |
 
@@ -111,8 +111,8 @@ Settings UI → GET backup (file) / POST restore (multipart)
 ### Income view
 
 ```
-GET portfolio/income-summary + coupon list routes
-     → Repo aggregates + bonds-domain schedule helpers for estimates
+GET portfolio/income-summary + coupon/interest list routes
+     → Repo aggregates recorded bond coupon + BRFI interest payments; bonds-domain schedule helpers for estimates
 ```
 
 ## Invariants (enforced by structure, not a custom linter)

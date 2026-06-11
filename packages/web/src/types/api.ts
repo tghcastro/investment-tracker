@@ -163,8 +163,10 @@ export type ApiBrFiInterestPayment = {
 
 export type ApiIncomeSummaryByHolding = {
   holdingId: string;
+  holdingTypeSlug: string;
   issuer: string;
   totalReceived: number;
+  convertedTotalReceived: number | null;
   paymentCount: number;
 };
 
@@ -172,12 +174,19 @@ export type ApiIncomeSummaryPaymentRow = {
   id: string;
   paymentDate: string;
   amount: number;
+  currencyCode: string;
+  convertedAmount: number | null;
   holdingId: string;
+  holdingTypeSlug: string;
   issuer: string;
+  conversionError?: string;
 };
 
 export interface ApiIncomeSummary {
   totalReceived: number;
+  convertedTotalReceived: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
   paymentCount: number;
   byHolding: ApiIncomeSummaryByHolding[];
   payments: ApiIncomeSummaryPaymentRow[];

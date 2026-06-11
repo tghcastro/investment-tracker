@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { CurrencySelector } from '../components/CurrencySelector';
 import { EmptyState, ErrorBanner, PageHeader } from '../components/ui';
+import { useDisplayCurrency } from '../contexts/DisplayCurrencyContext';
 import { useApi } from '../hooks';
 import type { ApiIncomeSummary } from '../types/api';
 import { formatCurrency, formatDate } from '../utils/format';
+import { holdingDetailPath } from '../utils/holdingTypeRoutes';
 import {
   currentUtcCalendarYearRangeStrings,
   incomeSummaryUrl,
@@ -11,50 +14,67 @@ import {
 import './Home.css';
 import './Income.css';
 
+function formatConvertedCents(cents: number | null, currency: string): string {
+  return cents !== null ? formatCurrency(cents, currency) : '—';
+}
+
 export default function Income() {
+  const { displayCurrency } = useDisplayCurrency();
   const defaultRange = useMemo(() => currentUtcCalendarYearRangeStrings(), []);
   const [from, setFrom] = useState(defaultRange.from);
   const [to, setTo] = useState(defaultRange.to);
 
-  const { data: summary, loading, error } = useApi<ApiIncomeSummary>(
-    incomeSummaryUrl(from, to)
+  const summaryUrl = useMemo(
+    () => incomeSummaryUrl(from, to, displayCurrency),
+    [from, to, displayCurrency]
   );
+
+  const { data: summary, loading, error } = useApi<ApiIncomeSummary>(summaryUrl);
 
   const hasPayments = Boolean(summary && summary.paymentCount > 0);
   const isRefetch = loading && summary !== undefined;
+  const displayCurrencyCode = summary?.convertedCurrency ?? displayCurrency;
 
   return (
     <div className="cb-income">
-      <PageHeader title="Coupon income" subtitle="Cash received across your holdings" />
+      <PageHeader title="Income" subtitle="Cash received across your holdings" />
 
       <section className="cb-income__filters" aria-label="Income period">
-        <div className="cb-income__filter-field">
-          <label htmlFor="income-from" className="cb-income__filter-label">
-            From
-          </label>
-          <input
-            id="income-from"
-            type="date"
-            className="cb-income__filter-input"
-            value={from}
-            onChange={(event) => setFrom(event.target.value)}
-          />
+        <div className="cb-income__filter-group">
+          <div className="cb-income__filter-field">
+            <label htmlFor="income-from" className="cb-income__filter-label">
+              From
+            </label>
+            <input
+              id="income-from"
+              type="date"
+              className="cb-income__filter-input"
+              value={from}
+              onChange={(event) => setFrom(event.target.value)}
+            />
+          </div>
+          <div className="cb-income__filter-field">
+            <label htmlFor="income-to" className="cb-income__filter-label">
+              To
+            </label>
+            <input
+              id="income-to"
+              type="date"
+              className="cb-income__filter-input"
+              value={to}
+              onChange={(event) => setTo(event.target.value)}
+            />
+          </div>
         </div>
-        <div className="cb-income__filter-field">
-          <label htmlFor="income-to" className="cb-income__filter-label">
-            To
-          </label>
-          <input
-            id="income-to"
-            type="date"
-            className="cb-income__filter-input"
-            value={to}
-            onChange={(event) => setTo(event.target.value)}
-          />
+        <div className="cb-income__currency">
+          <CurrencySelector />
         </div>
       </section>
 
       {error ? <ErrorBanner message={error} /> : null}
+      {summary?.conversionError ? (
+        <ErrorBanner message="Some amounts could not be converted to the selected display currency." />
+      ) : null}
 
       {loading ? (
         <div
@@ -72,7 +92,7 @@ export default function Income() {
           <div className="cb-home__metric-card">
             <p className="cb-home__metric-label">Total received</p>
             <p className="cb-home__metric-value cb-number-display">
-              {formatCurrency(summary.totalReceived)}
+              {formatConvertedCents(summary.convertedTotalReceived, displayCurrencyCode)}
             </p>
           </div>
           <div className="cb-home__metric-card">
@@ -84,8 +104,8 @@ export default function Income() {
 
       {!loading && !error && summary && !hasPayments ? (
         <EmptyState
-          title="No coupon income in this period"
-          description="Record coupon payments on a holding to see income history here."
+          title="No income in this period"
+          description="Record coupon or interest payments on a holding to see income history here."
         />
       ) : null}
 
@@ -118,14 +138,21 @@ export default function Income() {
               <span role="columnheader">Payments</span>
             </div>
             {summary.byHolding.map((row) => (
-              <div key={row.holdingId} className="cb-income__table-row" role="row">
+              <div
+                key={`${row.holdingTypeSlug}-${row.holdingId}`}
+                className="cb-income__table-row"
+                role="row"
+              >
                 <span role="cell" data-label="Issuer">
-                  <Link to={`/holdings/${row.holdingId}`} className="cb-income__holding-link">
+                  <Link
+                    to={holdingDetailPath(row.holdingId, row.holdingTypeSlug)}
+                    className="cb-income__holding-link"
+                  >
                     {row.issuer}
                   </Link>
                 </span>
                 <span role="cell" data-label="Total received" className="cb-number-display">
-                  {formatCurrency(row.totalReceived)}
+                  {formatConvertedCents(row.convertedTotalReceived, displayCurrencyCode)}
                 </span>
                 <span role="cell" data-label="Payments" className="cb-number-display">
                   {row.paymentCount}
@@ -165,17 +192,24 @@ export default function Income() {
               <span role="columnheader">Amount</span>
             </div>
             {summary.payments.map((payment) => (
-              <div key={payment.id} className="cb-income__table-row" role="row">
+              <div
+                key={`${payment.holdingTypeSlug}-${payment.id}`}
+                className="cb-income__table-row"
+                role="row"
+              >
                 <span role="cell" data-label="Date">
                   {formatDate(payment.paymentDate)}
                 </span>
                 <span role="cell" data-label="Issuer">
-                  <Link to={`/holdings/${payment.holdingId}`} className="cb-income__holding-link">
+                  <Link
+                    to={holdingDetailPath(payment.holdingId, payment.holdingTypeSlug)}
+                    className="cb-income__holding-link"
+                  >
                     {payment.issuer}
                   </Link>
                 </span>
                 <span role="cell" data-label="Amount" className="cb-number-display">
-                  {formatCurrency(payment.amount)}
+                  {formatConvertedCents(payment.convertedAmount, displayCurrencyCode)}
                 </span>
               </div>
             ))}

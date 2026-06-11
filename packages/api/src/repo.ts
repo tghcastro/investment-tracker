@@ -23,6 +23,7 @@ import {
   bondCouponEvents,
   brFiInterestEvents,
   bucketAmountsByCalendarYear,
+  buildQuoteRateMap,
   buildQuoteRateMapForHolding,
   convertNativeCents,
   expectedBrFiInterestAmountCents,
@@ -219,8 +220,10 @@ export type FxConvertResult = {
 
 export type IncomeSummaryByHolding = {
   holdingId: string;
+  holdingTypeSlug: HoldingTypeSlug;
   issuer: string;
   totalReceived: number;
+  convertedTotalReceived: number | null;
   paymentCount: number;
 };
 
@@ -228,12 +231,19 @@ export type IncomeSummaryPaymentRow = {
   id: string;
   paymentDate: string;
   amount: number;
+  currencyCode: string;
+  convertedAmount: number | null;
   holdingId: string;
+  holdingTypeSlug: HoldingTypeSlug;
   issuer: string;
+  conversionError?: string;
 };
 
 export type IncomeSummary = {
   totalReceived: number;
+  convertedTotalReceived: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
   paymentCount: number;
   byHolding: IncomeSummaryByHolding[];
   payments: IncomeSummaryPaymentRow[];
@@ -459,6 +469,28 @@ function convertAmountAtPurchaseDate(
 ): number | null {
   const quoteMap = buildQuoteRateMapForHolding(quoteHistory, purchaseDateIso);
   return convertNativeCents(amountCents, currencyCode, convertedCurrency, quoteMap);
+}
+
+function convertAmountAtPaymentDate(
+  amountCents: number,
+  currencyCode: string,
+  paymentDateIso: string,
+  convertedCurrency: string,
+  quoteHistory: QuoteHistory
+): number | null {
+  const quoteMap = buildQuoteRateMap(quoteHistory, paymentDateIso);
+  return convertNativeCents(amountCents, currencyCode, convertedCurrency, quoteMap);
+}
+
+function emptyIncomeSummary(convertedCurrency: string): IncomeSummary {
+  return {
+    totalReceived: 0,
+    convertedTotalReceived: 0,
+    convertedCurrency,
+    paymentCount: 0,
+    byHolding: [],
+    payments: [],
+  };
 }
 
 function emptyDashboardResponse(convertedCurrency: string): DashboardResponse {
@@ -3077,17 +3109,23 @@ export function createRepo(database: Db) {
     return true;
   }
 
-  async function getIncomeSummary(from: Date, to: Date): Promise<IncomeSummary> {
+  async function getIncomeSummary(
+    from: Date,
+    to: Date,
+    options?: { displayCurrency?: string }
+  ): Promise<IncomeSummary> {
+    const convertedCurrency = options?.displayCurrency ?? BASE_CURRENCY_CODE;
     const rangeStart = startOfUtcDay(from);
     const rangeEnd = endOfUtcDay(to);
 
-    const rows = database
+    const bondRows = database
       .select({
         id: couponPayments.id,
         paymentDate: couponPayments.paymentDate,
         amount: couponPayments.amount,
         bondHoldingId: couponPayments.bondHoldingId,
         issuer: bondHoldings.issuer,
+        currencyCode: bondHoldings.currencyCode,
       })
       .from(couponPayments)
       .innerJoin(bondHoldings, eq(couponPayments.bondHoldingId, bondHoldings.id))
@@ -3097,61 +3135,160 @@ export function createRepo(database: Db) {
           lte(couponPayments.paymentDate, rangeEnd)
         )
       )
-      .orderBy(desc(couponPayments.paymentDate))
       .all();
 
-    if (rows.length === 0) {
-      return {
-        totalReceived: 0,
-        paymentCount: 0,
-        byHolding: [],
-        payments: [],
-      };
+    const brFiRows = database
+      .select({
+        id: brFiInterestPayments.id,
+        paymentDate: brFiInterestPayments.paymentDate,
+        amount: brFiInterestPayments.amount,
+        brFiHoldingId: brFiInterestPayments.brFiHoldingId,
+        issuer: brFiHoldings.name,
+        currencyCode: brFiHoldings.currencyCode,
+      })
+      .from(brFiInterestPayments)
+      .innerJoin(brFiHoldings, eq(brFiInterestPayments.brFiHoldingId, brFiHoldings.id))
+      .where(
+        and(
+          gte(brFiInterestPayments.paymentDate, rangeStart),
+          lte(brFiInterestPayments.paymentDate, rangeEnd)
+        )
+      )
+      .all();
+
+    type IncomeSummarySourceRow = {
+      id: string;
+      paymentDate: Date;
+      amount: number;
+      currencyCode: string;
+      holdingId: string;
+      holdingTypeSlug: HoldingTypeSlug;
+      issuer: string;
+    };
+
+    const sourceRows: IncomeSummarySourceRow[] = [
+      ...bondRows.map((row) => ({
+        id: String(row.id),
+        paymentDate: row.paymentDate,
+        amount: row.amount,
+        currencyCode: row.currencyCode,
+        holdingId: String(row.bondHoldingId),
+        holdingTypeSlug: 'bond' as const,
+        issuer: row.issuer,
+      })),
+      ...brFiRows.map((row) => ({
+        id: String(row.id),
+        paymentDate: row.paymentDate,
+        amount: row.amount,
+        currencyCode: row.currencyCode,
+        holdingId: String(row.brFiHoldingId),
+        holdingTypeSlug: 'brazilian-fixed-income' as const,
+        issuer: row.issuer,
+      })),
+    ];
+
+    if (sourceRows.length === 0) {
+      return emptyIncomeSummary(convertedCurrency);
     }
 
+    sourceRows.sort((left, right) => {
+      const dateCompare = right.paymentDate.getTime() - left.paymentDate.getTime();
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+      return right.id.localeCompare(left.id);
+    });
+
+    const quoteHistory = await getQuoteHistory();
     let totalReceived = 0;
+    let convertedTotalReceived = 0;
+    let hasConversionError = false;
     const byHoldingMap = new Map<
       string,
-      { issuer: string; totalReceived: number; paymentCount: number }
+      {
+        holdingId: string;
+        holdingTypeSlug: HoldingTypeSlug;
+        issuer: string;
+        totalReceived: number;
+        convertedTotalReceived: number;
+        hasConversionError: boolean;
+        paymentCount: number;
+      }
     >();
 
-    const payments: IncomeSummaryPaymentRow[] = rows.map((row) => {
+    const payments: IncomeSummaryPaymentRow[] = sourceRows.map((row) => {
       totalReceived += row.amount;
+      const paymentDateIso = toIsoDateString(row.paymentDate);
+      const convertedAmount = convertAmountAtPaymentDate(
+        row.amount,
+        row.currencyCode,
+        paymentDateIso,
+        convertedCurrency,
+        quoteHistory
+      );
 
-      const holdingId = String(row.bondHoldingId);
-      const existing = byHoldingMap.get(holdingId);
+      if (convertedAmount === null) {
+        hasConversionError = true;
+      } else {
+        convertedTotalReceived += convertedAmount;
+      }
+
+      const holdingKey = `${row.holdingTypeSlug}:${row.holdingId}`;
+      const existing = byHoldingMap.get(holdingKey);
       if (existing) {
         existing.totalReceived += row.amount;
         existing.paymentCount += 1;
+        if (convertedAmount === null) {
+          existing.hasConversionError = true;
+        } else {
+          existing.convertedTotalReceived += convertedAmount;
+        }
       } else {
-        byHoldingMap.set(holdingId, {
+        byHoldingMap.set(holdingKey, {
+          holdingId: row.holdingId,
+          holdingTypeSlug: row.holdingTypeSlug,
           issuer: row.issuer,
           totalReceived: row.amount,
+          convertedTotalReceived: convertedAmount ?? 0,
+          hasConversionError: convertedAmount === null,
           paymentCount: 1,
         });
       }
 
       return {
-        id: String(row.id),
-        paymentDate: toIsoDateString(row.paymentDate),
+        id: row.id,
+        paymentDate: paymentDateIso,
         amount: row.amount,
-        holdingId,
+        currencyCode: row.currencyCode,
+        convertedAmount,
+        holdingId: row.holdingId,
+        holdingTypeSlug: row.holdingTypeSlug,
         issuer: row.issuer,
+        ...(convertedAmount === null ? { conversionError: 'EXCHANGE_RATE_REQUIRED' as const } : {}),
       };
     });
 
-    const byHolding = [...byHoldingMap.entries()]
-      .map(([holdingId, stats]) => ({
-        holdingId,
-        issuer: stats.issuer,
-        totalReceived: stats.totalReceived,
-        paymentCount: stats.paymentCount,
+    const byHolding = [...byHoldingMap.values()]
+      .map((entry) => ({
+        holdingId: entry.holdingId,
+        holdingTypeSlug: entry.holdingTypeSlug,
+        issuer: entry.issuer,
+        totalReceived: entry.totalReceived,
+        convertedTotalReceived: entry.hasConversionError ? null : entry.convertedTotalReceived,
+        paymentCount: entry.paymentCount,
       }))
       .filter((entry) => entry.totalReceived > 0)
-      .sort((a, b) => b.totalReceived - a.totalReceived);
+      .sort((a, b) => {
+        const leftTotal = a.convertedTotalReceived ?? a.totalReceived;
+        const rightTotal = b.convertedTotalReceived ?? b.totalReceived;
+        return rightTotal - leftTotal;
+      });
 
     return {
       totalReceived,
+      convertedTotalReceived: hasConversionError ? null : convertedTotalReceived,
+      convertedCurrency,
+      ...(hasConversionError ? { conversionError: 'EXCHANGE_RATE_REQUIRED' as const } : {}),
       paymentCount: payments.length,
       byHolding,
       payments,

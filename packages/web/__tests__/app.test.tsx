@@ -38,6 +38,8 @@ vi.mock('../src/hooks/useApi', () => ({
       return {
         data: {
           totalReceived: 0,
+          convertedTotalReceived: 0,
+          convertedCurrency: 'USD',
           paymentCount: 0,
           byHolding: [],
           payments: [],

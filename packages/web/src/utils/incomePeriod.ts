@@ -1,3 +1,5 @@
+import { appendDisplayCurrencyParam } from '../contexts/DisplayCurrencyContext';
+
 export function currentUtcCalendarYearRangeStrings(): { from: string; to: string } {
   const year = new Date().getUTCFullYear();
   return {
@@ -6,6 +8,7 @@ export function currentUtcCalendarYearRangeStrings(): { from: string; to: string
   };
 }
 
-export function incomeSummaryUrl(from: string, to: string): string {
-  return `/api/portfolio/income-summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+export function incomeSummaryUrl(from: string, to: string, displayCurrency: string): string {
+  const base = `/api/portfolio/income-summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+  return appendDisplayCurrencyParam(base, displayCurrency);
 }

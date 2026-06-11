@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 
 import type { Repo } from '../../repo.js';
+import { validateDisplayCurrencyQuery } from '../coupon-payments/display-currency.js';
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -34,10 +35,16 @@ function currentUtcCalendarYearRange(): { from: Date; to: Date } {
 export function registerPortfolioIncomeSummary(app: FastifyInstance, getRepo: () => Repo): void {
   app.get('/api/portfolio/income-summary', async (request, reply) => {
     const repo = getRepo();
-    const { from: fromParam, to: toParam } = request.query as {
+    const { from: fromParam, to: toParam, displayCurrency } = request.query as {
       from?: string;
       to?: string;
+      displayCurrency?: string;
     };
+
+    const displayCurrencyResult = validateDisplayCurrencyQuery(displayCurrency);
+    if ('status' in displayCurrencyResult) {
+      return reply.status(displayCurrencyResult.status).send(displayCurrencyResult.body);
+    }
 
     const defaults = currentUtcCalendarYearRange();
     let from = defaults.from;
@@ -75,7 +82,9 @@ export function registerPortfolioIncomeSummary(app: FastifyInstance, getRepo: ()
       });
     }
 
-    const summary = await repo.getIncomeSummary(from, to);
+    const summary = await repo.getIncomeSummary(from, to, {
+      displayCurrency: displayCurrencyResult.displayCurrency,
+    });
     return reply.status(200).send(summary);
   });
 }
