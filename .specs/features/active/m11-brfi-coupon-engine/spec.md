@@ -35,32 +35,32 @@ M11 delivers domain + API coupon rules per indexing type, `couponFrequency` on B
 
 ## Out of Scope
 
-| Feature | Reason |
-| --- | --- |
-| Daily accrual ledger | ROADMAP Future / M9 out of scope |
-| Broker feeds or automatic indicator import | M13–M14 |
-| Bond coupon rule changes | Bonds covered in M3; reuse `couponSchedule` helpers only |
-| Principal amortization before maturity | Coupons are independent cash flows; principal unchanged until maturity |
-| Rewriting historical interest payments | Recorded payments immutable; projections are separate |
-| Persisting user calc preferences | N/A |
-| Web-side interest math | AD-010 — API/domain only |
+| Feature                                    | Reason                                                                 |
+| ------------------------------------------ | ---------------------------------------------------------------------- |
+| Daily accrual ledger                       | ROADMAP Future / M9 out of scope                                       |
+| Broker feeds or automatic indicator import | M13–M14                                                                |
+| Bond coupon rule changes                   | Bonds covered in M3; reuse `couponSchedule` helpers only               |
+| Principal amortization before maturity     | Coupons are independent cash flows; principal unchanged until maturity |
+| Rewriting historical interest payments     | Recorded payments immutable; projections are separate                  |
+| Persisting user calc preferences           | N/A                                                                    |
+| Web-side interest math                     | AD-010 — API/domain only                                               |
 
 ---
 
 ## Baseline (current codebase)
 
-| Area | Today | M11 change |
-| --- | --- | --- |
-| BRFI interest payment CRUD | `br_fi_interest_payments` + web section | Unchanged CRUD; add estimate display |
-| BRFI holding schema | No `coupon_frequency` column | Migration `009_*`: column + default `annual` |
-| BRFI domain type | `BrFiHolding` without `couponFrequency` | Add field; Zod create/update validation |
-| Interest amount calc | `brFiAnnualInterestCents` — flat annual from latest indicator | Replace with per-period engine per indexing type |
-| Interest payment dates | `generateBrFiInterestDates` — yearly from purchase | Use `generateEstimatedCouponDates` + `couponFrequency` |
-| Bond coupon helpers | `couponSchedule.ts` — frequency, dates, pre-fixed amount | Reuse for BRFI schedule; new BRFI amount fns |
-| API BRFI GET | No `expectedInterestAmountCents` | Embed next-payment estimate (or `null`) |
-| Dashboard `/api/dashboard` | Latest-indicator annual BRFI math | Per-period projections from indicator history |
-| Web `BrFiForm` | No frequency field | Select: Mensal / Trimestral / Semestral / Anual |
-| Web interest section | No estimate banner | Render `expectedInterestAmountCents` from API |
+| Area                       | Today                                                         | M11 change                                             |
+| -------------------------- | ------------------------------------------------------------- | ------------------------------------------------------ |
+| BRFI interest payment CRUD | `br_fi_interest_payments` + web section                       | Unchanged CRUD; add estimate display                   |
+| BRFI holding schema        | No `coupon_frequency` column                                  | Migration `009_*`: column + default `annual`           |
+| BRFI domain type           | `BrFiHolding` without `couponFrequency`                       | Add field; Zod create/update validation                |
+| Interest amount calc       | `brFiAnnualInterestCents` — flat annual from latest indicator | Replace with per-period engine per indexing type       |
+| Interest payment dates     | `generateBrFiInterestDates` — yearly from purchase            | Use `generateEstimatedCouponDates` + `couponFrequency` |
+| Bond coupon helpers        | `couponSchedule.ts` — frequency, dates, pre-fixed amount      | Reuse for BRFI schedule; new BRFI amount fns           |
+| API BRFI GET               | No `expectedInterestAmountCents`                              | Embed next-payment estimate (or `null`)                |
+| Dashboard `/api/dashboard` | Latest-indicator annual BRFI math                             | Per-period projections from indicator history          |
+| Web `BrFiForm`             | No frequency field                                            | Select: Monthly / Quarterly / Semi-annual / Annual     |
+| Web interest section       | No estimate banner                                            | Render `expectedInterestAmountCents` from API          |
 
 ---
 
@@ -142,11 +142,11 @@ Design and domain tests **SHALL** implement these examples (±1 cent rounding to
 
 ### Example A — PRE_FIXED, semi-annual
 
-| Input | Value |
-| --- | --- |
+| Input                 | Value                  |
+| --------------------- | ---------------------- |
 | `investedAmountCents` | `1_000_000` (R$10,000) |
-| `preFixedRatePercent` | `12.0` |
-| `couponFrequency` | `semi-annual` |
+| `preFixedRatePercent` | `12.0`                 |
+| `couponFrequency`     | `semi-annual`          |
 
 ```
 perPeriodRate = 12 / 2 = 6%
@@ -159,23 +159,23 @@ interestCents = round(1_000_000 × 6 / 100) = 60_000
 
 ### Example B — IPCA_SPREAD, semi-annual (period accumulation)
 
-| Input | Value |
-| --- | --- |
-| `investedAmountCents` | `10_000_000` (R$100,000) |
-| `ipcaSpreadPercent` | `5.5` (real annual spread) |
-| `couponFrequency` | `semi-annual` |
-| `purchaseDate` | `2025-07-01` |
-| First coupon (`periodEnd`) | `2026-01-01` |
-| IPCA monthly `%` in period | see table |
+| Input                      | Value                      |
+| -------------------------- | -------------------------- |
+| `investedAmountCents`      | `10_000_000` (R$100,000)   |
+| `ipcaSpreadPercent`        | `5.5` (real annual spread) |
+| `couponFrequency`          | `semi-annual`              |
+| `purchaseDate`             | `2025-07-01`               |
+| First coupon (`periodEnd`) | `2026-01-01`               |
+| IPCA monthly `%` in period | see table                  |
 
-| valueDate | value (% monthly) |
-| --- | --- |
-| 2025-08-01 | 0.38 |
-| 2025-09-01 | 0.44 |
-| 2025-10-01 | 0.44 |
-| 2025-11-01 | 0.56 |
-| 2025-12-01 | 0.39 |
-| 2026-01-01 | 0.52 |
+| valueDate  | value (% monthly) |
+| ---------- | ----------------- |
+| 2025-08-01 | 0.38              |
+| 2025-09-01 | 0.44              |
+| 2025-10-01 | 0.44              |
+| 2025-11-01 | 0.56              |
+| 2025-12-01 | 0.39              |
+| 2026-01-01 | 0.52              |
 
 ```
 accumulation = 1.0038 × 1.0044 × 1.0044 × 1.0056 × 1.0039 × 1.0052
@@ -191,13 +191,13 @@ interestCents = round(10_280_809 × 2.75 / 100) = 282_722
 
 ### Example C — CDI_PERCENTAGE, monthly (period accumulation)
 
-| Input | Value |
-| --- | --- |
-| `investedAmountCents` | `5_000_000` (R$50,000) |
-| `cdiPercentage` | `100` |
-| `couponFrequency` | `monthly` |
-| Period | `2026-01-02` → `2026-02-02` |
-| Daily CDI `%` (22 business days, all `0.055131`) | |
+| Input                                            | Value                       |
+| ------------------------------------------------ | --------------------------- |
+| `investedAmountCents`                            | `5_000_000` (R$50,000)      |
+| `cdiPercentage`                                  | `100`                       |
+| `couponFrequency`                                | `monthly`                   |
+| Period                                           | `2026-01-02` → `2026-02-02` |
+| Daily CDI `%` (22 business days, all `0.055131`) |                             |
 
 ```
 accumulation = (1.00055131)^22 ≈ 1.0121797
@@ -212,11 +212,11 @@ interestCents = round(5_000_000 × 1.00 × (1.0121797 - 1)) = 60_899
 
 ### Example D — SELIC, quarterly (period accumulation)
 
-| Input | Value |
-| --- | --- |
-| `investedAmountCents` | `2_000_000` (R$20,000) |
-| `couponFrequency` | `quarterly` |
-| Period | `2026-01-15` → `2026-04-15` |
+| Input                                 | Value                                       |
+| ------------------------------------- | ------------------------------------------- |
+| `investedAmountCents`                 | `2_000_000` (R$20,000)                      |
+| `couponFrequency`                     | `quarterly`                                 |
+| Period                                | `2026-01-15` → `2026-04-15`                 |
 | Daily SELIC `%` (illustrative 5 days) | `0.045`, `0.045`, `0.045`, `0.045`, `0.045` |
 
 ```
@@ -309,7 +309,7 @@ interestCents = round(2_000_000 × (1.0022525 - 1)) = 4_505
 **Acceptance Criteria**:
 
 1. WHEN user opens BRFI create/edit form THEN system SHALL show **Coupon frequency** select
-2. WHEN select renders THEN options SHALL be: **Mensal** (`monthly`), **Trimestral** (`quarterly`), **Semestral** (`semi-annual`), **Anual** (`annual`)
+2. WHEN select renders THEN options SHALL be: **Monthly** (`monthly`), **Quarterly** (`quarterly`), **Semi-annual** (`semi-annual`), **Annual** (`annual`)
 3. WHEN user submits THEN `couponFrequency` SHALL be sent in POST/PATCH body
 4. WHEN editing existing holding THEN select SHALL reflect stored value (default `annual` for migrated rows)
 
@@ -359,37 +359,37 @@ interestCents = round(2_000_000 × (1.0022525 - 1)) = 4_505
 
 ## Non-Functional Requirements
 
-| ID | Requirement |
-| --- | --- |
+| ID          | Requirement                                                                                           |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
 | M11-NFR-001 | All coupon math in `bonds-domain`; API orchestrates indicator history load; web renders only (AD-010) |
-| M11-NFR-002 | Migration `009_*` additive only — no column drops or data rewrites (AD-012) |
-| M11-NFR-003 | Integer cents with `Math.round` at final step; no floating-point money in API responses |
-| M11-NFR-004 | Reuse `couponSchedule.ts` for frequency helpers and date generation; do not fork bond schedule logic |
-| M11-NFR-005 | Index-linked estimates degrade to `null` on history gaps — never silent latest-value fallback |
-| M11-NFR-006 | Existing BRFI interest payment CRUD and routes remain backward compatible |
-| M11-NFR-007 | Domain + API tests cover all four indexing types and Examples A–D |
+| M11-NFR-002 | Migration `009_*` additive only — no column drops or data rewrites (AD-012)                           |
+| M11-NFR-003 | Integer cents with `Math.round` at final step; no floating-point money in API responses               |
+| M11-NFR-004 | Reuse `couponSchedule.ts` for frequency helpers and date generation; do not fork bond schedule logic  |
+| M11-NFR-005 | Index-linked estimates degrade to `null` on history gaps — never silent latest-value fallback         |
+| M11-NFR-006 | Existing BRFI interest payment CRUD and routes remain backward compatible                             |
+| M11-NFR-007 | Domain + API tests cover all four indexing types and Examples A–D                                     |
 
 ---
 
 ## Requirement Traceability
 
-| ID | Story | Summary |
-| --- | --- | --- |
-| M11-001 | P1 Domain | PRE_FIXED per-period formula |
-| M11-002 | P1 Domain | IPCA_SPREAD adjusted principal + real rate |
-| M11-003 | P1 Domain | CDI_PERCENTAGE period accumulation × CDI % |
-| M11-004 | P1 Domain | SELIC period accumulation |
-| M11-005 | P1 Domain | Null estimate on insufficient indicator history |
-| M11-006 | P1 Domain | Examples A–D test conformance |
-| M11-007 | P1 Frequency | Migration `009_*` + default `annual` |
-| M11-008 | P1 Frequency | API CRUD accepts/returns `couponFrequency` |
-| M11-009 | P1 API | `expectedInterestAmountCents` on BRFI GET |
-| M11-010 | P1 Dashboard | Frequency-based dates + per-period amounts |
+| ID      | Story        | Summary                                                                           |
+| ------- | ------------ | --------------------------------------------------------------------------------- |
+| M11-001 | P1 Domain    | PRE_FIXED per-period formula                                                      |
+| M11-002 | P1 Domain    | IPCA_SPREAD adjusted principal + real rate                                        |
+| M11-003 | P1 Domain    | CDI_PERCENTAGE period accumulation × CDI %                                        |
+| M11-004 | P1 Domain    | SELIC period accumulation                                                         |
+| M11-005 | P1 Domain    | Null estimate on insufficient indicator history                                   |
+| M11-006 | P1 Domain    | Examples A–D test conformance                                                     |
+| M11-007 | P1 Frequency | Migration `009_*` + default `annual`                                              |
+| M11-008 | P1 Frequency | API CRUD accepts/returns `couponFrequency`                                        |
+| M11-009 | P1 API       | `expectedInterestAmountCents` on BRFI GET                                         |
+| M11-010 | P1 Dashboard | Frequency-based dates + per-period amounts                                        |
 | M11-011 | P1 Dashboard | Remove `brFiAnnualInterestCents` / `generateBrFiInterestDates` from forecast path |
-| M11-012 | P2 Web | BrFiForm frequency select (PT labels) |
-| M11-013 | P2 Web | Interest section shows API estimate |
-| M11-014 | P3 Tests | Example + edge-case domain tests |
-| M11-015 | P3 Docs | ARCHITECTURE / API-FIRST / FRONTEND updates on ship |
+| M11-012 | P2 Web       | BrFiForm frequency select (PT labels)                                             |
+| M11-013 | P2 Web       | Interest section shows API estimate                                               |
+| M11-014 | P3 Tests     | Example + edge-case domain tests                                                  |
+| M11-015 | P3 Docs      | ARCHITECTURE / API-FIRST / FRONTEND updates on ship                               |
 
 ---
 
@@ -402,7 +402,7 @@ interestCents = round(2_000_000 × (1.0022525 - 1)) = 4_505
 - [ ] SELIC quarterly: per-period compound matches Example D pattern
 - [ ] Index-linked holding with gap in indicator history: `expectedInterestAmountCents` is `null`
 - [ ] Dashboard upcoming INTEREST events show per-date amounts at correct frequency
-- [ ] BrFiForm: Mensal / Trimestral / Semestral / Anual labels; saves frequency
+- [ ] BrFiForm: Monthly / Quarterly / Semi-annual / Annual labels; saves frequency
 - [ ] Interest payment section shows estimate from API; no web-side math
 - [ ] `npm run test` and `npm run check:docs` pass
 

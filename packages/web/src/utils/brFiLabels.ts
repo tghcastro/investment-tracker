@@ -35,10 +35,10 @@ export const INDEXING_TYPE_OPTIONS = (Object.keys(INDEXING_TYPE_LABELS) as Index
 );
 
 export const COUPON_FREQUENCY_LABELS: Record<CouponFrequency, string> = {
-  monthly: 'Mensal',
-  quarterly: 'Trimestral',
-  'semi-annual': 'Semestral',
-  annual: 'Anual',
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  'semi-annual': 'Semi-annual',
+  annual: 'Annual',
 };
 
 export const COUPON_FREQUENCY_OPTIONS = (

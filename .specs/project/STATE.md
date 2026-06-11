@@ -23,7 +23,7 @@
 
 ### AD-012: M10–M16 planning decisions (2026-06-06)
 
-**Decision:** (1) "Add currency" = **currency quotes** modal, UI-only continue-creating. (2) BRFI `couponFrequency` = bonds enum; UI **Mensal / Trimestral / Semestral / Anual**; migration default `annual`. (3) Index-linked coupon math uses **indicator history accumulated over each coupon period** (per M11 spec examples), not latest-value shortcut. (4) DB file picker: **prompt each session** — no persisted path across API restarts. (5) DB picker = app feature (DEV + PROD), not Docker-only. (6) Ship order: M10 → M11 → M13 → M14 → M15 → M16 → **M12 last** (v1.8.0). (7) **Retrocompatibility:** additive migrations only; existing DBs/backups must upgrade in place.
+**Decision:** (1) "Add currency" = **currency quotes** modal, UI-only continue-creating. (2) BRFI `couponFrequency` = bonds enum; UI **Monthly / Quarterly / Semi-annual / Annual**; migration default `annual`. (3) Index-linked coupon math uses **indicator history accumulated over each coupon period** (per M11 spec examples), not latest-value shortcut. (4) DB file picker: **prompt each session** — no persisted path across API restarts. (5) DB picker = app feature (DEV + PROD), not Docker-only. (6) Ship order: M10 → M11 → M13 → M14 → M15 → M16 → **M12 last** (v1.8.0). (7) **Retrocompatibility:** additive migrations only; existing DBs/backups must upgrade in place.
 **Reason:** User confirmations on open questions.
 **Trade-off:** Session DB picker means re-upload after API restart; period-based indicator math needs M8 history gaps handled gracefully (null estimate).
 **Impact:** M11 domain/API design; M12 no persistence layer; release map in ROADMAP.
@@ -109,9 +109,9 @@ _None yet._
 
 ## Quick Tasks Completed
 
-| #   | Description              | Date       | Commit | Status  |
-| --- | ------------------------ | ---------- | ------ | ------- |
-| —   | —                        | —          | —      | —       |
+| #   | Description | Date | Commit | Status |
+| --- | ----------- | ---- | ------ | ------ |
+| —   | —           | —    | —      | —      |
 
 ---
 

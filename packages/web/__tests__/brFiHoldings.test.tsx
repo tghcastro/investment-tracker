@@ -281,7 +281,7 @@ describe('BrFiForm indexing fields', () => {
     expect(screen.queryByLabelText('Market indicator')).not.toBeInTheDocument();
   });
 
-  it('shows coupon frequency options in Portuguese', () => {
+  it('shows coupon frequency options in English', () => {
     mockIndicatorApi('INTEREST_RATE');
 
     render(
@@ -289,10 +289,10 @@ describe('BrFiForm indexing fields', () => {
     );
 
     expect(screen.getByLabelText('Coupon frequency')).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Mensal' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Trimestral' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Semestral' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Anual' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Monthly' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Quarterly' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Semi-annual' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Annual' })).toBeInTheDocument();
   });
 
   it('pre-selects default indicator slug from API list', async () => {

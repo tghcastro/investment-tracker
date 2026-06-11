@@ -62,8 +62,8 @@ ALTER TABLE `br_fi_holdings`
   ADD COLUMN `coupon_frequency` text NOT NULL DEFAULT 'annual';
 ```
 
-| Column | Type | Notes |
-| --- | --- | --- |
+| Column             | Type          | Notes                                                                     |
+| ------------------ | ------------- | ------------------------------------------------------------------------- |
 | `coupon_frequency` | text NOT NULL | Same enum as bonds: `monthly` \| `quarterly` \| `semi-annual` \| `annual` |
 
 **Drizzle:** extend `brFiHoldings` in `packages/api/src/schema.ts` with `couponFrequency: text('coupon_frequency').notNull().default('annual')`.
@@ -116,10 +116,10 @@ export function indicatorAccumulationFactor(values: IndicatorValueRow[]): number
 
 ### Expected observation dates (insufficient-history rule — M11-005)
 
-| Indicator cadence | Rule |
-| --- | --- |
-| **Monthly (IPCA / INFLATION)** | For each calendar month `M` with any day in `(periodStart, periodEnd]`, require ≥1 row with `valueDate` in that month (YYYY-MM). Missing month → period not computable. |
-| **Daily (CDI / SELIC / INTEREST_RATE)** | Require ≥1 row with `periodStart < valueDate <= periodEnd`. Accumulate **all** rows in range (product formula). Zero rows → not computable. |
+| Indicator cadence                       | Rule                                                                                                                                                                    |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Monthly (IPCA / INFLATION)**          | For each calendar month `M` with any day in `(periodStart, periodEnd]`, require ≥1 row with `valueDate` in that month (YYYY-MM). Missing month → period not computable. |
+| **Daily (CDI / SELIC / INTEREST_RATE)** | Require ≥1 row with `periodStart < valueDate <= periodEnd`. Accumulate **all** rows in range (product formula). Zero rows → not computable.                             |
 
 **Duplicate `valueDate`:** If multiple rows share a date, use the row with the **latest `createdAt`** when loaded from API; domain tests pass deduped arrays. Repo query: `ORDER BY value_date, id` and keep last per date.
 
@@ -209,11 +209,11 @@ export function brFiInterestEvents(
 
 ### Deprecate (forecast path only)
 
-| Symbol | Action |
-| --- | --- |
-| `brFiAnnualInterestCents` | Stop calling from repo/dashboard; keep exported until M11 P3 if external, else remove |
-| `brFiEffectiveAnnualRatePercent` | Same — dashboard no longer uses annual shortcut |
-| `generateBrFiInterestDates` | Replace with `brFiInterestEvents` + `generateEstimatedCouponDates` |
+| Symbol                           | Action                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------- |
+| `brFiAnnualInterestCents`        | Stop calling from repo/dashboard; keep exported until M11 P3 if external, else remove |
+| `brFiEffectiveAnnualRatePercent` | Same — dashboard no longer uses annual shortcut                                       |
+| `generateBrFiInterestDates`      | Replace with `brFiInterestEvents` + `generateEstimatedCouponDates`                    |
 
 ---
 
@@ -232,12 +232,12 @@ export function brFiInterestEvents(
 
 ### Repo (`packages/api/src/repo.ts`)
 
-| Area | Change |
-| --- | --- |
-| BRFI insert/update | Persist `coupon_frequency`; map to/from domain |
-| BRFI list/get | Include `couponFrequency`; compute `expectedInterestAmountCents` via domain helper |
-| Indicator load | New helper `loadIndicatorValuesForHolding(holdingId, from, to)` — query `market_indicator_values` for holding's `market_indicator_id` in date range (batch for dashboard) |
-| `getDashboard` | BRFI income + upcoming: call `brFiInterestEvents` instead of `brFiAnnualInterestCents` + `generateBrFiInterestDates`; skip events where amount is `null`; increment `holdingsMissingIndicator` when index-linked and no computable events in range |
+| Area               | Change                                                                                                                                                                                                                                             |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BRFI insert/update | Persist `coupon_frequency`; map to/from domain                                                                                                                                                                                                     |
+| BRFI list/get      | Include `couponFrequency`; compute `expectedInterestAmountCents` via domain helper                                                                                                                                                                 |
+| Indicator load     | New helper `loadIndicatorValuesForHolding(holdingId, from, to)` — query `market_indicator_values` for holding's `market_indicator_id` in date range (batch for dashboard)                                                                          |
+| `getDashboard`     | BRFI income + upcoming: call `brFiInterestEvents` instead of `brFiAnnualInterestCents` + `generateBrFiInterestDates`; skip events where amount is `null`; increment `holdingsMissingIndicator` when index-linked and no computable events in range |
 
 ### Serialize (`packages/api/src/routes/br-fi-holdings/serialize.ts`)
 
@@ -262,12 +262,12 @@ No response shape change — amounts and dates change internally. INTEREST upcom
 
 ## Web Changes
 
-| File | Change |
-| --- | --- |
-| `packages/web/src/types/api.ts` | `couponFrequency`, `expectedInterestAmountCents` on `ApiBrFiHolding` |
-| `packages/web/src/components/BrFiForm.tsx` | Select **Frequência de cupom** — Mensal / Trimestral / Semestral / Anual; include in submit payload |
-| `packages/web/src/components/BrFiInterestPaymentsSection.tsx` | Estimate banner from `holding.expectedInterestAmountCents` (pattern: `CouponPaymentsSection`) |
-| `packages/web/src/utils/brFiLabels.ts` | Optional `COUPON_FREQUENCY_OPTIONS` PT labels (reuse bond labels if shared) |
+| File                                                          | Change                                                                                                 |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `packages/web/src/types/api.ts`                               | `couponFrequency`, `expectedInterestAmountCents` on `ApiBrFiHolding`                                   |
+| `packages/web/src/components/BrFiForm.tsx`                    | Select **Frequência de cupom** — Monthly / Quarterly / Semi-annual / Annual; include in submit payload |
+| `packages/web/src/components/BrFiInterestPaymentsSection.tsx` | Estimate banner from `holding.expectedInterestAmountCents` (pattern: `CouponPaymentsSection`)          |
+| `packages/web/src/utils/brFiLabels.ts`                        | Optional `COUPON_FREQUENCY_OPTIONS` PT labels (reuse bond labels if shared)                            |
 
 No dashboard web changes — Home already consumes `/api/dashboard`.
 
@@ -275,13 +275,13 @@ No dashboard web changes — Home already consumes `/api/dashboard`.
 
 ## Test Strategy
 
-| Layer | Focus | Requirement IDs |
-| --- | --- | --- |
-| **Domain unit** | Examples A–D ±1 cent; PRE_FIXED/IPCA/CDI/SELIC; null on gap; first/last coupon period | M11-001–006, M11-014 |
-| **Migration** | Fresh DB + seeded pre-M11 fixture → column exists, default `annual` | M11-007 |
-| **API repo** | CRUD frequency; GET estimate pre-fixed Example A; sparse history → `null` | M11-008, M11-009 |
-| **Dashboard integration** | Semi-annual pre-fixed → 2 events/year @ 60_000; CDI monthly varying amounts | M11-010 |
-| **Web component** | Form PT labels + payload; interest section estimate render | M11-012, M11-013 |
+| Layer                     | Focus                                                                                 | Requirement IDs      |
+| ------------------------- | ------------------------------------------------------------------------------------- | -------------------- |
+| **Domain unit**           | Examples A–D ±1 cent; PRE_FIXED/IPCA/CDI/SELIC; null on gap; first/last coupon period | M11-001–006, M11-014 |
+| **Migration**             | Fresh DB + seeded pre-M11 fixture → column exists, default `annual`                   | M11-007              |
+| **API repo**              | CRUD frequency; GET estimate pre-fixed Example A; sparse history → `null`             | M11-008, M11-009     |
+| **Dashboard integration** | Semi-annual pre-fixed → 2 events/year @ 60_000; CDI monthly varying amounts           | M11-010              |
+| **Web component**         | Form PT labels + payload; interest section estimate render                            | M11-012, M11-013     |
 
 **Fixtures:** Domain tests use inline indicator arrays from spec Examples B–D. API tests seed `market_indicator_values` rows for integration paths.
 
@@ -295,11 +295,11 @@ No dashboard web changes — Home already consumes `/api/dashboard`.
 
 ## Files Touched (implementation reference)
 
-| Package | Primary files |
-| --- | --- |
-| `bonds-domain` | `brFiCouponEngine.ts` (new), `brFi.ts`, `types.ts`, `dashboardForecast.ts`, `index.ts`, `__tests__/brFiCouponEngine.test.ts` |
-| `api` | `migrations/009_*.sql`, `schema.ts`, `repo.ts`, `routes/br-fi-holdings/*`, `__tests__/repo.test.ts`, `__tests__/routes.test.ts` |
-| `web` | `BrFiForm.tsx`, `BrFiInterestPaymentsSection.tsx`, `types/api.ts`, `__tests__/*` |
+| Package        | Primary files                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `bonds-domain` | `brFiCouponEngine.ts` (new), `brFi.ts`, `types.ts`, `dashboardForecast.ts`, `index.ts`, `__tests__/brFiCouponEngine.test.ts`    |
+| `api`          | `migrations/009_*.sql`, `schema.ts`, `repo.ts`, `routes/br-fi-holdings/*`, `__tests__/repo.test.ts`, `__tests__/routes.test.ts` |
+| `web`          | `BrFiForm.tsx`, `BrFiInterestPaymentsSection.tsx`, `types/api.ts`, `__tests__/*`                                                |
 
 ---
 

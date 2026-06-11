@@ -10,11 +10,11 @@
 
 ## 3-Phase Split
 
-| Phase | Tasks | Scope | Gate |
-| --- | --- | --- | --- |
-| **P1 — Domain, migration & API** | T1–T11 | Migration 009, coupon engine, BRFI CRUD, dashboard repo path | `npm run test -w @investment-tracker/bonds-domain && npm run test -w @investment-tracker/api` |
-| **P2 — Web UI** | T12–T16 | BrFiForm frequency, interest estimate display | `npm run test -w @investment-tracker/web` |
-| **P3 — Verify, docs & ship** | T17–T20 | Edge-case tests, codebase docs, monorepo gate | `npm run lint && npm run test && npm run check:docs` |
+| Phase                            | Tasks   | Scope                                                        | Gate                                                                                          |
+| -------------------------------- | ------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| **P1 — Domain, migration & API** | T1–T11  | Migration 009, coupon engine, BRFI CRUD, dashboard repo path | `npm run test -w @investment-tracker/bonds-domain && npm run test -w @investment-tracker/api` |
+| **P2 — Web UI**                  | T12–T16 | BrFiForm frequency, interest estimate display                | `npm run test -w @investment-tracker/web`                                                     |
+| **P3 — Verify, docs & ship**     | T17–T20 | Edge-case tests, codebase docs, monorepo gate                | `npm run lint && npm run test && npm run check:docs`                                          |
 
 **Suggested branches:** `m11-p1-api` → `m11-p2-web` → `m11-p3-ship`
 
@@ -150,7 +150,7 @@
 **Requirement**: M11-012  
 **Depends on**: T12  
 **Where**: `packages/web/src/components/BrFiForm.tsx`, `brFiLabels.ts`, `BrFiFormPage.tsx`, `__tests__/brFiHoldings.test.tsx`  
-**What**: Select with PT labels Mensal / Trimestral / Semestral / Anual; default `annual` on create; edit reflects stored value  
+**What**: Select with PT labels Monthly / Quarterly / Semi-annual / Annual; default `annual` on create; edit reflects stored value  
 **Done when**: Form test submits `couponFrequency` in POST/PATCH body  
 **Commit**: `feat(web): BrFiForm coupon frequency field`
 
@@ -220,21 +220,21 @@
 
 ## Requirement Traceability Matrix
 
-| Task | Requirements |
-| --- | --- |
-| T1 | M11-007 |
-| T2 | M11-008 |
-| T3 | M11-005, M11-NFR-004 |
-| T4 | M11-001, M11-002, M11-003, M11-004, M11-006 |
-| T5 | M11-009, M11-010, M11-011 |
-| T6 | M11-007, M11-008 |
-| T7 | M11-009, M11-NFR-001, M11-NFR-005 |
-| T8 | M11-010, M11-011 |
-| T9 | M11-008, M11-009 |
-| T10 | M11-007, M11-010 |
-| T11 | M11-NFR-007 |
-| T12–T16 | M11-012, M11-013 |
-| T17–T20 | M11-014, M11-015 |
+| Task    | Requirements                                |
+| ------- | ------------------------------------------- |
+| T1      | M11-007                                     |
+| T2      | M11-008                                     |
+| T3      | M11-005, M11-NFR-004                        |
+| T4      | M11-001, M11-002, M11-003, M11-004, M11-006 |
+| T5      | M11-009, M11-010, M11-011                   |
+| T6      | M11-007, M11-008                            |
+| T7      | M11-009, M11-NFR-001, M11-NFR-005           |
+| T8      | M11-010, M11-011                            |
+| T9      | M11-008, M11-009                            |
+| T10     | M11-007, M11-010                            |
+| T11     | M11-NFR-007                                 |
+| T12–T16 | M11-012, M11-013                            |
+| T17–T20 | M11-014, M11-015                            |
 
 ---
 
