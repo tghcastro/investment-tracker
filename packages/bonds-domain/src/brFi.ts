@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { BASE_CURRENCY_CODE } from './currency.js';
 import { requiredIndicatorCategory } from './marketIndicator.js';
+import { couponFrequencySchema } from './validators.js';
 import { currencyCodeSchema } from './validators.js';
 
 export const PRODUCT_TYPES = ['LCI', 'LCA', 'TESOURO_DIRETO', 'CRI', 'CRA'] as const;
@@ -37,6 +38,7 @@ const brFiHoldingFieldsSchema = z.object({
     .number()
     .positive('Pre-fixed rate must be positive')
     .optional(),
+  couponFrequency: couponFrequencySchema.default('annual'),
   purchaseDate: z.coerce.date(),
   maturityDate: z.coerce.date(),
   investedAmountCents: z.number().int().positive('Invested amount must be positive'),

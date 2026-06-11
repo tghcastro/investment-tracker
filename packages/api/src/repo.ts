@@ -21,12 +21,13 @@ import type {
 import {
   BASE_CURRENCY_CODE,
   bondCouponEvents,
-  brFiAnnualInterestCents,
+  brFiInterestEvents,
   bucketAmountsByCalendarYear,
+  buildQuoteRateMap,
   buildQuoteRateMapForHolding,
   convertNativeCents,
+  expectedBrFiInterestAmountCents,
   expectedCouponAmountCents,
-  generateBrFiInterestDates,
   generateEstimatedCouponDates,
   mergeUpcomingEvents,
   normalizeUsdToTargetRate,
@@ -138,6 +139,7 @@ export type InsertBrFiHoldingData = {
   name: string;
   productType: ProductType;
   indexingType: IndexingType;
+  couponFrequency?: CouponFrequency;
   marketIndicatorId?: string;
   cdiPercentage?: number;
   ipcaSpreadPercent?: number;
@@ -153,6 +155,7 @@ export type UpdateBrFiHoldingData = {
   name?: string;
   productType?: ProductType;
   indexingType?: IndexingType;
+  couponFrequency?: CouponFrequency;
   marketIndicatorId?: string;
   cdiPercentage?: number;
   ipcaSpreadPercent?: number;
@@ -217,8 +220,10 @@ export type FxConvertResult = {
 
 export type IncomeSummaryByHolding = {
   holdingId: string;
+  holdingTypeSlug: HoldingTypeSlug;
   issuer: string;
   totalReceived: number;
+  convertedTotalReceived: number | null;
   paymentCount: number;
 };
 
@@ -226,12 +231,19 @@ export type IncomeSummaryPaymentRow = {
   id: string;
   paymentDate: string;
   amount: number;
+  currencyCode: string;
+  convertedAmount: number | null;
   holdingId: string;
+  holdingTypeSlug: HoldingTypeSlug;
   issuer: string;
+  conversionError?: string;
 };
 
 export type IncomeSummary = {
   totalReceived: number;
+  convertedTotalReceived: number | null;
+  convertedCurrency: string;
+  conversionError?: string;
   paymentCount: number;
   byHolding: IncomeSummaryByHolding[];
   payments: IncomeSummaryPaymentRow[];
@@ -286,6 +298,7 @@ export type BondHoldingWithDisplay = BondHolding & {
 export type BrFiHoldingWithDisplay = BrFiHolding & {
   convertedInvestedAmountCents: number | null;
   convertedCurrency: string;
+  expectedInterestAmountCents: number | null;
   conversionError?: string;
 };
 
@@ -458,6 +471,28 @@ function convertAmountAtPurchaseDate(
   return convertNativeCents(amountCents, currencyCode, convertedCurrency, quoteMap);
 }
 
+function convertAmountAtPaymentDate(
+  amountCents: number,
+  currencyCode: string,
+  paymentDateIso: string,
+  convertedCurrency: string,
+  quoteHistory: QuoteHistory
+): number | null {
+  const quoteMap = buildQuoteRateMap(quoteHistory, paymentDateIso);
+  return convertNativeCents(amountCents, currencyCode, convertedCurrency, quoteMap);
+}
+
+function emptyIncomeSummary(convertedCurrency: string): IncomeSummary {
+  return {
+    totalReceived: 0,
+    convertedTotalReceived: 0,
+    convertedCurrency,
+    paymentCount: 0,
+    byHolding: [],
+    payments: [],
+  };
+}
+
 function emptyDashboardResponse(convertedCurrency: string): DashboardResponse {
   return {
     summary: {
@@ -574,6 +609,7 @@ function mapBrFiHolding(
     cdiPercentage: row.cdiPercentage ?? undefined,
     ipcaSpreadPercent: row.ipcaSpreadPercent ?? undefined,
     preFixedRatePercent: row.preFixedRatePercent ?? undefined,
+    couponFrequency: row.couponFrequency as CouponFrequency,
     purchaseDate: row.purchaseDate,
     maturityDate: row.maturityDate,
     investedAmountCents: row.investedAmountCents,
@@ -886,6 +922,7 @@ export function createRepo(database: Db) {
 
   function attachConvertedFieldsToBrFiHolding(
     holding: BrFiHolding,
+    expectedInterestAmountCents: number | null,
     convertedCurrency: string,
     quoteHistory: QuoteHistory
   ): BrFiHoldingWithDisplay {
@@ -901,6 +938,7 @@ export function createRepo(database: Db) {
       ...holding,
       convertedInvestedAmountCents,
       convertedCurrency,
+      expectedInterestAmountCents,
       ...(conversionError ? { conversionError } : {}),
     };
   }
@@ -1595,6 +1633,113 @@ export function createRepo(database: Db) {
     return mapBrFiHolding(row, holdingTypeRow, marketIndicator);
   }
 
+  function loadIndicatorValuesByIndicatorIds(
+    indicatorIds: number[],
+    fromDate: string,
+    toDate: string
+  ): Map<number, Array<{ valueDate: string; value: number }>> {
+    if (indicatorIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = database
+      .select({
+        indicatorId: marketIndicatorValues.indicatorId,
+        valueDate: marketIndicatorValues.valueDate,
+        value: marketIndicatorValues.value,
+        id: marketIndicatorValues.id,
+      })
+      .from(marketIndicatorValues)
+      .where(
+        and(
+          inArray(marketIndicatorValues.indicatorId, indicatorIds),
+          gte(marketIndicatorValues.valueDate, fromDate),
+          lte(marketIndicatorValues.valueDate, toDate)
+        )
+      )
+      .orderBy(
+        marketIndicatorValues.indicatorId,
+        marketIndicatorValues.valueDate,
+        marketIndicatorValues.id
+      )
+      .all();
+
+    const byIndicator = new Map<number, Map<string, { valueDate: string; value: number }>>();
+    for (const row of rows) {
+      const byDate = byIndicator.get(row.indicatorId) ?? new Map();
+      byDate.set(row.valueDate, { valueDate: row.valueDate, value: row.value });
+      byIndicator.set(row.indicatorId, byDate);
+    }
+
+    const result = new Map<number, Array<{ valueDate: string; value: number }>>();
+    for (const [indicatorId, byDate] of byIndicator.entries()) {
+      result.set(
+        indicatorId,
+        [...byDate.values()].sort((a, b) => a.valueDate.localeCompare(b.valueDate))
+      );
+    }
+    return result;
+  }
+
+  function expectedBrFiInterestByHoldingId(
+    holdings: BrFiHolding[],
+    asOfDate: string
+  ): Map<string, number | null> {
+    const fromDateByIndicator = new Map<number, string>();
+    let maxToDate = asOfDate;
+
+    for (const holding of holdings) {
+      const maturityIso = toIsoDateString(holding.maturityDate);
+      if (maturityIso > maxToDate) {
+        maxToDate = maturityIso;
+      }
+      if (!holding.marketIndicatorId) {
+        continue;
+      }
+      const indicatorId = parseId(holding.marketIndicatorId, 'market indicator id');
+      const purchaseIso = toIsoDateString(holding.purchaseDate);
+      const currentMin = fromDateByIndicator.get(indicatorId);
+      if (!currentMin || purchaseIso < currentMin) {
+        fromDateByIndicator.set(indicatorId, purchaseIso);
+      }
+    }
+
+    const indicatorIds = [...fromDateByIndicator.keys()];
+    const globalFromDate =
+      indicatorIds.length > 0
+        ? [...fromDateByIndicator.values()].sort((a, b) => a.localeCompare(b))[0]!
+        : asOfDate;
+    const valuesByIndicator = loadIndicatorValuesByIndicatorIds(
+      indicatorIds,
+      globalFromDate,
+      maxToDate
+    );
+
+    const result = new Map<string, number | null>();
+    for (const holding of holdings) {
+      const indicatorValues = holding.marketIndicatorId
+        ? (valuesByIndicator.get(parseId(holding.marketIndicatorId, 'market indicator id')) ?? [])
+        : [];
+      const amount = expectedBrFiInterestAmountCents(
+        {
+          investedAmountCents: holding.investedAmountCents,
+          indexingType: holding.indexingType,
+          couponFrequency: holding.couponFrequency,
+          preFixedRatePercent: holding.preFixedRatePercent,
+          cdiPercentage: holding.cdiPercentage,
+          ipcaSpreadPercent: holding.ipcaSpreadPercent,
+          purchaseDate: holding.purchaseDate,
+          maturityDate: holding.maturityDate,
+        },
+        indicatorValues,
+        asOfDate
+      );
+      result.set(holding.id, amount);
+    }
+
+    return result;
+  }
+
   async function insertBrFiHolding(data: InsertBrFiHoldingData): Promise<BrFiHolding> {
     await assertAccountNotArchived(database, data.accountId);
     const accountId = parseId(data.accountId, 'account id');
@@ -1628,6 +1773,7 @@ export function createRepo(database: Db) {
           indexingType: data.indexingType,
           marketIndicatorId,
           ...indexingParams,
+          couponFrequency: data.couponFrequency ?? 'annual',
           purchaseDate: data.purchaseDate,
           maturityDate: data.maturityDate,
           investedAmountCents: data.investedAmountCents,
@@ -1707,6 +1853,9 @@ export function createRepo(database: Db) {
     if (data.indexingType !== undefined) {
       updates.indexingType = data.indexingType;
     }
+    if (data.couponFrequency !== undefined) {
+      updates.couponFrequency = data.couponFrequency;
+    }
     if (data.purchaseDate !== undefined) {
       updates.purchaseDate = data.purchaseDate;
     }
@@ -1783,10 +1932,16 @@ export function createRepo(database: Db) {
     const holdings = await Promise.all(
       rows.map((row) => mapBrFiRowWithIndicator(row.brFi, row.holdingType))
     );
+    const expectedByHolding = expectedBrFiInterestByHoldingId(holdings, todayUtcIsoDate());
     const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
     const quoteHistory = await loadGroupedQuoteHistory();
     return holdings.map((holding) =>
-      attachConvertedFieldsToBrFiHolding(holding, convertedCurrency, quoteHistory)
+      attachConvertedFieldsToBrFiHolding(
+        holding,
+        expectedByHolding.get(holding.id) ?? null,
+        convertedCurrency,
+        quoteHistory
+      )
     );
   }
 
@@ -1875,9 +2030,15 @@ export function createRepo(database: Db) {
     if (!holding) {
       return null;
     }
+    const expectedByHolding = expectedBrFiInterestByHoldingId([holding], todayUtcIsoDate());
     const convertedCurrency = resolveDisplayCurrency(options?.displayCurrency);
     const quoteHistory = await loadGroupedQuoteHistory();
-    return attachConvertedFieldsToBrFiHolding(holding, convertedCurrency, quoteHistory);
+    return attachConvertedFieldsToBrFiHolding(
+      holding,
+      expectedByHolding.get(holding.id) ?? null,
+      convertedCurrency,
+      quoteHistory
+    );
   }
 
   async function getBondHoldingWithConverted(
@@ -2139,6 +2300,35 @@ export function createRepo(database: Db) {
     }
 
     const quoteHistory = await loadGroupedQuoteHistory();
+    const brFiIndicatorValuesByHolding = new Map<string, Array<{ valueDate: string; value: number }>>();
+    if (brFiHoldingsList.length > 0) {
+      const indicatorIds = [
+        ...new Set(
+          brFiHoldingsList
+            .map((holding) =>
+              holding.marketIndicatorId
+                ? parseId(holding.marketIndicatorId, 'market indicator id')
+                : null
+            )
+            .filter((value): value is number => value !== null)
+        ),
+      ];
+      const minPurchaseDate =
+        brFiHoldingsList
+          .map((holding) => toIsoDateString(holding.purchaseDate))
+          .sort((a, b) => a.localeCompare(b))[0] ?? from;
+      const valuesByIndicator = loadIndicatorValuesByIndicatorIds(indicatorIds, minPurchaseDate, to);
+      for (const holding of brFiHoldingsList) {
+        if (!holding.marketIndicatorId) {
+          brFiIndicatorValuesByHolding.set(holding.id, []);
+          continue;
+        }
+        brFiIndicatorValuesByHolding.set(
+          holding.id,
+          valuesByIndicator.get(parseId(holding.marketIndicatorId, 'market indicator id')) ?? []
+        );
+      }
+    }
     let conversionError: string | null = null;
 
     let totalFaceValueCents = 0;
@@ -2316,36 +2506,36 @@ export function createRepo(database: Db) {
 
     for (const holding of brFiHoldingsList) {
       const purchaseDateIso = toIsoDateString(holding.purchaseDate);
-      const latestIndicatorValue = holding.marketIndicator?.latestValue?.value;
-      const interest = brFiAnnualInterestCents(holding.investedAmountCents, holding.indexingType, {
-        preFixedRatePercent: holding.preFixedRatePercent,
-        cdiPercentage: holding.cdiPercentage,
-        ipcaSpreadPercent: holding.ipcaSpreadPercent,
-        latestIndicatorValue,
-      });
-
-      if ('missingIndicator' in interest) {
-        holdingsMissingIndicator += 1;
-        continue;
-      }
-
-      const dates = generateBrFiInterestDates(
-        holding.purchaseDate,
-        holding.maturityDate,
+      const events = brFiInterestEvents(
+        {
+          investedAmountCents: holding.investedAmountCents,
+          indexingType: holding.indexingType,
+          couponFrequency: holding.couponFrequency,
+          preFixedRatePercent: holding.preFixedRatePercent,
+          cdiPercentage: holding.cdiPercentage,
+          ipcaSpreadPercent: holding.ipcaSpreadPercent,
+          purchaseDate: holding.purchaseDate,
+          maturityDate: holding.maturityDate,
+        },
+        brFiIndicatorValuesByHolding.get(holding.id) ?? [],
         from,
         to
       );
 
-      for (const date of dates) {
+      if (holding.indexingType !== 'PRE_FIXED' && events.length === 0) {
+        holdingsMissingIndicator += 1;
+      }
+
+      for (const event of events) {
         nativeIncomeEvents.push({
-          date,
-          amountCents: interest.amountCents,
+          date: event.date,
+          amountCents: event.amountCents,
           kind: 'interest',
           currencyCode: holding.currencyCode,
           purchaseDateIso,
         });
         const convertedAmount = convertAmountAtPurchaseDate(
-          interest.amountCents,
+          event.amountCents,
           holding.currencyCode,
           purchaseDateIso,
           convertedCurrency,
@@ -2355,7 +2545,7 @@ export function createRepo(database: Db) {
           conversionError = 'EXCHANGE_RATE_REQUIRED';
           continue;
         }
-        const year = Number.parseInt(date.slice(0, 4), 10);
+        const year = Number.parseInt(event.date.slice(0, 4), 10);
         const bucket = convertedIncomeByYear.get(year) ?? {
           couponCents: 0,
           interestCents: 0,
@@ -2483,32 +2673,31 @@ export function createRepo(database: Db) {
     }
 
     const interestUpcoming: DashboardUpcomingEvent[] = [];
+    const upcomingFrom = today > from ? today : from;
     for (const holding of brFiHoldingsList) {
-      const latestIndicatorValue = holding.marketIndicator?.latestValue?.value;
-      const interest = brFiAnnualInterestCents(holding.investedAmountCents, holding.indexingType, {
-        preFixedRatePercent: holding.preFixedRatePercent,
-        cdiPercentage: holding.cdiPercentage,
-        ipcaSpreadPercent: holding.ipcaSpreadPercent,
-        latestIndicatorValue,
-      });
-      if ('missingIndicator' in interest) {
-        continue;
-      }
-
-      const dates = generateBrFiInterestDates(
-        holding.purchaseDate,
-        holding.maturityDate,
-        from,
+      const events = brFiInterestEvents(
+        {
+          investedAmountCents: holding.investedAmountCents,
+          indexingType: holding.indexingType,
+          couponFrequency: holding.couponFrequency,
+          preFixedRatePercent: holding.preFixedRatePercent,
+          cdiPercentage: holding.cdiPercentage,
+          ipcaSpreadPercent: holding.ipcaSpreadPercent,
+          purchaseDate: holding.purchaseDate,
+          maturityDate: holding.maturityDate,
+        },
+        brFiIndicatorValuesByHolding.get(holding.id) ?? [],
+        upcomingFrom,
         to
       );
-      for (const date of dates) {
+      for (const event of events) {
         interestUpcoming.push({
-          date,
+          date: event.date,
           type: 'INTEREST',
           holdingKind: 'br-fi',
           holdingId: holding.id,
           label: holding.name,
-          amountCents: interest.amountCents,
+          amountCents: event.amountCents,
           currencyCode: holding.currencyCode,
         });
       }
@@ -2920,17 +3109,23 @@ export function createRepo(database: Db) {
     return true;
   }
 
-  async function getIncomeSummary(from: Date, to: Date): Promise<IncomeSummary> {
+  async function getIncomeSummary(
+    from: Date,
+    to: Date,
+    options?: { displayCurrency?: string }
+  ): Promise<IncomeSummary> {
+    const convertedCurrency = options?.displayCurrency ?? BASE_CURRENCY_CODE;
     const rangeStart = startOfUtcDay(from);
     const rangeEnd = endOfUtcDay(to);
 
-    const rows = database
+    const bondRows = database
       .select({
         id: couponPayments.id,
         paymentDate: couponPayments.paymentDate,
         amount: couponPayments.amount,
         bondHoldingId: couponPayments.bondHoldingId,
         issuer: bondHoldings.issuer,
+        currencyCode: bondHoldings.currencyCode,
       })
       .from(couponPayments)
       .innerJoin(bondHoldings, eq(couponPayments.bondHoldingId, bondHoldings.id))
@@ -2940,61 +3135,160 @@ export function createRepo(database: Db) {
           lte(couponPayments.paymentDate, rangeEnd)
         )
       )
-      .orderBy(desc(couponPayments.paymentDate))
       .all();
 
-    if (rows.length === 0) {
-      return {
-        totalReceived: 0,
-        paymentCount: 0,
-        byHolding: [],
-        payments: [],
-      };
+    const brFiRows = database
+      .select({
+        id: brFiInterestPayments.id,
+        paymentDate: brFiInterestPayments.paymentDate,
+        amount: brFiInterestPayments.amount,
+        brFiHoldingId: brFiInterestPayments.brFiHoldingId,
+        issuer: brFiHoldings.name,
+        currencyCode: brFiHoldings.currencyCode,
+      })
+      .from(brFiInterestPayments)
+      .innerJoin(brFiHoldings, eq(brFiInterestPayments.brFiHoldingId, brFiHoldings.id))
+      .where(
+        and(
+          gte(brFiInterestPayments.paymentDate, rangeStart),
+          lte(brFiInterestPayments.paymentDate, rangeEnd)
+        )
+      )
+      .all();
+
+    type IncomeSummarySourceRow = {
+      id: string;
+      paymentDate: Date;
+      amount: number;
+      currencyCode: string;
+      holdingId: string;
+      holdingTypeSlug: HoldingTypeSlug;
+      issuer: string;
+    };
+
+    const sourceRows: IncomeSummarySourceRow[] = [
+      ...bondRows.map((row) => ({
+        id: String(row.id),
+        paymentDate: row.paymentDate,
+        amount: row.amount,
+        currencyCode: row.currencyCode,
+        holdingId: String(row.bondHoldingId),
+        holdingTypeSlug: 'bond' as const,
+        issuer: row.issuer,
+      })),
+      ...brFiRows.map((row) => ({
+        id: String(row.id),
+        paymentDate: row.paymentDate,
+        amount: row.amount,
+        currencyCode: row.currencyCode,
+        holdingId: String(row.brFiHoldingId),
+        holdingTypeSlug: 'brazilian-fixed-income' as const,
+        issuer: row.issuer,
+      })),
+    ];
+
+    if (sourceRows.length === 0) {
+      return emptyIncomeSummary(convertedCurrency);
     }
 
+    sourceRows.sort((left, right) => {
+      const dateCompare = right.paymentDate.getTime() - left.paymentDate.getTime();
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+      return right.id.localeCompare(left.id);
+    });
+
+    const quoteHistory = await getQuoteHistory();
     let totalReceived = 0;
+    let convertedTotalReceived = 0;
+    let hasConversionError = false;
     const byHoldingMap = new Map<
       string,
-      { issuer: string; totalReceived: number; paymentCount: number }
+      {
+        holdingId: string;
+        holdingTypeSlug: HoldingTypeSlug;
+        issuer: string;
+        totalReceived: number;
+        convertedTotalReceived: number;
+        hasConversionError: boolean;
+        paymentCount: number;
+      }
     >();
 
-    const payments: IncomeSummaryPaymentRow[] = rows.map((row) => {
+    const payments: IncomeSummaryPaymentRow[] = sourceRows.map((row) => {
       totalReceived += row.amount;
+      const paymentDateIso = toIsoDateString(row.paymentDate);
+      const convertedAmount = convertAmountAtPaymentDate(
+        row.amount,
+        row.currencyCode,
+        paymentDateIso,
+        convertedCurrency,
+        quoteHistory
+      );
 
-      const holdingId = String(row.bondHoldingId);
-      const existing = byHoldingMap.get(holdingId);
+      if (convertedAmount === null) {
+        hasConversionError = true;
+      } else {
+        convertedTotalReceived += convertedAmount;
+      }
+
+      const holdingKey = `${row.holdingTypeSlug}:${row.holdingId}`;
+      const existing = byHoldingMap.get(holdingKey);
       if (existing) {
         existing.totalReceived += row.amount;
         existing.paymentCount += 1;
+        if (convertedAmount === null) {
+          existing.hasConversionError = true;
+        } else {
+          existing.convertedTotalReceived += convertedAmount;
+        }
       } else {
-        byHoldingMap.set(holdingId, {
+        byHoldingMap.set(holdingKey, {
+          holdingId: row.holdingId,
+          holdingTypeSlug: row.holdingTypeSlug,
           issuer: row.issuer,
           totalReceived: row.amount,
+          convertedTotalReceived: convertedAmount ?? 0,
+          hasConversionError: convertedAmount === null,
           paymentCount: 1,
         });
       }
 
       return {
-        id: String(row.id),
-        paymentDate: toIsoDateString(row.paymentDate),
+        id: row.id,
+        paymentDate: paymentDateIso,
         amount: row.amount,
-        holdingId,
+        currencyCode: row.currencyCode,
+        convertedAmount,
+        holdingId: row.holdingId,
+        holdingTypeSlug: row.holdingTypeSlug,
         issuer: row.issuer,
+        ...(convertedAmount === null ? { conversionError: 'EXCHANGE_RATE_REQUIRED' as const } : {}),
       };
     });
 
-    const byHolding = [...byHoldingMap.entries()]
-      .map(([holdingId, stats]) => ({
-        holdingId,
-        issuer: stats.issuer,
-        totalReceived: stats.totalReceived,
-        paymentCount: stats.paymentCount,
+    const byHolding = [...byHoldingMap.values()]
+      .map((entry) => ({
+        holdingId: entry.holdingId,
+        holdingTypeSlug: entry.holdingTypeSlug,
+        issuer: entry.issuer,
+        totalReceived: entry.totalReceived,
+        convertedTotalReceived: entry.hasConversionError ? null : entry.convertedTotalReceived,
+        paymentCount: entry.paymentCount,
       }))
       .filter((entry) => entry.totalReceived > 0)
-      .sort((a, b) => b.totalReceived - a.totalReceived);
+      .sort((a, b) => {
+        const leftTotal = a.convertedTotalReceived ?? a.totalReceived;
+        const rightTotal = b.convertedTotalReceived ?? b.totalReceived;
+        return rightTotal - leftTotal;
+      });
 
     return {
       totalReceived,
+      convertedTotalReceived: hasConversionError ? null : convertedTotalReceived,
+      convertedCurrency,
+      ...(hasConversionError ? { conversionError: 'EXCHANGE_RATE_REQUIRED' as const } : {}),
       paymentCount: payments.length,
       byHolding,
       payments,

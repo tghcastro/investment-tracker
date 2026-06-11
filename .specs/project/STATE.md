@@ -1,7 +1,7 @@
 # State
 
 **Last Updated:** 2026-06-11
-**Current Work:** **M10** specified — approve spec → design/tasks → implement → **v1.2.0**. See [m10 spec](../features/active/m10-navigation-tools/spec.md).
+**Current Work:** **M10** specified — approve spec → design/tasks → **v1.2.0**. **M11** design + tasks drafted — approve → **v1.3.0**. See [m10 spec](../features/active/m10-navigation-tools/spec.md), [m11 spec](../features/active/m11-brfi-coupon-engine/spec.md), [m11 design](../features/active/m11-brfi-coupon-engine/design.md), [m11 tasks](../features/active/m11-brfi-coupon-engine/tasks.md).
 
 ### AD-010: API-first business rules — web UI only (2026-05-31)
 
@@ -23,7 +23,7 @@
 
 ### AD-012: M10–M16 planning decisions (2026-06-06)
 
-**Decision:** (1) "Add currency" = **currency quotes** modal, UI-only continue-creating. (2) BRFI `couponFrequency` = bonds enum; UI **Mensal / Trimestral / Semestral / Anual**; migration default `annual`. (3) Index-linked coupon math uses **indicator history accumulated over each coupon period** (per M11 spec examples), not latest-value shortcut. (4) DB file picker: **prompt each session** — no persisted path across API restarts. (5) DB picker = app feature (DEV + PROD), not Docker-only. (6) Ship order: M10 → M11 → M13 → M14 → M15 → M16 → **M12 last** (v1.8.0). (7) **Retrocompatibility:** additive migrations only; existing DBs/backups must upgrade in place.
+**Decision:** (1) "Add currency" = **currency quotes** modal, UI-only continue-creating. (2) BRFI `couponFrequency` = bonds enum; UI **Monthly / Quarterly / Semi-annual / Annual**; migration default `annual`. (3) Index-linked coupon math uses **indicator history accumulated over each coupon period** (per M11 spec examples), not latest-value shortcut. (4) DB file picker: **prompt each session** — no persisted path across API restarts. (5) DB picker = app feature (DEV + PROD), not Docker-only. (6) Ship order: M10 → M11 → M13 → M14 → M15 → M16 → **M12 last** (v1.8.0). (7) **Retrocompatibility:** additive migrations only; existing DBs/backups must upgrade in place.
 **Reason:** User confirmations on open questions.
 **Trade-off:** Session DB picker means re-upload after API restart; period-based indicator math needs M8 history gaps handled gracefully (null estimate).
 **Impact:** M11 domain/API design; M12 no persistence layer; release map in ROADMAP.
@@ -109,9 +109,9 @@ _None yet._
 
 ## Quick Tasks Completed
 
-| #   | Description              | Date       | Commit | Status  |
-| --- | ------------------------ | ---------- | ------ | ------- |
-| —   | —                        | —          | —      | —       |
+| #   | Description | Date | Commit | Status |
+| --- | ----------- | ---- | ------ | ------ |
+| —   | —           | —    | —      | —      |
 
 ---
 
@@ -127,7 +127,8 @@ _None yet._
 
 - [ ] Approve M10 spec → design + tasks (2026-06-11)
 - [x] Specify M10 — `.specs/features/active/m10-navigation-tools/spec.md` (2026-06-11)
-- [ ] Specify M11 — BRFI coupon engine
+- [x] Specify M11 — `.specs/features/active/m11-brfi-coupon-engine/spec.md` (2026-06-11)
+- [ ] Approve M11 spec → design + tasks — [design](../features/active/m11-brfi-coupon-engine/design.md), [tasks](../features/active/m11-brfi-coupon-engine/tasks.md) (2026-06-11)
 - [ ] Specify M12 — database file picker
 - [ ] Specify M13 — CSV currency quotes import
 - [ ] Specify M14 — CSV market indicators import

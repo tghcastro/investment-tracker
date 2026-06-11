@@ -1246,6 +1246,8 @@ describe('API routes', () => {
     const body = response.json();
     expect(body).toMatchObject({
       totalReceived: expect.any(Number),
+      convertedTotalReceived: expect.any(Number),
+      convertedCurrency: expect.any(String),
       paymentCount: expect.any(Number),
       byHolding: expect.any(Array),
       payments: expect.any(Array),
@@ -1274,12 +1276,16 @@ describe('API routes', () => {
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.totalReceived).toBe(21250);
+    expect(body.convertedTotalReceived).toBe(21250);
+    expect(body.convertedCurrency).toBe('USD');
     expect(body.paymentCount).toBe(1);
     expect(body.byHolding).toEqual([
       {
         holdingId: holding.id,
+        holdingTypeSlug: 'bond',
         issuer: 'Coupon Route Issuer',
         totalReceived: 21250,
+        convertedTotalReceived: 21250,
         paymentCount: 1,
       },
     ]);
@@ -1287,8 +1293,160 @@ describe('API routes', () => {
     expect(body.payments[0]).toMatchObject({
       paymentDate: '2026-03-15',
       amount: 21250,
+      currencyCode: 'USD',
+      convertedAmount: 21250,
       holdingId: holding.id,
+      holdingTypeSlug: 'bond',
     });
+  });
+
+  it('GET /api/portfolio/income-summary includes BRFI interest payments', async () => {
+    const accountResponse = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: { name: 'Income BRFI', currencyCodes: ['USD', 'BRL'] },
+    });
+    const accountId = accountResponse.json().id as string;
+    await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2025-01-15', targetCurrencyCode: 'BRL', rate: 5 },
+    });
+    const indicators = await app.inject({ method: 'GET', url: '/api/market-indicators' });
+    const cdiId = indicators
+      .json()
+      .find((row: { slug: string }) => row.slug === 'CDI')?.id as string;
+
+    const holdingResponse = await app.inject({
+      method: 'POST',
+      url: '/api/br-fi-holdings',
+      payload: {
+        accountId,
+        currencyCode: 'BRL',
+        name: 'Income LCI',
+        productType: 'LCI',
+        indexingType: 'CDI_PERCENTAGE',
+        couponFrequency: 'annual',
+        marketIndicatorId: cdiId,
+        cdiPercentage: 100,
+        purchaseDate: '2025-01-15',
+        maturityDate: '2027-01-15',
+        investedAmountCents: 1_000_000,
+      },
+    });
+    const holdingId = holdingResponse.json().id as string;
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/br-fi-interest-payments',
+      payload: {
+        brFiHoldingId: holdingId,
+        paymentDate: '2026-04-10',
+        amount: 15000,
+      },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/income-summary?from=2026-01-01&to=2026-12-31',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.totalReceived).toBe(15000);
+    expect(body.convertedTotalReceived).toBe(3000);
+    expect(body.convertedCurrency).toBe('USD');
+    expect(body.paymentCount).toBe(1);
+    expect(body.byHolding).toEqual([
+      {
+        holdingId,
+        holdingTypeSlug: 'brazilian-fixed-income',
+        issuer: 'Income LCI',
+        totalReceived: 15000,
+        convertedTotalReceived: 3000,
+        paymentCount: 1,
+      },
+    ]);
+    expect(body.payments[0]).toMatchObject({
+      paymentDate: '2026-04-10',
+      amount: 15000,
+      currencyCode: 'BRL',
+      convertedAmount: 3000,
+      holdingId,
+      holdingTypeSlug: 'brazilian-fixed-income',
+      issuer: 'Income LCI',
+    });
+  });
+
+  it('GET /api/portfolio/income-summary converts amounts with displayCurrency', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2024-01-01', targetCurrencyCode: 'EUR', rate: 0.5 },
+    });
+    await app.inject({
+      method: 'POST',
+      url: '/api/currency-quotes',
+      payload: { quoteDate: '2025-06-15', targetCurrencyCode: 'EUR', rate: 0.5 },
+    });
+
+    const accountResponse = await app.inject({
+      method: 'POST',
+      url: '/api/accounts',
+      payload: { name: 'Income FX Route', currencyCodes: ['USD', 'EUR'] },
+    });
+    const accountId = accountResponse.json().id as string;
+
+    const holdingResponse = await app.inject({
+      method: 'POST',
+      url: '/api/holdings',
+      payload: {
+        accountId,
+        currencyCode: 'EUR',
+        issuer: 'Euro Income Bond',
+        faceValue: 100_000,
+        couponRate: 4,
+        couponFrequency: 'semi-annual',
+        maturityDate: '2030-01-01',
+        purchaseDate: '2024-01-01',
+      },
+    });
+    const holdingId = holdingResponse.json().id as string;
+
+    const repo = createRepo(database);
+    await repo.insertCouponPayment({
+      bondHoldingId: holdingId,
+      paymentDate: new Date(Date.UTC(2025, 5, 15)),
+      amount: 10_000,
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/income-summary?from=2025-01-01&to=2025-12-31&displayCurrency=USD',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      convertedCurrency: 'USD',
+      convertedTotalReceived: 20_000,
+      payments: [
+        expect.objectContaining({
+          amount: 10_000,
+          currencyCode: 'EUR',
+          convertedAmount: 20_000,
+        }),
+      ],
+    });
+  });
+
+  it('GET /api/portfolio/income-summary rejects invalid displayCurrency', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/portfolio/income-summary?displayCurrency=US',
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().code).toBe('VALIDATION_ERROR');
   });
 
   it('GET /api/portfolio/income-summary returns 400 when from > to', async () => {
@@ -1783,6 +1941,7 @@ describe('M6 multi-currency routes', () => {
       name: 'LCI Banco X',
       productType: 'LCI',
       indexingType: 'CDI_PERCENTAGE',
+      couponFrequency: 'annual',
       marketIndicatorId: await getIndicatorId('CDI'),
       cdiPercentage: 105,
       purchaseDate: '2025-01-15',
@@ -1805,12 +1964,14 @@ describe('M6 multi-currency routes', () => {
         name: 'LCI Banco X',
         productType: 'LCI',
         indexingType: 'CDI_PERCENTAGE',
+        couponFrequency: 'annual',
         cdiPercentage: 105,
         purchaseDate: '2025-01-15',
         maturityDate: '2027-01-15',
         investedAmountCents: 10_000_000,
         currencyCode: 'BRL',
         accountId,
+        expectedInterestAmountCents: null,
       });
       expect(body.holdingType).toMatchObject({
         slug: 'brazilian-fixed-income',
@@ -1879,6 +2040,7 @@ describe('M6 multi-currency routes', () => {
       expect(getResponse.json()).toMatchObject({
         id: posted.id,
         name: 'LCI Banco X',
+        couponFrequency: 'annual',
       });
     });
 
@@ -1902,6 +2064,34 @@ describe('M6 multi-currency routes', () => {
         name: 'Renamed LCI',
         investedAmountCents: 11_000_000,
       });
+    });
+
+    it('GET /api/br-fi-holdings returns expectedInterestAmountCents from API math', async () => {
+      const accountId = await createBrFiAccountWithQuote();
+      const postResponse = await app.inject({
+        method: 'POST',
+        url: '/api/br-fi-holdings',
+        payload: {
+          accountId,
+          currencyCode: 'BRL',
+          name: 'Pre-fixed Example A',
+          productType: 'LCI',
+          indexingType: 'PRE_FIXED',
+          couponFrequency: 'semi-annual',
+          preFixedRatePercent: 12,
+          purchaseDate: '2025-07-01',
+          maturityDate: '2027-07-01',
+          investedAmountCents: 1_000_000,
+        },
+      });
+      expect(postResponse.statusCode).toBe(201);
+
+      const listResponse = await app.inject({ method: 'GET', url: '/api/br-fi-holdings' });
+      expect(listResponse.statusCode).toBe(200);
+      const row = (listResponse.json() as Array<{ name: string; expectedInterestAmountCents: number }>).find(
+        (entry) => entry.name === 'Pre-fixed Example A'
+      );
+      expect(row?.expectedInterestAmountCents).toBe(60_000);
     });
 
     it('DELETE /api/br-fi-holdings/:id returns 204', async () => {

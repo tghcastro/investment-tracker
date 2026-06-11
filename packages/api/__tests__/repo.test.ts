@@ -336,6 +336,8 @@ describe('Repo integration', () => {
     );
     expect(summary).toEqual({
       totalReceived: 0,
+      convertedTotalReceived: 0,
+      convertedCurrency: 'USD',
       paymentCount: 0,
       byHolding: [],
       payments: [],
@@ -390,24 +392,227 @@ describe('Repo integration', () => {
     );
 
     expect(summary.totalReceived).toBe(5_750);
+    expect(summary.convertedTotalReceived).toBe(5_750);
+    expect(summary.convertedCurrency).toBe('USD');
     expect(summary.paymentCount).toBe(3);
     expect(summary.byHolding).toEqual([
       {
         holdingId: holdingA.id,
+        holdingTypeSlug: 'bond',
         issuer: 'Issuer A',
         totalReceived: 4_250,
+        convertedTotalReceived: 4_250,
         paymentCount: 2,
       },
       {
         holdingId: holdingB.id,
+        holdingTypeSlug: 'bond',
         issuer: 'Issuer B',
         totalReceived: 1_500,
+        convertedTotalReceived: 1_500,
         paymentCount: 1,
       },
     ]);
     expect(summary.payments).toHaveLength(3);
     expect(summary.payments[0].paymentDate).toBe('2026-09-15');
     expect(summary.payments[0].issuer).toBe('Issuer A');
+    expect(summary.payments[0].holdingTypeSlug).toBe('bond');
+    expect(summary.payments[0].convertedAmount).toBe(2_250);
+  });
+
+  it('getIncomeSummary includes BRFI interest payments and merges with bond coupons', async () => {
+    const account = await repo.insertAccount({
+      name: 'Mixed Income',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-01-15',
+      targetCurrencyCode: 'BRL',
+      rate: 5,
+    });
+
+    const bond = await repo.insertBondHolding({
+      accountId: account.id,
+      issuer: 'Bond Issuer',
+      faceValue: 100_000,
+      couponRate: 0.04,
+      couponFrequency: 'annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+    const brFi = await repo.insertBrFiHolding({
+      accountId: account.id,
+      currencyCode: 'BRL',
+      name: 'LCI Income',
+      productType: 'LCI',
+      indexingType: 'CDI_PERCENTAGE',
+      marketIndicatorId: await indicatorIdBySlug('CDI'),
+      cdiPercentage: 100,
+      purchaseDate: new Date('2025-01-15'),
+      maturityDate: new Date('2027-01-15'),
+      investedAmountCents: 500_000,
+    });
+
+    await repo.insertCouponPayment({
+      bondHoldingId: bond.id,
+      paymentDate: new Date(Date.UTC(2026, 5, 1)),
+      amount: 2_000,
+    });
+    await repo.insertBrFiInterestPayment({
+      brFiHoldingId: brFi.id,
+      paymentDate: new Date(Date.UTC(2026, 3, 10)),
+      amount: 3_500,
+    });
+    await repo.insertBrFiInterestPayment({
+      brFiHoldingId: brFi.id,
+      paymentDate: new Date(Date.UTC(2025, 3, 10)),
+      amount: 999,
+    });
+
+    const summary = await repo.getIncomeSummary(
+      new Date(Date.UTC(2026, 0, 1)),
+      new Date(Date.UTC(2026, 11, 31))
+    );
+
+    expect(summary.totalReceived).toBe(5_500);
+    expect(summary.convertedTotalReceived).toBe(2_700);
+    expect(summary.convertedCurrency).toBe('USD');
+    expect(summary.paymentCount).toBe(2);
+    expect(summary.byHolding).toEqual([
+      {
+        holdingId: bond.id,
+        holdingTypeSlug: 'bond',
+        issuer: 'Bond Issuer',
+        totalReceived: 2_000,
+        convertedTotalReceived: 2_000,
+        paymentCount: 1,
+      },
+      {
+        holdingId: brFi.id,
+        holdingTypeSlug: 'brazilian-fixed-income',
+        issuer: 'LCI Income',
+        totalReceived: 3_500,
+        convertedTotalReceived: 700,
+        paymentCount: 1,
+      },
+    ]);
+    expect(summary.payments).toEqual([
+      expect.objectContaining({
+        paymentDate: '2026-06-01',
+        amount: 2_000,
+        currencyCode: 'USD',
+        convertedAmount: 2_000,
+        holdingId: bond.id,
+        holdingTypeSlug: 'bond',
+        issuer: 'Bond Issuer',
+      }),
+      expect.objectContaining({
+        paymentDate: '2026-04-10',
+        amount: 3_500,
+        currencyCode: 'BRL',
+        convertedAmount: 700,
+        holdingId: brFi.id,
+        holdingTypeSlug: 'brazilian-fixed-income',
+        issuer: 'LCI Income',
+      }),
+    ]);
+  });
+
+  it('getIncomeSummary returns BRFI-only totals when no bond payments exist', async () => {
+    const account = await repo.insertAccount({
+      name: 'BRFI Income',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-01-15',
+      targetCurrencyCode: 'BRL',
+      rate: 5,
+    });
+    const brFi = await repo.insertBrFiHolding({
+      accountId: account.id,
+      currencyCode: 'BRL',
+      name: 'CDB Only',
+      productType: 'CDB',
+      indexingType: 'PRE_FIXED',
+      preFixedRatePercent: 12,
+      purchaseDate: new Date('2025-01-15'),
+      maturityDate: new Date('2027-01-15'),
+      investedAmountCents: 100_000,
+    });
+
+    await repo.insertBrFiInterestPayment({
+      brFiHoldingId: brFi.id,
+      paymentDate: new Date(Date.UTC(2026, 1, 1)),
+      amount: 1_200,
+    });
+
+    const summary = await repo.getIncomeSummary(
+      new Date(Date.UTC(2026, 0, 1)),
+      new Date(Date.UTC(2026, 11, 31))
+    );
+
+    expect(summary.totalReceived).toBe(1_200);
+    expect(summary.convertedTotalReceived).toBe(240);
+    expect(summary.convertedCurrency).toBe('USD');
+    expect(summary.paymentCount).toBe(1);
+    expect(summary.byHolding).toEqual([
+      {
+        holdingId: brFi.id,
+        holdingTypeSlug: 'brazilian-fixed-income',
+        issuer: 'CDB Only',
+        totalReceived: 1_200,
+        convertedTotalReceived: 240,
+        paymentCount: 1,
+      },
+    ]);
+  });
+
+  it('getIncomeSummary converts amounts with displayCurrency using payment-date rates', async () => {
+    await repo.insertCurrencyQuote({
+      quoteDate: '2024-01-01',
+      targetCurrencyCode: 'EUR',
+      rate: 0.5,
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-06-15',
+      targetCurrencyCode: 'EUR',
+      rate: 0.5,
+    });
+
+    const account = await repo.insertAccount({
+      name: 'Income FX',
+      currencyCodes: ['USD', 'EUR'],
+    });
+    const holding = await repo.insertBondHolding({
+      accountId: account.id,
+      currencyCode: 'EUR',
+      issuer: 'Euro Bond',
+      faceValue: 100_000,
+      couponRate: 0.04,
+      couponFrequency: 'semi-annual',
+      maturityDate: new Date('2030-01-01'),
+      purchaseDate: new Date('2024-01-01'),
+    });
+
+    await repo.insertCouponPayment({
+      bondHoldingId: holding.id,
+      paymentDate: new Date(Date.UTC(2025, 5, 15)),
+      amount: 10_000,
+    });
+
+    const summary = await repo.getIncomeSummary(
+      new Date(Date.UTC(2025, 0, 1)),
+      new Date(Date.UTC(2025, 11, 31)),
+      { displayCurrency: 'USD' }
+    );
+
+    expect(summary.convertedCurrency).toBe('USD');
+    expect(summary.convertedTotalReceived).toBe(20_000);
+    expect(summary.payments[0]).toMatchObject({
+      amount: 10_000,
+      currencyCode: 'EUR',
+      convertedAmount: 20_000,
+    });
   });
 
   it('getUpcomingCoupons merges holdings, sorts asc, and respects limit', async () => {
@@ -879,6 +1084,7 @@ describe('Repo integration', () => {
       name: 'LCI Test',
       productType: 'LCI',
       indexingType: 'CDI_PERCENTAGE',
+      couponFrequency: 'annual',
       marketIndicatorId: cdiId,
       cdiPercentage: 105,
       investedAmountCents: 10_000_000,
@@ -972,6 +1178,35 @@ describe('Repo integration', () => {
     const filtered = await repo.listBrFiHoldingsFiltered({ accountId: accountA.id });
     expect(filtered).toHaveLength(1);
     expect(filtered[0].name).toBe('Account A LCI');
+    expect(filtered[0]?.expectedInterestAmountCents).toBeNull();
+  });
+
+  it('computes expected BRFI interest amount for next coupon (Example A)', async () => {
+    const account = await repo.insertAccount({
+      name: 'BRFI Expected',
+      currencyCodes: ['USD', 'BRL'],
+    });
+    await repo.insertCurrencyQuote({
+      quoteDate: '2025-07-01',
+      targetCurrencyCode: 'BRL',
+      rate: 5,
+    });
+
+    const inserted = await repo.insertBrFiHolding({
+      accountId: account.id,
+      currencyCode: 'BRL',
+      name: 'PRE_FIXED A',
+      productType: 'LCI',
+      indexingType: 'PRE_FIXED',
+      couponFrequency: 'semi-annual',
+      preFixedRatePercent: 12,
+      purchaseDate: new Date('2025-07-01'),
+      maturityDate: new Date('2027-07-01'),
+      investedAmountCents: 1_000_000,
+    });
+
+    const fetched = await repo.getBrFiHoldingWithConverted(inserted.id);
+    expect(fetched?.expectedInterestAmountCents).toBe(60_000);
   });
 
   it('blocks removing account currency used by BRFI holdings', async () => {
@@ -1289,6 +1524,48 @@ describe('Repo integration', () => {
       expect(
         dashboard.projectedIncomeByYear.every((row) => row.interestCents === 0)
       ).toBe(true);
+    });
+
+    it('projects semi-annual PRE_FIXED BRFI events at per-period amount', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(Date.UTC(2025, 11, 31)));
+
+      const account = await repo.insertAccount({
+        name: 'BRFI Dashboard Semi',
+        currencyCodes: ['USD', 'BRL'],
+      });
+      await repo.insertCurrencyQuote({
+        quoteDate: '2025-07-01',
+        targetCurrencyCode: 'BRL',
+        rate: 5,
+      });
+      await repo.insertBrFiHolding({
+        accountId: account.id,
+        currencyCode: 'BRL',
+        name: 'Semi PRE_FIXED',
+        productType: 'LCI',
+        indexingType: 'PRE_FIXED',
+        couponFrequency: 'semi-annual',
+        preFixedRatePercent: 12,
+        purchaseDate: new Date('2025-07-01'),
+        maturityDate: new Date('2027-07-01'),
+        investedAmountCents: 1_000_000,
+      });
+
+      const dashboard = await repo.getDashboard({
+        from: '2026-01-01',
+        to: '2026-12-31',
+      });
+
+      const interestRows = dashboard.upcomingEvents.filter((event) => event.type === 'INTEREST');
+      expect(interestRows).toHaveLength(2);
+      expect(interestRows[0]?.amountCents).toBe(60_000);
+      expect(interestRows[1]?.amountCents).toBe(60_000);
+      expect(
+        dashboard.projectedIncomeByYear.find((row) => row.year === 2026)?.interestCents
+      ).toBe(120_000);
+
+      vi.useRealTimers();
     });
   });
 });

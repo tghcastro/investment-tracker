@@ -54,6 +54,24 @@ describe('Brazilian Fixed Income validators', () => {
       const result = brFiHoldingCreateSchema.parse(validBase);
       expect(result.name).toBe('LCI Banco X');
       expect(result.cdiPercentage).toBe(105);
+      expect(result.couponFrequency).toBe('annual');
+    });
+
+    it('accepts all coupon frequencies', () => {
+      expect(
+        brFiHoldingCreateSchema.parse({ ...validBase, couponFrequency: 'monthly' }).couponFrequency
+      ).toBe('monthly');
+      expect(
+        brFiHoldingCreateSchema.parse({ ...validBase, couponFrequency: 'quarterly' })
+          .couponFrequency
+      ).toBe('quarterly');
+      expect(
+        brFiHoldingCreateSchema.parse({ ...validBase, couponFrequency: 'semi-annual' })
+          .couponFrequency
+      ).toBe('semi-annual');
+      expect(
+        brFiHoldingCreateSchema.parse({ ...validBase, couponFrequency: 'annual' }).couponFrequency
+      ).toBe('annual');
     });
 
     it('rejects maturityDate <= purchaseDate', () => {
@@ -158,6 +176,11 @@ describe('Brazilian Fixed Income validators', () => {
           marketIndicatorId: undefined,
         })
       ).toThrow();
+    });
+
+    it('accepts coupon frequency updates', () => {
+      const result = brFiHoldingUpdateSchema.parse({ couponFrequency: 'monthly' });
+      expect(result.couponFrequency).toBe('monthly');
     });
   });
 });

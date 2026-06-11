@@ -1,4 +1,5 @@
 export * from './brFi.js';
+export * from './brFiCouponEngine.js';
 export * from './couponSchedule.js';
 export * from './dashboardForecast.js';
 export * from './currency.js';

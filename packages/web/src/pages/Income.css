@@ -2,11 +2,23 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
+  justify-content: space-between;
   gap: var(--cb-space-base);
   margin-bottom: var(--cb-space-xl);
   padding: var(--cb-space-lg);
   background-color: var(--cb-surface-soft);
   border-radius: var(--cb-radius-xl);
+}
+
+.cb-income__filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--cb-space-base);
+}
+
+.cb-income__currency {
+  margin-left: auto;
 }
 
 .cb-income__filter-field {

@@ -22,12 +22,14 @@ const sampleHolding: ApiBrFiHolding = {
   currencyCode: 'BRL',
   holdingType: { id: '2', slug: 'brazilian-fixed-income', name: 'Brazilian Fixed Income' },
   name: 'CDB Banco X',
-  productType: 'CDB',
+  productType: 'LCI',
   indexingType: 'CDI_PERCENTAGE',
+  couponFrequency: 'annual',
   cdiPercentage: 100,
   purchaseDate: '2024-01-01',
   maturityDate: '2026-01-01',
   investedAmountCents: 10_000_00,
+  expectedInterestAmountCents: 12_345,
   convertedInvestedAmountCents: 2_000_00,
   convertedCurrency: 'USD',
   updatedAt: '2024-01-01T00:00:00.000Z',
@@ -69,5 +71,14 @@ describe('BrFiInterestPaymentsSection', () => {
     expect(
       await screen.findByRole('heading', { name: 'No interest payments yet' })
     ).toBeInTheDocument();
+  });
+
+  it('shows expected amount from API', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse([]));
+
+    render(<BrFiInterestPaymentsSection holding={sampleHolding} />);
+
+    expect(await screen.findByText(/Estimate:/)).toBeInTheDocument();
+    expect(screen.getByText(/R\$123\.45/)).toBeInTheDocument();
   });
 });

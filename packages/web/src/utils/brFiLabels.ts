@@ -1,4 +1,9 @@
-import type { ApiBrFiHolding, IndexingType, ProductType } from '../types/api';
+import type {
+  ApiBrFiHolding,
+  CouponFrequency,
+  IndexingType,
+  ProductType,
+} from '../types/api';
 
 export const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   LCI: 'LCI',
@@ -28,6 +33,20 @@ export const INDEXING_TYPE_OPTIONS = (Object.keys(INDEXING_TYPE_LABELS) as Index
     label: INDEXING_TYPE_LABELS[value],
   })
 );
+
+export const COUPON_FREQUENCY_LABELS: Record<CouponFrequency, string> = {
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  'semi-annual': 'Semi-annual',
+  annual: 'Annual',
+};
+
+export const COUPON_FREQUENCY_OPTIONS = (
+  Object.keys(COUPON_FREQUENCY_LABELS) as CouponFrequency[]
+).map((value) => ({
+  value,
+  label: COUPON_FREQUENCY_LABELS[value],
+}));
 
 export function formatBrFiIndexingSummary(
   holding: Pick<

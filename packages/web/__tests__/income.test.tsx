@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import Income from '../src/pages/Income';
 import type { ApiIncomeSummary } from '../src/types/api';
-import { currentUtcCalendarYearRangeStrings } from '../src/utils/incomePeriod';
+import { currentUtcCalendarYearRangeStrings, incomeSummaryUrl } from '../src/utils/incomePeriod';
 
 const mockUseApi = vi.fn();
 
@@ -13,14 +13,33 @@ vi.mock('../src/hooks/useApi', () => ({
   useApi: (url: string) => mockUseApi(url),
 }));
 
+vi.mock('../src/contexts/DisplayCurrencyContext', () => ({
+  useDisplayCurrency: () => ({
+    displayCurrency: 'USD',
+    displaySymbol: '$',
+    availableCurrencies: [
+      { code: 'USD', symbol: '$', number: '840', name: 'US Dollar' },
+      { code: 'EUR', symbol: '€', number: '978', name: 'Euro' },
+    ],
+    loading: false,
+    setDisplayCurrency: vi.fn(),
+  }),
+  appendDisplayCurrencyParam: (url: string) => url,
+  DisplayCurrencyProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 const sampleIncome: ApiIncomeSummary = {
   totalReceived: 42500,
+  convertedTotalReceived: 42500,
+  convertedCurrency: 'USD',
   paymentCount: 2,
   byHolding: [
     {
       holdingId: '1',
+      holdingTypeSlug: 'bond',
       issuer: 'US Treasury',
       totalReceived: 42500,
+      convertedTotalReceived: 42500,
       paymentCount: 2,
     },
   ],
@@ -29,15 +48,50 @@ const sampleIncome: ApiIncomeSummary = {
       id: '3',
       paymentDate: '2026-03-15',
       amount: 21250,
+      currencyCode: 'USD',
+      convertedAmount: 21250,
       holdingId: '1',
+      holdingTypeSlug: 'bond',
       issuer: 'US Treasury',
     },
     {
       id: '4',
       paymentDate: '2026-06-15',
       amount: 21250,
+      currencyCode: 'USD',
+      convertedAmount: 21250,
       holdingId: '1',
+      holdingTypeSlug: 'bond',
       issuer: 'US Treasury',
+    },
+  ],
+};
+
+const brFiIncome: ApiIncomeSummary = {
+  totalReceived: 15000,
+  convertedTotalReceived: 3000,
+  convertedCurrency: 'USD',
+  paymentCount: 1,
+  byHolding: [
+    {
+      holdingId: '7',
+      holdingTypeSlug: 'brazilian-fixed-income',
+      issuer: 'LCI Banco X',
+      totalReceived: 15000,
+      convertedTotalReceived: 3000,
+      paymentCount: 1,
+    },
+  ],
+  payments: [
+    {
+      id: '2',
+      paymentDate: '2026-04-10',
+      amount: 15000,
+      currencyCode: 'BRL',
+      convertedAmount: 3000,
+      holdingId: '7',
+      holdingTypeSlug: 'brazilian-fixed-income',
+      issuer: 'LCI Banco X',
     },
   ],
 };
@@ -45,8 +99,9 @@ const sampleIncome: ApiIncomeSummary = {
 describe('Income', () => {
   it('renders summary and tables for default calendar year', () => {
     const { from, to } = currentUtcCalendarYearRangeStrings();
-    mockUseApi.mockImplementation((url: string) => {
-      if (url === `/api/portfolio/income-summary?from=${from}&to=${to}`) {
+    const url = incomeSummaryUrl(from, to, 'USD');
+    mockUseApi.mockImplementation((requestUrl: string) => {
+      if (requestUrl === url) {
         return { data: sampleIncome, loading: false, error: undefined };
       }
       return { data: undefined, loading: false, error: undefined };
@@ -58,7 +113,8 @@ describe('Income', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: 'Coupon income' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Income' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Display currency')).toBeInTheDocument();
     expect(within(screen.getByLabelText('Income summary')).getByText('$425.00')).toBeInTheDocument();
     expect(screen.getByLabelText('Income by holding')).toBeInTheDocument();
     expect(screen.getByLabelText('All coupon payments')).toBeInTheDocument();
@@ -67,8 +123,9 @@ describe('Income', () => {
 
   it('adds data-label attributes on table cells for mobile card layout', () => {
     const { from, to } = currentUtcCalendarYearRangeStrings();
-    mockUseApi.mockImplementation((url: string) => {
-      if (url === `/api/portfolio/income-summary?from=${from}&to=${to}`) {
+    const url = incomeSummaryUrl(from, to, 'USD');
+    mockUseApi.mockImplementation((requestUrl: string) => {
+      if (requestUrl === url) {
         return { data: sampleIncome, loading: false, error: undefined };
       }
       return { data: undefined, loading: false, error: undefined };
@@ -114,7 +171,7 @@ describe('Income', () => {
         return { data: sampleIncome, loading: true, error: undefined };
       }
       const { from, to } = currentUtcCalendarYearRangeStrings();
-      if (url === `/api/portfolio/income-summary?from=${from}&to=${to}`) {
+      if (url === incomeSummaryUrl(from, to, 'USD')) {
         return { data: sampleIncome, loading: false, error: undefined };
       }
       return { data: undefined, loading: false, error: undefined };
@@ -149,7 +206,14 @@ describe('Income', () => {
       requestedUrls.push(url);
       if (url.includes('from=2025-01-01') && url.includes('to=2025-06-30')) {
         return {
-          data: { ...sampleIncome, totalReceived: 10000, paymentCount: 1, byHolding: [], payments: [] },
+          data: {
+            ...sampleIncome,
+            totalReceived: 10000,
+            convertedTotalReceived: 10000,
+            paymentCount: 1,
+            byHolding: [],
+            payments: [],
+          },
           loading: false,
           error: undefined,
         };
@@ -182,11 +246,14 @@ describe('Income', () => {
 
   it('shows empty state when no payments in period', () => {
     const { from, to } = currentUtcCalendarYearRangeStrings();
-    mockUseApi.mockImplementation((url: string) => {
-      if (url === `/api/portfolio/income-summary?from=${from}&to=${to}`) {
+    const url = incomeSummaryUrl(from, to, 'USD');
+    mockUseApi.mockImplementation((requestUrl: string) => {
+      if (requestUrl === url) {
         return {
           data: {
             totalReceived: 0,
+            convertedTotalReceived: 0,
+            convertedCurrency: 'USD',
             paymentCount: 0,
             byHolding: [],
             payments: [],
@@ -204,7 +271,30 @@ describe('Income', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('heading', { name: 'No coupon income in this period' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'No income in this period' })).toBeInTheDocument();
     expect(screen.getByText('$0.00')).toBeInTheDocument();
+  });
+
+  it('links BRFI income rows to the BRFI holding detail route', () => {
+    const { from, to } = currentUtcCalendarYearRangeStrings();
+    const url = incomeSummaryUrl(from, to, 'USD');
+    mockUseApi.mockImplementation((requestUrl: string) => {
+      if (requestUrl === url) {
+        return { data: brFiIncome, loading: false, error: undefined };
+      }
+      return { data: undefined, loading: false, error: undefined };
+    });
+
+    render(
+      <MemoryRouter>
+        <Income />
+      </MemoryRouter>
+    );
+
+    expect(screen.getAllByRole('link', { name: 'LCI Banco X' })[0]).toHaveAttribute(
+      'href',
+      '/holdings/brazilian-fixed-income/7'
+    );
+    expect(within(screen.getByLabelText('Income summary')).getByText('$30.00')).toBeInTheDocument();
   });
 });

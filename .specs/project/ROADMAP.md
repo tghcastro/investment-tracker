@@ -309,7 +309,7 @@
 
 **BRFI holding model** — PLANNED
 
-- New field: `couponFrequency` — same enum as bonds (`monthly` | `quarterly` | `semi-annual` | `annual`); UI labels **Mensal / Trimestral / Semestral / Anual**
+- New field: `couponFrequency` — same enum as bonds (`monthly` | `quarterly` | `semi-annual` | `annual`); UI labels **Monthly / Quarterly / Semi-annual / Annual**
 - Migration `009_*`: additive column, default `annual` for existing rows (matches current yearly projection behaviour)
 - API embeds `expectedInterestAmountCents` on BRFI GET responses
 - Projected future coupons when rate data sufficient (M8 indicator **history** between coupon dates — see AD-012)
@@ -475,15 +475,15 @@
 
 ## Release map (post-v1.1.0)
 
-| Order | Milestone | Version | Theme |
-| --- | --- | --- | --- |
-| 1 | M10 | **v1.2.0** | Nav + Tools shell + continue creating |
-| 2 | M11 | **v1.3.0** | BRFI coupon engine |
-| 3 | M13 | **v1.4.0** | CSV currency quotes |
-| 4 | M14 | **v1.5.0** | CSV market indicators |
-| 5 | M15 | **v1.6.0** | Compound + simple calculators |
-| 6 | M16 | **v1.7.0** | Million goal calculator |
-| 7 | M12 | **v1.8.0** | Database file picker |
+| Order | Milestone | Version    | Theme                                 |
+| ----- | --------- | ---------- | ------------------------------------- |
+| 1     | M10       | **v1.2.0** | Nav + Tools shell + continue creating |
+| 2     | M11       | **v1.3.0** | BRFI coupon engine                    |
+| 3     | M13       | **v1.4.0** | CSV currency quotes                   |
+| 4     | M14       | **v1.5.0** | CSV market indicators                 |
+| 5     | M15       | **v1.6.0** | Compound + simple calculators         |
+| 6     | M16       | **v1.7.0** | Million goal calculator               |
+| 7     | M12       | **v1.8.0** | Database file picker                  |
 
 **Cross-cutting:** All milestones use **additive SQLite migrations only**; backups from prior versions must restore and run forward migrations.
 

@@ -168,6 +168,7 @@ export const brFiHoldings = sqliteTable(
     cdiPercentage: real('cdi_percentage'),
     ipcaSpreadPercent: real('ipca_spread_percent'),
     preFixedRatePercent: real('pre_fixed_rate_percent'),
+    couponFrequency: text('coupon_frequency').notNull().default('annual'),
     purchaseDate: integer('purchase_date', { mode: 'timestamp_ms' }).notNull(),
     maturityDate: integer('maturity_date', { mode: 'timestamp_ms' }).notNull(),
     investedAmountCents: integer('invested_amount_cents').notNull(),
