@@ -262,23 +262,23 @@
 
 **Goal:** Rename nav for clarity; introduce Tools hub; improve bulk data-entry UX with "continue creating".  
 **Target:** **v1.2.0** — shippable without API changes.  
-**Status:** Planned  
+**Status:** Specified — [spec](../features/active/m10-navigation-tools/spec.md)  
 **Depends on:** v1.1.0
 
 ### Features
 
-**Navigation rename** — PLANNED
+**Navigation rename** — SPECIFIED
 
 - TopNav **Reference** → **Configurations** (same routes: Currencies, Currency Quotes, Market Indicators)
 - TopNav **Settings** → **Tools** → `/tools` (remove standalone `/settings` or redirect)
 
-**Tools page** — PLANNED
+**Tools page** — SPECIFIED
 
 - Card grid layout (pattern: Accounts page)
 - First card: **Backup / Restore** (content moved from current Settings page)
 - Card shows tool name + short description; click opens tool view
 
-**Continue creating (UI only)** — PLANNED
+**Continue creating (UI only)** — SPECIFIED
 
 - **Currency quotes** add modal (not new ISO codes): checkbox "Continue creating" (default off); on success keep modal open, clear value fields only
 - Add coupon payment modal (bonds): same pattern
