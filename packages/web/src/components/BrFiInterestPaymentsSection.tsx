@@ -5,7 +5,7 @@ import {
   type CouponPaymentFormSubmitPayload,
 } from './CouponPaymentForm';
 import { CouponPaymentsTable } from './CouponPaymentsTable';
-import { ConfirmDialog, FormDialog } from './forms';
+import { ConfirmDialog, ContinueCreatingCheckbox, FormDialog } from './forms';
 import { Button, EmptyState, ErrorBanner } from './ui';
 import { useApiMutation } from '../hooks';
 import {
@@ -62,6 +62,8 @@ export function BrFiInterestPaymentsSection({ holding }: BrFiInterestPaymentsSec
   const [mode, setMode] = useState<SectionMode>('list');
   const [editingPayment, setEditingPayment] = useState<ApiBrFiInterestPayment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ApiBrFiInterestPayment | null>(null);
+  const [continueCreating, setContinueCreating] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
 
   const createMutation = useApiMutation<ApiBrFiInterestPayment>(
     'POST',
@@ -102,8 +104,12 @@ export function BrFiInterestPaymentsSection({ holding }: BrFiInterestPaymentsSec
     });
 
     if (result.ok) {
-      setMode('list');
       await loadPayments();
+      if (continueCreating) {
+        setFormResetKey((key) => key + 1);
+      } else {
+        setMode('list');
+      }
     }
   };
 
@@ -146,7 +152,15 @@ export function BrFiInterestPaymentsSection({ holding }: BrFiInterestPaymentsSec
           </p>
         </div>
         {mode === 'list' && payments.length > 0 ? (
-          <Button type="button" variant="primary" onClick={() => setMode('add')}>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => {
+              setContinueCreating(false);
+              setFormResetKey((key) => key + 1);
+              setMode('add');
+            }}
+          >
             Record payment
           </Button>
         ) : null}
@@ -162,7 +176,15 @@ export function BrFiInterestPaymentsSection({ holding }: BrFiInterestPaymentsSec
           title="No interest payments yet"
           description="Record interest received for this position to track income history."
           action={
-            <Button type="button" variant="primary" onClick={() => setMode('add')}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => {
+                setContinueCreating(false);
+                setFormResetKey((key) => key + 1);
+                setMode('add');
+              }}
+            >
               Record payment
             </Button>
           }
@@ -186,10 +208,19 @@ export function BrFiInterestPaymentsSection({ holding }: BrFiInterestPaymentsSec
         open={mode === 'add'}
         title="Record payment"
         titleId="brfi-payment-add-title"
-        onClose={() => setMode('list')}
+        onClose={() => {
+          setContinueCreating(false);
+          setMode('list');
+        }}
       >
         {activeError ? <ErrorBanner message={activeError} /> : null}
+        <ContinueCreatingCheckbox
+          checked={continueCreating}
+          onChange={setContinueCreating}
+          disabled={formLoading}
+        />
         <CouponPaymentForm
+          key={formResetKey}
           currencyCode={holding.currencyCode}
           submitLabel="Record payment"
           loading={formLoading}
@@ -197,7 +228,10 @@ export function BrFiInterestPaymentsSection({ holding }: BrFiInterestPaymentsSec
           onSubmit={(payload) => {
             void handleCreate(payload);
           }}
-          onCancel={() => setMode('list')}
+          onCancel={() => {
+            setContinueCreating(false);
+            setMode('list');
+          }}
         />
       </FormDialog>
 

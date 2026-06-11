@@ -1,7 +1,7 @@
 # State
 
-**Last Updated:** 2026-06-06
-**Current Work:** **M10–M16** planned in [ROADMAP.md](ROADMAP.md) — per-milestone releases **v1.2.0–v1.8.0** (AD-011). Next implement: **M10**.
+**Last Updated:** 2026-06-11
+**Current Work:** **M10** specified — approve spec → design/tasks → implement → **v1.2.0**. See [m10 spec](../features/active/m10-navigation-tools/spec.md).
 
 ### AD-010: API-first business rules — web UI only (2026-05-31)
 
@@ -125,7 +125,8 @@ _None yet._
 
 ## Todos
 
-- [ ] Specify M10 — navigation & Tools shell → [ROADMAP](ROADMAP.md#m10--navigation--tools-shell)
+- [ ] Approve M10 spec → design + tasks (2026-06-11)
+- [x] Specify M10 — `.specs/features/active/m10-navigation-tools/spec.md` (2026-06-11)
 - [ ] Specify M11 — BRFI coupon engine
 - [ ] Specify M12 — database file picker
 - [ ] Specify M13 — CSV currency quotes import

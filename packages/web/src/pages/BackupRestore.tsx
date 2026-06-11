@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { ConfirmDialog } from '../components/forms';
 import { Button, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi } from '../hooks';
@@ -38,7 +39,7 @@ function parseBackupFilename(contentDisposition: string | null): string {
   return DEFAULT_BACKUP_FILENAME;
 }
 
-export default function Settings() {
+export default function BackupRestore() {
   const [infoRefreshKey, setInfoRefreshKey] = useState(0);
   const { data: info, loading, error } = useApi<ApiSystemInfo>(
     `/api/system/info?r=${infoRefreshKey}`
@@ -144,8 +145,13 @@ export default function Settings() {
   return (
     <div className="cb-settings">
       <PageHeader
-        title="Settings"
-        subtitle="System information and data backup"
+        title="Backup / Restore"
+        subtitle="Download a SQLite backup or restore from a file"
+        action={
+          <Link to="/tools" className="cb-button cb-button--tertiary-text">
+            All tools
+          </Link>
+        }
       />
 
       {bannerMessage ? <ErrorBanner message={bannerMessage} /> : null}

@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ConfirmDialog, FormDialog, FormField, Select, TextInput } from '../components/forms';
+import { ConfirmDialog, ContinueCreatingCheckbox, FormDialog, FormField, Select, TextInput } from '../components/forms';
 import { Button, ErrorBanner, PageHeader } from '../components/ui';
 import { useApi, useApiMutation } from '../hooks';
 import type { ApiCurrency, ApiCurrencyQuote } from '../types/api';
@@ -79,6 +79,7 @@ export default function CurrencyQuotes() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [continueCreating, setContinueCreating] = useState(false);
 
   const quotesUrl = buildQuotesUrl(refreshKey, filterValues);
   const { data: quotes, loading, error } = useApi<ApiCurrencyQuote[]>(quotesUrl);
@@ -114,7 +115,16 @@ export default function CurrencyQuotes() {
     setFormValues(EMPTY_FORM);
     setFormErrors({});
     setEditingId(null);
+    setContinueCreating(false);
     setMode('list');
+  };
+
+  const openAddForm = () => {
+    setFormValues(EMPTY_FORM);
+    setFormErrors({});
+    setEditingId(null);
+    setContinueCreating(false);
+    setMode('add');
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -137,8 +147,17 @@ export default function CurrencyQuotes() {
       : await createMutation.mutate(payload);
 
     if (result.ok) {
-      resetForm();
       setRefreshKey((value) => value + 1);
+      if (!editingId && continueCreating) {
+        setFormValues((current) => ({
+          ...current,
+          quoteDate: '',
+          rate: '',
+        }));
+        setFormErrors({});
+      } else {
+        resetForm();
+      }
     }
   };
 
@@ -248,7 +267,7 @@ export default function CurrencyQuotes() {
         action={
           <div className="cb-currency-quotes-page__header-actions">
             {mode === 'list' ? (
-              <Button type="button" variant="primary" onClick={() => setMode('add')}>
+              <Button type="button" variant="primary" onClick={openAddForm}>
                 Record quote
               </Button>
             ) : null}
@@ -347,6 +366,11 @@ export default function CurrencyQuotes() {
         onClose={resetForm}
       >
         {activeError ? <ErrorBanner message={activeError} /> : null}
+        <ContinueCreatingCheckbox
+          checked={continueCreating}
+          onChange={setContinueCreating}
+          disabled={activeMutation.loading}
+        />
         {quoteForm}
       </FormDialog>
 

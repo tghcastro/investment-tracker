@@ -1,4 +1,4 @@
-import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { TopNav } from './components/ui';
 import { DisplayCurrencyProvider } from './contexts/DisplayCurrencyContext';
@@ -14,7 +14,8 @@ import Holdings from './pages/Holdings';
 import Income from './pages/Income';
 import MarketIndicatorDetail from './pages/MarketIndicatorDetail';
 import MarketIndicators from './pages/MarketIndicators';
-import Settings from './pages/Settings';
+import BackupRestore from './pages/BackupRestore';
+import Tools from './pages/Tools';
 import './App.css';
 
 function AppLayout() {
@@ -53,7 +54,9 @@ export default function App() {
               <Route path="/currencies" element={<Currencies />} />
               <Route path="/market-indicators/:id" element={<MarketIndicatorDetail />} />
               <Route path="/market-indicators" element={<MarketIndicators />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/tools" element={<Tools />} />
+              <Route path="/tools/backup-restore" element={<BackupRestore />} />
+              <Route path="/settings" element={<Navigate to="/tools/backup-restore" replace />} />
               <Route path="/accounts/new" element={<AccountFormPage mode="create" />} />
               <Route path="/accounts/:id" element={<AccountFormPage mode="edit" />} />
               <Route path="/accounts" element={<Accounts />} />

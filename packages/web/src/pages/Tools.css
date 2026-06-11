@@ -1,0 +1,34 @@
+.cb-tools-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cb-space-base);
+}
+
+.cb-tools-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cb-space-base);
+  padding: var(--cb-space-xl);
+  background-color: var(--cb-canvas);
+  border: 1px solid var(--cb-hairline);
+  border-radius: var(--cb-radius-xl);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.cb-tools-card:hover {
+  border-color: var(--cb-primary);
+  box-shadow: 0 0 0 1px var(--cb-primary);
+}
+
+.cb-tools-card__description {
+  margin: 0;
+  flex: 1;
+  font-family: var(--cb-font-body-md-family);
+  font-size: var(--cb-font-body-md-size);
+  font-weight: var(--cb-font-body-md-weight);
+  line-height: var(--cb-font-body-md-line-height);
+  letter-spacing: var(--cb-font-body-md-letter-spacing);
+  color: var(--cb-body);
+}
