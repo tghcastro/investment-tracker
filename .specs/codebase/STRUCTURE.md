@@ -107,7 +107,7 @@ web/
 │   │   ├── forms/            # TextInput, FormField, FormDialog, Select
 │   │   └── …                 # HoldingForm, BrFiForm, tables, etc.
 │   ├── contexts/             # DisplayCurrencyProvider
-│   ├── pages/                # Home, Holdings, BrFiHoldings, MarketIndicators, Accounts, Income, Currencies, Settings, forms
+│   ├── pages/                # Home, Holdings, BrFiHoldings, MarketIndicators, Accounts, Income, Currencies, Tools, BackupRestore, forms
 │   ├── hooks/                # useApi, useApiMutation
 │   ├── types/api.ts
 │   └── utils/

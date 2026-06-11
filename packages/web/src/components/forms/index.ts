@@ -1,3 +1,5 @@
+export { ContinueCreatingCheckbox } from './ContinueCreatingCheckbox';
+export type { ContinueCreatingCheckboxProps } from './ContinueCreatingCheckbox';
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
 export { FormDialog } from './FormDialog';

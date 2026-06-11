@@ -134,9 +134,9 @@ describe('TopNav responsive behavior', () => {
     expect(window.matchMedia(MOBILE_QUERY).matches).toBe(false);
     expect(mainNav).not.toHaveClass('cb-top-nav__center--open');
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Reference' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Configurations' })).toBeInTheDocument();
     });
-    expect(screen.getByRole('menuitem', { name: 'Accounts' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
     expect(screen.queryByRole('button', { name: 'Close menu' })).not.toBeInTheDocument();
   });
 
@@ -196,8 +196,9 @@ describe('TopNav responsive behavior', () => {
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
   });
 
-  it('includes Market Indicators nav link to /market-indicators', () => {
+  it('includes Currency Quotes in configurations submenu', async () => {
     mockMatchMedia(false);
+    const user = userEvent.setup();
 
     render(
       <MemoryRouter>
@@ -205,13 +206,19 @@ describe('TopNav responsive behavior', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('menuitem', { name: 'Market Indicators' })).toHaveAttribute(
-      'href',
-      '/market-indicators'
+    const configurationsItem = screen.getByRole('button', { name: 'Configurations' }).closest('li');
+    expect(configurationsItem).not.toBeNull();
+
+    await user.hover(configurationsItem!);
+
+    const configurationsSubmenu = document.getElementById('configurations-submenu');
+    expect(configurationsSubmenu).not.toBeNull();
+    expect(configurationsSubmenu!.querySelector('[href="/currencies/quotes"]')).toHaveTextContent(
+      'Currency Quotes'
     );
   });
 
-  it('includes Settings nav link to /settings', () => {
+  it('includes Tools nav link to /tools', () => {
     mockMatchMedia(false);
 
     render(
@@ -220,7 +227,7 @@ describe('TopNav responsive behavior', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
+    expect(screen.getByRole('link', { name: 'Tools' })).toHaveAttribute('href', '/tools');
   });
 
   it('closes holdings submenu after pointer leaves on wide viewports', async () => {

@@ -115,17 +115,20 @@ describe('App', () => {
     );
     expect(addSubmenu!.querySelector('[href="/holdings/new"]')).toHaveTextContent('Bond');
     expect(screen.getByRole('link', { name: 'Income' })).toHaveAttribute('href', '/income');
-    expect(screen.getByRole('button', { name: 'Reference' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Currencies' })).toHaveAttribute(
-      'href',
-      '/currencies'
+    expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
+    expect(screen.getByRole('link', { name: 'Tools' })).toHaveAttribute('href', '/tools');
+    expect(screen.getByRole('button', { name: 'Configurations' })).toBeInTheDocument();
+    const configurationsSubmenu = document.getElementById('configurations-submenu');
+    expect(configurationsSubmenu).not.toBeNull();
+    expect(configurationsSubmenu!.querySelector('[href="/currencies"]')).toHaveTextContent(
+      'Currencies'
     );
-    expect(screen.getByRole('menuitem', { name: 'Market Indicators' })).toHaveAttribute(
-      'href',
-      '/market-indicators'
+    expect(configurationsSubmenu!.querySelector('[href="/currencies/quotes"]')).toHaveTextContent(
+      'Currency Quotes'
     );
-    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
-    expect(screen.getByRole('menuitem', { name: 'Accounts' })).toHaveAttribute('href', '/accounts');
+    expect(configurationsSubmenu!.querySelector('[href="/market-indicators"]')).toHaveTextContent(
+      'Market Indicators'
+    );
     expect(screen.getByRole('heading', { name: 'Portfolio' })).toBeInTheDocument();
   });
 
@@ -165,11 +168,22 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Coupon income' })).toBeInTheDocument();
   });
 
-  it('resolves /settings route', () => {
+  it('redirects /settings to backup restore tool', () => {
     window.history.pushState({}, '', '/settings');
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Backup / Restore' })).toBeInTheDocument();
+  });
+
+  it('resolves /tools route', () => {
+    window.history.pushState({}, '', '/tools');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Tools' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Backup \/ Restore/ })).toHaveAttribute(
+      'href',
+      '/tools/backup-restore'
+    );
   });
 
   it('resolves /market-indicators route', () => {

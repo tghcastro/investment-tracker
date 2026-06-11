@@ -11,17 +11,24 @@ import './TopNav.css';
 const NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
   { to: '/income', label: 'Income', end: false },
-  { to: '/settings', label: 'Settings', end: false },
+  { to: '/accounts', label: 'Accounts', end: false },
+  { to: '/tools', label: 'Tools', end: false },
 ] as const;
 
-const REFERENCE_NAV_ITEMS = [
-  { to: '/market-indicators', label: 'Market Indicators' },
+const CONFIGURATIONS_NAV_ITEMS = [
   { to: '/currencies', label: 'Currencies' },
-  { to: '/accounts', label: 'Accounts' },
+  { to: '/currencies/quotes', label: 'Currency Quotes' },
+  { to: '/market-indicators', label: 'Market Indicators' },
 ] as const;
 
-function isReferenceActive(pathname: string): boolean {
-  return REFERENCE_NAV_ITEMS.some(({ to }) => pathname.startsWith(to));
+function isConfigurationsActive(pathname: string): boolean {
+  return (
+    pathname.startsWith('/currencies') || pathname.startsWith('/market-indicators')
+  );
+}
+
+function isToolsActive(pathname: string): boolean {
+  return pathname.startsWith('/tools');
 }
 
 function useSubmenuOpenState() {
@@ -133,10 +140,10 @@ function HoldingsNavItem({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
-function ReferenceNavItem({ onNavigate }: { onNavigate: () => void }) {
+function ConfigurationsNavItem({ onNavigate }: { onNavigate: () => void }) {
   const location = useLocation();
   const { open, setOpen, isMobile, closeSubmenu, handleMouseLeave } = useSubmenuOpenState();
-  const isReferenceNavActive = isReferenceActive(location.pathname);
+  const isConfigurationsNavActive = isConfigurationsActive(location.pathname);
 
   return (
     <li
@@ -149,20 +156,21 @@ function ReferenceNavItem({ onNavigate }: { onNavigate: () => void }) {
       <button
         type="button"
         className={`cb-top-nav__link cb-top-nav__link--submenu${
-          isReferenceNavActive ? ' cb-top-nav__link--active' : ''
+          isConfigurationsNavActive ? ' cb-top-nav__link--active' : ''
         }`}
         aria-expanded={open}
         aria-haspopup="true"
-        aria-controls="reference-submenu"
+        aria-controls="configurations-submenu"
         onClick={isMobile ? () => setOpen((value) => !value) : undefined}
       >
-        Reference
+        Configurations
       </button>
-      <ul id="reference-submenu" className="cb-top-nav__submenu" role="menu">
-        {REFERENCE_NAV_ITEMS.map(({ to, label }) => (
+      <ul id="configurations-submenu" className="cb-top-nav__submenu" role="menu">
+        {CONFIGURATIONS_NAV_ITEMS.map(({ to, label }) => (
           <li key={to} role="none">
             <NavLink
               to={to}
+              end={to === '/currencies'}
               role="menuitem"
               className={({ isActive }) =>
                 isActive
@@ -257,6 +265,7 @@ function AddHoldingNavItem() {
 
 export function TopNav() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -306,35 +315,25 @@ export function TopNav() {
               </li>
             ))}
             <HoldingsNavItem onNavigate={closeMenu} />
-            {NAV_ITEMS.slice(1, 2).map(({ to, label, end }) => (
+            {NAV_ITEMS.slice(1).map(({ to, label, end }) => (
               <li key={to}>
                 <NavLink
                   to={to}
                   end={end}
-                  className={({ isActive }) =>
-                    isActive ? 'cb-top-nav__link cb-top-nav__link--active' : 'cb-top-nav__link'
-                  }
+                  className={({ isActive }) => {
+                    const active =
+                      to === '/tools' ? isToolsActive(location.pathname) : isActive;
+                    return active
+                      ? 'cb-top-nav__link cb-top-nav__link--active'
+                      : 'cb-top-nav__link';
+                  }}
                   onClick={closeMenu}
                 >
                   {label}
                 </NavLink>
               </li>
             ))}
-            <ReferenceNavItem onNavigate={closeMenu} />
-            {NAV_ITEMS.slice(2).map(({ to, label, end }) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  end={end}
-                  className={({ isActive }) =>
-                    isActive ? 'cb-top-nav__link cb-top-nav__link--active' : 'cb-top-nav__link'
-                  }
-                  onClick={closeMenu}
-                >
-                  {label}
-                </NavLink>
-              </li>
-            ))}
+            <ConfigurationsNavItem onNavigate={closeMenu} />
           </ul>
         </nav>
 

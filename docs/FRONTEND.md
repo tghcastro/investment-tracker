@@ -49,9 +49,9 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 
 ## App shell
 
-- `TopNav` 64px, canvas background, hairline bottom border; **Holdings** hover submenu from `GET /api/holding-types` (Bond → `/holdings`; Brazilian Fixed Income → `/holdings/brazilian-fixed-income`); **Reference** submenu groups Market Indicators, Currencies, and Accounts (click-toggle on mobile only; closes on pointer leave / route change).
+- `TopNav` 64px, canvas background, hairline bottom border; **Holdings** hover submenu from `GET /api/holding-types` (Bond → `/holdings`; Brazilian Fixed Income → `/holdings/brazilian-fixed-income`); **Configurations** submenu groups Currencies, Currency Quotes, and Market Indicators; **Accounts** and **Tools** are top-level links (click-toggle on mobile only; closes on pointer leave / route change).
 - Main: `.cb-app__main`, max-width ~1200px, padding 32px / 24px.
-- Routes: `/`, `/holdings`, `/holdings/new`, `/holdings/:id`, `/holdings/brazilian-fixed-income`, `/holdings/brazilian-fixed-income/new`, `/holdings/brazilian-fixed-income/:id`, `/accounts`, `/accounts/new`, `/accounts/:id`, `/income`, `/currencies`, `/currencies/quotes`, `/market-indicators`, `/market-indicators/:id`, `/settings`.
+- Routes: `/`, `/holdings`, `/holdings/new`, `/holdings/:id`, `/holdings/brazilian-fixed-income`, `/holdings/brazilian-fixed-income/new`, `/holdings/brazilian-fixed-income/:id`, `/accounts`, `/accounts/new`, `/accounts/:id`, `/income`, `/currencies`, `/currencies/quotes`, `/market-indicators`, `/market-indicators/:id`, `/tools`, `/tools/backup-restore` (`/settings` redirects to backup/restore).
 - **Display currency:** `DisplayCurrencyProvider` loads `GET /api/currencies/available`; preference in `localStorage` key `displayCurrency`. Home dashboard passes `displayCurrency` via `buildDashboardUrl` (`utils/dashboardUrl.ts`); Holdings lists use `appendDisplayCurrencyParam`. `buildDashboardUrl` defaults `from`/`to` when omitted (Accounts page uses `defaultDashboardDateRange()`).
 - **Home (`/`):** Portfolio dashboard — summary cards, allocation tables, yearly income/principal forecasts, upcoming events; filter bar (account, holding type, date range) synced to URL search params; scroll-limited tables except allocation-by-type.
 - **Accounts (`/accounts`):** Card grid with holding count + converted total from `GET /api/dashboard` (`allocationByAccount`); native-currency breakdown in value tooltip.
@@ -62,7 +62,7 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 | Component | Use |
 | --- | --- |
 | `Button` | `primary`, `secondary`, `tertiary`, `disabled` |
-| `TopNav` | Global nav; Holdings + Reference submenus |
+| `TopNav` | Global nav; Holdings + Configurations submenus; Accounts + Tools top-level |
 | `BrFiInterestPaymentsSection` | BRFI edit page — interest payments CRUD (mirror `CouponPaymentsSection`) |
 | `PageHeader` | Title + subtitle + optional action |
 | `EmptyState` | Zero-data lists |
@@ -71,8 +71,11 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 | `HoldingsTable`, `BrFiHoldingsTable`, `CouponPaymentsTable` | Data tables |
 | `BrFiForm`, `IndexingFields` | BRFI create/edit (product + indexing params; indicator picker via `GET /api/market-indicators?category=`) |
 | `MarketIndicators`, `MarketIndicatorDetail` | Indicator list + dated values CRUD; **Record value** opens `FormDialog` (mirror CurrencyQuotes) |
-| `CurrencyQuotes` | Quote list + filters; **Record quote** opens `FormDialog` |
+| `CurrencyQuotes` | Quote list + filters; **Record quote** opens `FormDialog`; optional **Continue creating** on add |
 | `CurrencySelector` | Display-currency dropdown (Home, Holdings toolbar) |
+| `Tools` | Utilities hub card grid at `/tools` |
+| `BackupRestore` | System info + backup download / restore at `/tools/backup-restore` |
+| `ContinueCreatingCheckbox` | Bulk-entry add forms (quotes, coupon/interest payments) |
 
 ## Forms
 
@@ -83,6 +86,7 @@ Condensed from [`DESIGN.md`](../DESIGN.md) and shipped UI in `packages/web/`. Fo
 - **BrFiForm:** product type, indexing type + conditional params (`IndexingFields`); when indexing requires a benchmark, fetch `GET /api/market-indicators?category=...` and pass `marketIndicatorId` in POST/PATCH; default selection from API list (slug match, not hardcoded map); `investedAmount` in cents via `parseDollarsToCents`; currency from account allowed set; optional `?accountId=` filter on list.
 - On submit failure, call `focusFirstFieldError` (`utils/focusFirstFieldError.ts`).
 - `couponRate` in API is **percent** (0–100) in JSON.
+- **Continue creating:** optional checkbox on add flows (Currency Quotes, bond coupon payments, BRFI interest payments). When checked, successful create keeps the form open and clears date/amount (quotes: date/rate only; preserves currency + rate direction). Resets to unchecked on cancel or next open.
 
 ## CSS conventions
 

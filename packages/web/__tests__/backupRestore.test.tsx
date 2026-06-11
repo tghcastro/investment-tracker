@@ -1,8 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import Settings from '../src/pages/Settings';
+import BackupRestore from '../src/pages/BackupRestore';
 import type { ApiSystemInfo } from '../src/types/api';
 import { formatDateTime } from '../src/utils/format';
 
@@ -27,6 +28,14 @@ function mockSystemInfo(info: ApiSystemInfo = sampleInfo, loading = false) {
   });
 }
 
+function renderBackupRestore() {
+  return render(
+    <MemoryRouter>
+      <BackupRestore />
+    </MemoryRouter>
+  );
+}
+
 async function blobResponse(
   body: BlobPart,
   headers?: Record<string, string>
@@ -38,7 +47,7 @@ async function blobResponse(
   });
 }
 
-describe('Settings', () => {
+describe('BackupRestore', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
   });
@@ -51,9 +60,9 @@ describe('Settings', () => {
   it('renders system info (version, database path, last backup formatted)', () => {
     mockSystemInfo();
 
-    render(<Settings />);
+    renderBackupRestore();
 
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Backup / Restore' })).toBeInTheDocument();
     expect(screen.getByLabelText('System information')).toBeInTheDocument();
     expect(screen.getByText('1.2.3')).toBeInTheDocument();
     expect(screen.getByText('/data/investment-tracker.db')).toBeInTheDocument();
@@ -63,7 +72,7 @@ describe('Settings', () => {
   it('shows Never when lastBackupAt is null', () => {
     mockSystemInfo({ ...sampleInfo, lastBackupAt: null });
 
-    render(<Settings />);
+    renderBackupRestore();
 
     expect(screen.getByText('Never')).toBeInTheDocument();
   });
@@ -85,7 +94,7 @@ describe('Settings', () => {
 
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    render(<Settings />);
+    renderBackupRestore();
 
     await user.click(screen.getByRole('button', { name: 'Download backup' }));
 
@@ -119,7 +128,7 @@ describe('Settings', () => {
       value: { href: '', assign: locationAssign },
     });
 
-    render(<Settings />);
+    renderBackupRestore();
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     await user.upload(fileInput, restoreFile);
@@ -156,7 +165,7 @@ describe('Settings', () => {
       type: 'application/octet-stream',
     });
 
-    render(<Settings />);
+    renderBackupRestore();
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     await user.upload(fileInput, restoreFile);
@@ -188,7 +197,7 @@ describe('Settings', () => {
       )
     );
 
-    render(<Settings />);
+    renderBackupRestore();
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     await user.upload(fileInput, restoreFile);
@@ -221,7 +230,7 @@ describe('Settings', () => {
       )
     );
 
-    render(<Settings />);
+    renderBackupRestore();
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     await user.upload(fileInput, restoreFile);

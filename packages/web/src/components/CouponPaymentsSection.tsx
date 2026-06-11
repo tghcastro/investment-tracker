@@ -5,7 +5,7 @@ import {
   type CouponPaymentFormSubmitPayload,
 } from './CouponPaymentForm';
 import { CouponPaymentsTable } from './CouponPaymentsTable';
-import { ConfirmDialog, FormDialog } from './forms';
+import { ConfirmDialog, ContinueCreatingCheckbox, FormDialog } from './forms';
 import { Button, EmptyState, ErrorBanner } from './ui';
 import { useApiMutation } from '../hooks';
 import {
@@ -63,6 +63,8 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
   const [mode, setMode] = useState<SectionMode>('list');
   const [editingPayment, setEditingPayment] = useState<ApiCouponPayment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ApiCouponPayment | null>(null);
+  const [continueCreating, setContinueCreating] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
 
   const createMutation = useApiMutation<ApiCouponPayment>('POST', '/api/coupon-payments');
   const updateMutation = useApiMutation<ApiCouponPayment>(
@@ -102,8 +104,12 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
     });
 
     if (result.ok) {
-      setMode('list');
       await loadPayments();
+      if (continueCreating) {
+        setFormResetKey((key) => key + 1);
+      } else {
+        setMode('list');
+      }
     }
   };
 
@@ -149,7 +155,15 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
           ) : null}
         </div>
         {mode === 'list' && payments.length > 0 ? (
-          <Button type="button" variant="primary" onClick={() => setMode('add')}>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => {
+              setContinueCreating(false);
+              setFormResetKey((key) => key + 1);
+              setMode('add');
+            }}
+          >
             Record payment
           </Button>
         ) : null}
@@ -165,7 +179,15 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
           title="No coupon payments yet"
           description="Record interest received for this bond to track income history."
           action={
-            <Button type="button" variant="primary" onClick={() => setMode('add')}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => {
+                setContinueCreating(false);
+                setFormResetKey((key) => key + 1);
+                setMode('add');
+              }}
+            >
               Record payment
             </Button>
           }
@@ -188,10 +210,19 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
         open={mode === 'add'}
         title="Record payment"
         titleId="coupon-payment-add-title"
-        onClose={() => setMode('list')}
+        onClose={() => {
+          setContinueCreating(false);
+          setMode('list');
+        }}
       >
         {activeError ? <ErrorBanner message={activeError} /> : null}
+        <ContinueCreatingCheckbox
+          checked={continueCreating}
+          onChange={setContinueCreating}
+          disabled={formLoading}
+        />
         <CouponPaymentForm
+          key={formResetKey}
           currencyCode={holding.currencyCode}
           submitLabel="Record payment"
           loading={formLoading}
@@ -199,7 +230,10 @@ export function CouponPaymentsSection({ holding }: CouponPaymentsSectionProps) {
           onSubmit={(payload) => {
             void handleCreate(payload);
           }}
-          onCancel={() => setMode('list')}
+          onCancel={() => {
+            setContinueCreating(false);
+            setMode('list');
+          }}
         />
       </FormDialog>
 
